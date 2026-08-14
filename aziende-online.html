@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Contabilità Azienda</title>
+<link rel="manifest" href="data:application/json,{}">
+<style>
+  :root{
+    --ink:#1B2A2E; --ink-soft:#4A5C60; --ink-faint:#8A9A9D;
+    --bg:#F7F5EF; --surface:#FFFFFF; --input-bg:#FBFAF6;
+    --line:#DDD8C8; --accent:#8C6A2F; --accent-soft:#F0E6D2;
+    --green:#2F6B4F; --over:#B3432B;
+    --radius:16px; --radius-sm:10px;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --serif:Georgia,'Times New Roman',serif;
+    --mono:'SF Mono',Menlo,Consolas,monospace;
+  }
+  [data-theme="dark"]{
+    --ink:#F0EDE4; --ink-soft:#B8B2A0; --ink-faint:#7A7565;
+    --bg:#181611; --surface:#221F19; --input-bg:#2A271F;
+    --line:#3A3527; --accent:#D4A94F; --accent-soft:#3A3020;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+  .app{max-width:920px;margin:0 auto;padding:20px;padding-bottom:60px;}
+  h1,h2,h3{font-family:var(--serif);font-weight:700;margin:0 0 6px 0;}
+  h3{font-size:18px;}
+  label{display:block;font-size:12.5px;color:var(--ink-soft);font-weight:600;margin-bottom:5px;}
+  input,select,textarea{
+    width:100%;padding:10px 12px;border:1.5px solid var(--line);background:var(--input-bg);border-radius:var(--radius-sm);
+    font-family:var(--sans);font-size:14px;color:var(--ink);margin-bottom:14px;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+  button{font-family:var(--sans);cursor:pointer;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:600;}
+  button.primary{background:var(--accent);color:#fff;padding:11px 18px;}
+  button.primary:hover{opacity:0.92;}
+  button.ghost{background:var(--surface);border:1.5px solid var(--line);color:var(--ink);padding:10px 16px;}
+  button.ghost:hover{border-color:var(--accent);}
+  button.icon-btn{background:none;border:none;color:var(--ink-faint);padding:4px 8px;font-size:15px;}
+  button.icon-btn:hover{color:var(--accent);}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+  .hint{font-size:12.5px;color:var(--ink-faint);line-height:1.5;}
+  .hint.box{background:var(--accent-soft);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;color:var(--ink-soft);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+  .form-grid .full{grid-column:1 / -1;}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:6px;}
+  .tab{background:none;border:none;padding:9px 14px;border-radius:8px;color:var(--ink-soft);font-size:13.5px;font-weight:600;}
+  .tab.active{background:var(--accent);color:#fff;}
+  .mono{font-family:var(--mono);}
+  .list-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:10px;}
+  .list-row:last-child{border-bottom:none;}
+  .list-main{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .list-cat{font-weight:600;font-size:14px;}
+  .list-note{font-size:12px;color:var(--ink-faint);}
+  .list-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .list-amount{font-family:var(--mono);font-weight:600;font-size:14px;}
+  .segmented{display:inline-flex;border:1.5px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;}
+  .segmented button{background:var(--surface);border:none;padding:9px 16px;font-size:13px;color:var(--ink-soft);}
+  .segmented button.active{background:var(--accent);color:#fff;}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--ink-faint);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:0.03em;padding:6px 8px;border-bottom:1.5px solid var(--line);}
+  td{padding:8px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  .balanced{color:var(--green);font-weight:700;}
+  .unbalanced{color:var(--over);font-weight:700;}
+  .empty-state{text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:13.5px;}
+</style>
+</head>
+<body>
+
+<div id="authScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="width:100%;max-width:400px;">
+    <h1 style="font-size:26px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
+    <p class="hint" style="margin-bottom:20px;">Accedi con le stesse credenziali di Le Mie Finanze.</p>
+    <label>Email</label>
+    <input type="email" id="authEmail" placeholder="tu@esempio.com">
+    <label>Password</label>
+    <input type="password" id="authPassword" placeholder="••••••••">
+    <button class="primary" id="authLoginBtn" type="button" style="width:100%;">Accedi</button>
+    <div id="authError" style="display:none;margin-top:12px;padding:10px 12px;border-radius:var(--radius-sm);background:#FBE9E5;color:var(--over);font-size:13px;"></div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+<div class="app">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+    <h1 style="font-size:22px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="hint" id="companyNameLabel"></span>
+      <button class="ghost" id="logoutBtn" type="button" style="padding:8px 14px;font-size:12px;">Esci</button>
+    </div>
+  </div>
+
+  <!-- SETUP AZIENDA (mostrato solo se non esiste ancora un'azienda) -->
+  <div id="companySetupCard" class="card" style="display:none;">
+    <h3>Crea la tua azienda</h3>
+    <div class="hint box">Il punto di partenza — nome e forma di bilancio (puoi cambiarla dopo).</div>
+    <label>Nome azienda</label>
+    <input type="text" id="companyNameInput" placeholder="es. Rossi Srl">
+    <label>Partita IVA (facoltativo)</label>
+    <input type="text" id="companyVatInput" placeholder="es. IT01234567890">
+    <label>Forma di bilancio</label>
+    <select id="companyFormSelect">
+      <option value="abbreviated">Abbreviata</option>
+      <option value="ordinary">Ordinaria</option>
+    </select>
+    <button class="primary" id="createCompanyBtn" type="button">Crea azienda</button>
+  </div>
+
+  <!-- APP PRINCIPALE (mostrata solo se esiste già un'azienda) -->
+  <div id="mainAppWrap" style="display:none;">
+    <div class="card" style="padding:6px;margin-bottom:16px;">
+      <div class="tabs">
+        <button class="tab active" data-panel="dashboard">Dashboard</button>
+        <button class="tab" data-panel="conti">Piano dei conti</button>
+        <button class="tab" data-panel="primanota">Prima nota</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="panel" id="panel-dashboard">
+      <div class="card">
+        <h3>Situazione generale</h3>
+        <div id="dashboardWrap"></div>
+      </div>
+    </div>
+
+    <!-- PIANO DEI CONTI -->
+    <div class="panel" id="panel-conti" style="display:none;">
+      <div class="card">
+        <h3>Piano dei conti</h3>
+        <div class="hint box">L'elenco dei conti su cui registri i movimenti — parte già con una base universale, aggiungine altri se ti servono.</div>
+        <div class="form-grid">
+          <div>
+            <label>Codice</label>
+            <input type="text" id="acctCodeInput" placeholder="es. 1050">
+          </div>
+          <div>
+            <label>Nome conto</label>
+            <input type="text" id="acctNameInput" placeholder="es. Cassa contanti">
+          </div>
+          <div class="full">
+            <label>Categoria</label>
+            <select id="acctCategorySelect">
+              <option value="attivo">Attivo</option>
+              <option value="passivo">Passivo</option>
+              <option value="patrimonio_netto">Patrimonio Netto</option>
+              <option value="costi">Costi</option>
+              <option value="ricavi">Ricavi</option>
+            </select>
+          </div>
+        </div>
+        <button class="primary" id="addAccountBtn" type="button">Aggiungi conto</button>
+        <button class="ghost" id="cancelAccountEditBtn" type="button" style="display:none;">Annulla modifica</button>
+      </div>
+      <div class="card">
+        <h3>I tuoi conti</h3>
+        <div id="accountsListWrap"></div>
+      </div>
+    </div>
+
+    <!-- PRIMA NOTA -->
+    <div class="panel" id="panel-primanota" style="display:none;">
+      <div class="card" style="padding:6px;margin-bottom:16px;">
+        <div class="segmented" id="entryModeToggle">
+          <button data-mode="simple" class="active" type="button">Modalità semplice</button>
+          <button data-mode="advanced" type="button">Modalità avanzata</button>
+        </div>
+      </div>
+
+      <!-- MODALITÀ SEMPLICE -->
+      <div class="card" id="simpleEntryCard">
+        <h3>Nuova registrazione (modalità semplice)</h3>
+        <div class="hint box">Scegli cosa è successo — l'app sa già quali conti muovere.</div>
+        <label>Cosa è successo</label>
+        <select id="simpleTemplateSelect"></select>
+        <div class="form-grid">
+          <div>
+            <label>Data</label>
+            <input type="date" id="simpleDateInput">
+          </div>
+          <div>
+            <label>Importo</label>
+            <input type="number" step="0.01" min="0" id="simpleAmountInput" placeholder="0.00">
+          </div>
+          <div class="full">
+            <label>Descrizione (facoltativa)</label>
+            <input type="text" id="simpleDescInput" placeholder="es. Fattura n. 12 - Cliente Bianchi">
+          </div>
+        </div>
+        <div class="hint" id="simplePreview" style="margin-bottom:14px;"></div>
+        <button class="primary" id="addSimpleEntryBtn" type="button">Registra</button>
+      </div>
+
+      <!-- MODALITÀ AVANZATA -->
+      <div class="card" id="advancedEntryCard" style="display:none;">
+        <h3>Nuova registrazione (modalità avanzata)</h3>
+        <div class="hint box">Dare e avere liberi — scegli tu i conti, quante righe ti servono.</div>
+        <div class="form-grid">
+          <div>
+            <label>Data</label>
+            <input type="date" id="advDateInput">
+          </div>
+          <div>
+            <label>Descrizione</label>
+            <input type="text" id="advDescInput" placeholder="es. Acquisto materiali">
+          </div>
+        </div>
+        <div id="advancedLinesWrap"></div>
+        <button class="ghost" id="addAdvancedLineBtn" type="button" style="margin-bottom:14px;">+ Aggiungi riga</button>
+        <div id="advancedBalanceCheck" style="margin-bottom:14px;font-weight:600;"></div>
+        <button class="primary" id="addAdvancedEntryBtn" type="button">Registra</button>
+      </div>
+
+      <div class="card">
+        <h3>Registrazioni</h3>
+        <div id="journalListWrap"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://lnchlsluabaxqlbcrxhb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuY2hsc2x1YWJheHFsYmNyeGhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMzU4MzAsImV4cCI6MjA5OTcxMTgzMH0.aOSlAxS883n-8hDUnJyXkfJNF9aQ22mmYIqOPXfJCeY';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const CATEGORY_LABELS = { attivo:'Attivo', passivo:'Passivo', patrimonio_netto:'Patrimonio Netto', costi:'Costi', ricavi:'Ricavi' };
+  const DEFAULT_ACCOUNTS = [
+    { code:'1000', name:'Cassa', category:'attivo' },
+    { code:'1010', name:'Banca c/c', category:'attivo' },
+    { code:'1100', name:'Crediti verso clienti', category:'attivo' },
+    { code:'1200', name:'Magazzino / Rimanenze', category:'attivo' },
+    { code:'1500', name:'Immobilizzazioni materiali', category:'attivo' },
+    { code:'1510', name:'Immobilizzazioni immateriali', category:'attivo' },
+    { code:'2000', name:'Debiti verso fornitori', category:'passivo' },
+    { code:'2100', name:'Debiti verso banche', category:'passivo' },
+    { code:'2200', name:'Debiti tributari', category:'passivo' },
+    { code:'2300', name:'TFR', category:'passivo' },
+    { code:'3000', name:'Capitale sociale', category:'patrimonio_netto' },
+    { code:'3100', name:'Utili portati a nuovo', category:'patrimonio_netto' },
+    { code:'3200', name:"Utile/perdita d'esercizio", category:'patrimonio_netto' },
+    { code:'4000', name:'Acquisti materie prime/merci', category:'costi' },
+    { code:'4100', name:'Costi per servizi', category:'costi' },
+    { code:'4200', name:'Salari e stipendi', category:'costi' },
+    { code:'4300', name:'Ammortamenti', category:'costi' },
+    { code:'5000', name:'Ricavi delle vendite', category:'ricavi' },
+    { code:'5100', name:'Altri ricavi', category:'ricavi' }
+  ];
+
+  // Modelli per la modalità semplice: ogni modello sa già quali conti muovere.
+  // "amountAccount" è il conto la cui riga prende l'importo intero (dare o avere secondo "side").
+  const SIMPLE_TEMPLATES = {
+    incasso_cliente: {
+      label: 'Incasso da cliente',
+      dareCode: '1010', // Banca c/c
+      avereCode: '5000'  // Ricavi delle vendite
+    },
+    pagamento_fornitore: {
+      label: 'Pagamento fornitore',
+      dareCode: '2000', // Debiti verso fornitori
+      avereCode: '1010'  // Banca c/c
+    },
+    acquisto_materiali: {
+      label: 'Acquisto materiali',
+      dareCode: '4000', // Acquisti materie prime/merci
+      avereCode: '1010'  // Banca c/c
+    },
+    pagamento_stipendi: {
+      label: 'Pagamento stipendi',
+      dareCode: '4200', // Salari e stipendi
+      avereCode: '1010'  // Banca c/c
+    },
+    versamento_capitale: {
+      label: 'Versamento capitale sociale',
+      dareCode: '1010', // Banca c/c
+      avereCode: '3000'  // Capitale sociale
+    }
+  };
+
+  let currentUserId = null;
+  let currentCompany = null;
+  const state = {
+    accounts: [],
+    journalEntries: [],
+    journalLines: []
+  };
+  let editingAccountId = null;
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  function fmt(n){ return (Number(n)||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function dayKey(d){ const dt = new Date(d); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
+  function showAuthError(msg){
+    const el = document.getElementById('authError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  async function loadCompany(){
+    const { data, error } = await supabaseClient.from('biz_companies').select('*').eq('user_id', currentUserId).order('id', {ascending:true}).limit(1);
+    if(error){ console.error('loadCompany error', error); return; }
+    currentCompany = (data && data[0]) || null;
+  }
+
+  async function loadAccounts(){
+    if(!currentCompany) return;
+    const { data, error } = await supabaseClient.from('biz_accounts').select('*').eq('company_id', currentCompany.id).order('code', {ascending:true});
+    if(error){ console.error('loadAccounts error', error); state.accounts = []; return; }
+    state.accounts = data || [];
+  }
+
+  async function loadJournal(){
+    if(!currentCompany) return;
+    const { data: entries, error: e1 } = await supabaseClient.from('biz_journal_entries').select('*').eq('company_id', currentCompany.id).order('date', {ascending:false});
+    if(e1){ console.error('loadJournal entries error', e1); state.journalEntries = []; return; }
+    state.journalEntries = entries || [];
+    const { data: lines, error: e2 } = await supabaseClient.from('biz_journal_lines').select('*').eq('company_id', currentCompany.id);
+    if(e2){ console.error('loadJournal lines error', e2); state.journalLines = []; return; }
+    state.journalLines = lines || [];
+  }
+
+  function accountByCode(code){ return state.accounts.find(a=>a.code===code); }
+  function accountById(id){ return state.accounts.find(a=>a.id===id); }
+
+  async function seedDefaultAccounts(){
+    const rows = DEFAULT_ACCOUNTS.map(a => ({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, code: a.code, name: a.name, category: a.category }));
+    const { error } = await supabaseClient.from('biz_accounts').insert(rows);
+    if(error){ console.error('seedDefaultAccounts error', error); }
+  }
+
+  function populateSimpleTemplateSelect(){
+    const sel = document.getElementById('simpleTemplateSelect');
+    sel.innerHTML = '';
+    Object.keys(SIMPLE_TEMPLATES).forEach(key=>{
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = SIMPLE_TEMPLATES[key].label;
+      sel.appendChild(opt);
+    });
+  }
+
+  function updateSimplePreview(){
+    const key = document.getElementById('simpleTemplateSelect').value;
+    const tpl = SIMPLE_TEMPLATES[key];
+    const previewEl = document.getElementById('simplePreview');
+    if(!tpl){ previewEl.textContent = ''; return; }
+    const dareAcc = accountByCode(tpl.dareCode);
+    const avereAcc = accountByCode(tpl.avereCode);
+    const dareLabel = dareAcc ? (dareAcc.code+' '+dareAcc.name) : tpl.dareCode+' (conto non trovato)';
+    const avereLabel = avereAcc ? (avereAcc.code+' '+avereAcc.name) : tpl.avereCode+' (conto non trovato)';
+    previewEl.innerHTML = 'Dare: <strong>'+dareLabel+'</strong> — Avere: <strong>'+avereLabel+'</strong>';
+  }
+
+  function renderAccountsList(){
+    const wrap = document.getElementById('accountsListWrap');
+    if(!wrap) return;
+    if(state.accounts.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun conto ancora.</div>'; return; }
+    const order = ['attivo','passivo','patrimonio_netto','costi','ricavi'];
+    let html = '';
+    order.forEach(cat=>{
+      const accs = state.accounts.filter(a=>a.category===cat).sort((a,b)=> a.code < b.code ? -1 : 1);
+      if(accs.length === 0) return;
+      html += '<div class="badge" style="margin:12px 0 6px 0;">'+CATEGORY_LABELS[cat]+'</div>';
+      accs.forEach(a=>{
+        html += '<div class="list-row"><div class="list-main"><span class="list-cat">'+a.code+' — '+a.name+'</span></div><div class="list-right">'+
+          '<button class="icon-btn" data-edit-acct="'+a.id+'" title="Modifica">✎</button>'+
+          '<button class="icon-btn" data-del-acct="'+a.id+'" title="Elimina">✕</button>'+
+          '</div></div>';
+      });
+    });
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('[data-del-acct]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(editingAccountId === btn.dataset.delAcct) cancelAccountEdit();
+        await supabaseClient.from('biz_accounts').delete().eq('id', btn.dataset.delAcct);
+        state.accounts = state.accounts.filter(a=>a.id !== btn.dataset.delAcct);
+        renderAll();
+      });
+    });
+    wrap.querySelectorAll('[data-edit-acct]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const a = accountById(btn.dataset.editAcct);
+        if(!a) return;
+        document.getElementById('acctCodeInput').value = a.code;
+        document.getElementById('acctNameInput').value = a.name;
+        document.getElementById('acctCategorySelect').value = a.category;
+        editingAccountId = a.id;
+        document.getElementById('addAccountBtn').textContent = 'Salva modifiche';
+        document.getElementById('cancelAccountEditBtn').style.display = 'inline-block';
+      });
+    });
+  }
+  function cancelAccountEdit(){
+    editingAccountId = null;
+    document.getElementById('addAccountBtn').textContent = 'Aggiungi conto';
+    document.getElementById('cancelAccountEditBtn').style.display = 'none';
+    document.getElementById('acctCodeInput').value = '';
+    document.getElementById('acctNameInput').value = '';
+  }
+
+  function accountBalance(accountId){
+    // Dare positivo, avere negativo — il segno "naturale" dipende dalla categoria del conto,
+    // ma per ora mostriamo semplicemente dare-meno-avere: è il saldo contabile grezzo.
+    const lines = state.journalLines.filter(l=>l.account_id===accountId);
+    return lines.reduce((s,l)=> s + Number(l.debit||0) - Number(l.credit||0), 0);
+  }
+
+  function renderDashboard(){
+    const wrap = document.getElementById('dashboardWrap');
+    if(!wrap) return;
+    if(state.accounts.length === 0){ wrap.innerHTML = '<div class="empty-state">Aggiungi dei conti per iniziare.</div>'; return; }
+    const order = ['attivo','passivo','patrimonio_netto','costi','ricavi'];
+    let html = '<table><tr><th>Conto</th><th style="text-align:right;">Saldo</th></tr>';
+    order.forEach(cat=>{
+      const accs = state.accounts.filter(a=>a.category===cat).sort((a,b)=> a.code < b.code ? -1 : 1);
+      accs.forEach(a=>{
+        const bal = accountBalance(a.id);
+        if(bal === 0 && state.journalLines.every(l=>l.account_id!==a.id)) return; // nascondi conti mai movimentati e a zero
+        html += '<tr><td>'+a.code+' '+a.name+'</td><td style="text-align:right;" class="mono">€ '+fmt(bal)+'</td></tr>';
+      });
+    });
+    html += '</table>';
+    wrap.innerHTML = html;
+  }
+
+  function renderAdvancedLines(lines){
+    const wrap = document.getElementById('advancedLinesWrap');
+    const acctOptions = state.accounts.slice().sort((a,b)=> a.code < b.code ? -1 : 1)
+      .map(a=>'<option value="'+a.id+'">'+a.code+' '+a.name+'</option>').join('');
+    wrap.innerHTML = lines.map((line, idx) => `
+      <div class="form-grid" data-adv-line="${idx}" style="border-top:1px solid var(--line);padding-top:12px;margin-top:12px;">
+        <div class="full">
+          <label>Conto</label>
+          <select class="adv-account">${acctOptions}</select>
+        </div>
+        <div>
+          <label>Dare</label>
+          <input type="number" step="0.01" min="0" class="adv-debit" placeholder="0.00">
+        </div>
+        <div>
+          <label>Avere</label>
+          <input type="number" step="0.01" min="0" class="adv-credit" placeholder="0.00">
+        </div>
+      </div>
+    `).join('');
+    // Ripristina i valori già scelti
+    wrap.querySelectorAll('[data-adv-line]').forEach((el, idx)=>{
+      const line = lines[idx];
+      if(line.accountId) el.querySelector('.adv-account').value = line.accountId;
+      if(line.debit) el.querySelector('.adv-debit').value = line.debit;
+      if(line.credit) el.querySelector('.adv-credit').value = line.credit;
+      el.querySelector('.adv-debit').addEventListener('input', updateAdvancedBalanceCheck);
+      el.querySelector('.adv-credit').addEventListener('input', updateAdvancedBalanceCheck);
+    });
+    updateAdvancedBalanceCheck();
+  }
+
+  let advancedLines = [ {accountId:'', debit:'', credit:''}, {accountId:'', debit:'', credit:''} ];
+
+  function readAdvancedLinesFromDom(){
+    const wrap = document.getElementById('advancedLinesWrap');
+    return Array.from(wrap.querySelectorAll('[data-adv-line]')).map(el=>({
+      accountId: el.querySelector('.adv-account').value,
+      debit: el.querySelector('.adv-debit').value,
+      credit: el.querySelector('.adv-credit').value
+    }));
+  }
+
+  function updateAdvancedBalanceCheck(){
+    const lines = readAdvancedLinesFromDom();
+    const totalDebit = lines.reduce((s,l)=> s + (parseFloat(l.debit)||0), 0);
+    const totalCredit = lines.reduce((s,l)=> s + (parseFloat(l.credit)||0), 0);
+    const el = document.getElementById('advancedBalanceCheck');
+    const diff = Math.round((totalDebit - totalCredit) * 100) / 100;
+    if(diff === 0 && totalDebit > 0){
+      el.innerHTML = '<span class="balanced">✓ Dare e avere si bilanciano (€ '+fmt(totalDebit)+')</span>';
+    } else if(totalDebit === 0 && totalCredit === 0){
+      el.innerHTML = '<span class="hint">Inserisci gli importi nelle righe.</span>';
+    } else {
+      el.innerHTML = '<span class="unbalanced">✗ Non bilanciato — differenza di € '+fmt(Math.abs(diff))+'</span>';
+    }
+  }
+
+  function renderJournalList(){
+    const wrap = document.getElementById('journalListWrap');
+    if(!wrap) return;
+    if(state.journalEntries.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessuna registrazione ancora.</div>'; return; }
+    wrap.innerHTML = state.journalEntries.map(entry=>{
+      const lines = state.journalLines.filter(l=>l.entry_id===entry.id);
+      const dateLabel = new Date(entry.date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const linesHtml = lines.map(l=>{
+        const acc = accountById(l.account_id);
+        const accLabel = acc ? (acc.code+' '+acc.name) : '(conto eliminato)';
+        const side = Number(l.debit||0) > 0 ? ('Dare € '+fmt(l.debit)) : ('Avere € '+fmt(l.credit));
+        return '<div style="font-size:12px;color:var(--ink-faint);padding-left:12px;">'+accLabel+' — '+side+'</div>';
+      }).join('');
+      return `
+        <div class="list-row" style="flex-direction:column;align-items:stretch;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="list-main">
+              <span class="list-cat">${entry.description || '(senza descrizione)'}</span>
+              <span class="list-note">${dateLabel} · ${entry.mode === 'simple' ? 'modalità semplice' : 'modalità avanzata'}</span>
+            </div>
+            <button class="icon-btn" data-del-entry="${entry.id}" title="Elimina">✕</button>
+          </div>
+          ${linesHtml}
+        </div>
+      `;
+    }).join('');
+    wrap.querySelectorAll('[data-del-entry]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const entryId = btn.dataset.delEntry;
+        await supabaseClient.from('biz_journal_lines').delete().eq('entry_id', entryId);
+        await supabaseClient.from('biz_journal_entries').delete().eq('id', entryId);
+        state.journalEntries = state.journalEntries.filter(e=>e.id !== entryId);
+        state.journalLines = state.journalLines.filter(l=>l.entry_id !== entryId);
+        renderAll();
+      });
+    });
+  }
+
+  function renderAll(){
+    renderAccountsList();
+    renderDashboard();
+    renderJournalList();
+    updateSimplePreview();
+  }
+
+  // ---------- Autenticazione ----------
+  document.getElementById('authLoginBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if(!email || !password){ showAuthError('Inserisci email e password.'); return; }
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if(error){ showAuthError(error.message); return; }
+    await enterApp(data.session);
+  });
+  document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+    await supabaseClient.auth.signOut();
+    window.location.reload();
+  });
+
+  async function enterApp(session){
+    currentUserId = session.user.id;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appRoot').style.display = 'block';
+    await loadCompany();
+    if(!currentCompany){
+      document.getElementById('companySetupCard').style.display = 'block';
+      document.getElementById('mainAppWrap').style.display = 'none';
+      return;
+    }
+    document.getElementById('companyNameLabel').textContent = currentCompany.name;
+    document.getElementById('companySetupCard').style.display = 'none';
+    document.getElementById('mainAppWrap').style.display = 'block';
+    await loadAccounts();
+    await loadJournal();
+    populateSimpleTemplateSelect();
+    renderAll();
+  }
+
+  document.getElementById('createCompanyBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('companyNameInput').value.trim();
+    const vat = document.getElementById('companyVatInput').value.trim();
+    const form = document.getElementById('companyFormSelect').value;
+    if(!name){ alert('Scrivi il nome della tua azienda.'); return; }
+    const row = { id: uid(), user_id: currentUserId, name, vat_number: vat || null, balance_sheet_form: form };
+    const { error } = await supabaseClient.from('biz_companies').insert([row]);
+    if(error){ alert('Errore: ' + error.message); return; }
+    currentCompany = row;
+    await seedDefaultAccounts();
+    await enterApp({ user: { id: currentUserId } });
+  });
+
+  // ---------- Tab ----------
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.style.display = 'none');
+      tab.classList.add('active');
+      document.getElementById('panel-'+tab.dataset.panel).style.display = 'block';
+    });
+  });
+
+  // ---------- Piano dei conti ----------
+  document.getElementById('addAccountBtn').addEventListener('click', async ()=>{
+    const code = document.getElementById('acctCodeInput').value.trim();
+    const name = document.getElementById('acctNameInput').value.trim();
+    const category = document.getElementById('acctCategorySelect').value;
+    if(!code || !name){ alert('Scrivi codice e nome del conto.'); return; }
+    if(editingAccountId){
+      const idx = state.accounts.findIndex(a=>a.id===editingAccountId);
+      if(idx>-1){
+        state.accounts[idx] = { ...state.accounts[idx], code, name, category };
+        await supabaseClient.from('biz_accounts').update({ code, name, category }).eq('id', editingAccountId);
+      }
+      cancelAccountEdit();
+    } else {
+      const row = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, code, name, category };
+      const { error } = await supabaseClient.from('biz_accounts').insert([row]);
+      if(error){ alert('Errore: ' + error.message); return; }
+      state.accounts.push(row);
+      document.getElementById('acctCodeInput').value = '';
+      document.getElementById('acctNameInput').value = '';
+    }
+    populateSimpleTemplateSelect();
+    renderAll();
+  });
+  document.getElementById('cancelAccountEditBtn').addEventListener('click', cancelAccountEdit);
+
+  // ---------- Modalità inserimento (semplice/avanzata) ----------
+  document.querySelectorAll('#entryModeToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#entryModeToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const isSimple = btn.dataset.mode === 'simple';
+      document.getElementById('simpleEntryCard').style.display = isSimple ? 'block' : 'none';
+      document.getElementById('advancedEntryCard').style.display = isSimple ? 'none' : 'block';
+      if(!isSimple) renderAdvancedLines(advancedLines);
+    });
+  });
+  document.getElementById('simpleTemplateSelect').addEventListener('change', updateSimplePreview);
+
+  // ---------- Modalità semplice: registrazione ----------
+  document.getElementById('addSimpleEntryBtn').addEventListener('click', async ()=>{
+    const key = document.getElementById('simpleTemplateSelect').value;
+    const tpl = SIMPLE_TEMPLATES[key];
+    const date = document.getElementById('simpleDateInput').value || dayKey(new Date());
+    const amountRaw = parseFloat(document.getElementById('simpleAmountInput').value);
+    const desc = document.getElementById('simpleDescInput').value.trim() || tpl.label;
+    if(isNaN(amountRaw) || amountRaw <= 0){ alert('Inserisci un importo valido.'); return; }
+    const dareAcc = accountByCode(tpl.dareCode);
+    const avereAcc = accountByCode(tpl.avereCode);
+    if(!dareAcc || !avereAcc){ alert('Uno dei conti necessari per questo modello non esiste nel piano dei conti.'); return; }
+    const entryId = uid();
+    const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date, description: desc, mode: 'simple' };
+    const lineRows = [
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: dareAcc.id, debit: amountRaw, credit: 0 },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: avereAcc.id, debit: 0, credit: amountRaw }
+    ];
+    const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
+    if(e1){ alert('Errore: ' + e1.message); return; }
+    const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
+    if(e2){ alert('Errore: ' + e2.message); return; }
+    state.journalEntries.unshift(entryRow);
+    state.journalLines.push(...lineRows);
+    document.getElementById('simpleAmountInput').value = '';
+    document.getElementById('simpleDescInput').value = '';
+    renderAll();
+  });
+
+  // ---------- Modalità avanzata: righe dinamiche + registrazione ----------
+  document.getElementById('addAdvancedLineBtn').addEventListener('click', ()=>{
+    const current = readAdvancedLinesFromDom();
+    current.push({ accountId:'', debit:'', credit:'' });
+    advancedLines = current;
+    renderAdvancedLines(advancedLines);
+  });
+  document.getElementById('addAdvancedEntryBtn').addEventListener('click', async ()=>{
+    const date = document.getElementById('advDateInput').value || dayKey(new Date());
+    const desc = document.getElementById('advDescInput').value.trim();
+    const lines = readAdvancedLinesFromDom().filter(l => l.accountId && (parseFloat(l.debit)||0) + (parseFloat(l.credit)||0) > 0);
+    if(lines.length < 2){ alert('Servono almeno due righe con conto e importo.'); return; }
+    const totalDebit = lines.reduce((s,l)=> s + (parseFloat(l.debit)||0), 0);
+    const totalCredit = lines.reduce((s,l)=> s + (parseFloat(l.credit)||0), 0);
+    if(Math.round((totalDebit - totalCredit)*100)/100 !== 0){ alert('Dare e avere non si bilanciano — controlla gli importi.'); return; }
+    const entryId = uid();
+    const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date, description: desc, mode: 'advanced' };
+    const lineRows = lines.map(l => ({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: l.accountId, debit: parseFloat(l.debit)||0, credit: parseFloat(l.credit)||0 }));
+    const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
+    if(e1){ alert('Errore: ' + e1.message); return; }
+    const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
+    if(e2){ alert('Errore: ' + e2.message); return; }
+    state.journalEntries.unshift(entryRow);
+    state.journalLines.push(...lineRows);
+    document.getElementById('advDescInput').value = '';
+    advancedLines = [ {accountId:'', debit:'', credit:''}, {accountId:'', debit:'', credit:''} ];
+    renderAdvancedLines(advancedLines);
+    renderAll();
+  });
+
+  // ---------- Avvio ----------
+  (async function init(){
+    const { data } = await supabaseClient.auth.getSession();
+    if(data && data.session){
+      await enterApp(data.session);
+    }
+  })();
+
+})();
+</script>
+</body>
+</html>
