@@ -123,6 +123,7 @@
         <button class="tab" data-panel="iva">IVA</button>
         <button class="tab" data-panel="ammortamenti">Ammortamenti</button>
         <button class="tab" data-panel="contibancari">Conti bancari</button>
+        <button class="tab" data-panel="stipendi">Stipendi</button>
       </div>
     </div>
 
@@ -394,6 +395,63 @@
       </div>
     </div>
 
+    <!-- STIPENDI -->
+    <div class="panel" id="panel-stipendi" style="display:none;">
+      <div class="card" style="border:1px solid var(--over);">
+        <div class="hint box" style="border-color:var(--over);background:rgba(179,67,43,0.08);">⚠️ Calcolo illustrativo e semplificato — non tiene conto delle detrazioni da lavoro dipendente, del CCNL applicato, o di casi particolari. L'aliquota INAIL varia molto da settore a settore: verificala con un consulente del lavoro. Non usarlo come busta paga ufficiale — serve solo per farti un'idea e per esercitarti.</div>
+      </div>
+
+      <div class="card">
+        <h3>Nuovo dipendente</h3>
+        <div class="form-grid">
+          <div class="full">
+            <label>Nome</label>
+            <input type="text" id="empNameInput" placeholder="es. Mario Bianchi">
+          </div>
+          <div>
+            <label>Stipendio lordo mensile</label>
+            <input type="number" step="0.01" min="0" id="empSalaryInput" placeholder="0.00">
+          </div>
+          <div>
+            <label>Aliquota INAIL (%, a carico azienda)</label>
+            <input type="number" step="0.01" min="0" id="empInailInput" placeholder="es. 1.00" value="1.00">
+          </div>
+        </div>
+        <button class="primary" id="addEmployeeBtn" type="button">Aggiungi dipendente</button>
+      </div>
+
+      <div class="card">
+        <h3>I tuoi dipendenti</h3>
+        <div id="employeesListWrap"></div>
+      </div>
+
+      <div class="card">
+        <h3>Genera busta paga</h3>
+        <div class="hint box">Calcolo mensile — IRPEF stimata a scaglioni annualizzati, semplificata.</div>
+        <div class="form-grid">
+          <div>
+            <label>Dipendente</label>
+            <select id="payslipEmployeeSelect"></select>
+          </div>
+          <div>
+            <label>Mese</label>
+            <select id="payslipMonthSelect"></select>
+          </div>
+          <div>
+            <label>Anno</label>
+            <select id="payslipYearSelect"></select>
+          </div>
+        </div>
+        <div id="payslipPreviewWrap" style="margin-bottom:14px;"></div>
+        <button class="primary" id="generatePayslipBtn" type="button">Genera e registra busta paga</button>
+      </div>
+
+      <div class="card">
+        <h3>Buste paga registrate</h3>
+        <div id="payslipsListWrap"></div>
+      </div>
+    </div>
+
   </div>
 
 </div>
@@ -536,7 +594,9 @@
     invoices: [],
     invoiceLines: [],
     assets: [],
-    assetDepreciations: []
+    assetDepreciations: [],
+    employees: [],
+    payslips: []
   };
   let editingAccountId = null;
   let invoiceLinesDraft = [ {description:'', quantity:1, unitPrice:'', vatRate:22} ];
@@ -592,6 +652,16 @@
     const { data: deps, error: e2 } = await supabaseClient.from('biz_asset_depreciations').select('*').eq('company_id', currentCompany.id);
     if(e2){ console.error('loadAssetDepreciations error', e2); state.assetDepreciations = []; return; }
     state.assetDepreciations = deps || [];
+  }
+
+  async function loadEmployees(){
+    if(!currentCompany) return;
+    const { data: employees, error: e1 } = await supabaseClient.from('biz_employees').select('*').eq('company_id', currentCompany.id).order('name', {ascending:true});
+    if(e1){ console.error('loadEmployees error', e1); state.employees = []; return; }
+    state.employees = employees || [];
+    const { data: payslips, error: e2 } = await supabaseClient.from('biz_payslips').select('*').eq('company_id', currentCompany.id).order('month', {ascending:false});
+    if(e2){ console.error('loadPayslips error', e2); state.payslips = []; return; }
+    state.payslips = payslips || [];
   }
 
   function accountByCode(code){ return state.accounts.find(a=>a.code===code); }
@@ -1131,6 +1201,144 @@
       '</table>';
   }
 
+  // ---------- Stipendi ----------
+  // Aliquote 2026 verificate: 9,19% INPS a carico dipendente, 23,81% a carico azienda.
+  // Scaglioni IRPEF 2026: stessi usati in Le Mie Finanze.
+  const INPS_EMPLOYEE_RATE = 0.0919;
+  const INPS_EMPLOYER_RATE = 0.2381;
+  const TFR_DIVISOR = 13.5;
+  const IRPEF_BRACKETS_2026 = [
+    { upTo: 28000, rate: 0.23 },
+    { upTo: 50000, rate: 0.33 },
+    { upTo: Infinity, rate: 0.43 }
+  ];
+  function computeIllustrativeIrpef(taxableIncome){
+    let remaining = taxableIncome;
+    let prevThreshold = 0;
+    let total = 0;
+    for(const bracket of IRPEF_BRACKETS_2026){
+      if(remaining <= 0) break;
+      const bracketSize = bracket.upTo - prevThreshold;
+      const taxedInThisBracket = Math.min(remaining, bracketSize);
+      total += taxedInThisBracket * bracket.rate;
+      remaining -= taxedInThisBracket;
+      prevThreshold = bracket.upTo;
+    }
+    return total;
+  }
+
+  function calcPayslip(grossMonthly, inailRatePercent){
+    const inpsEmployee = round2(grossMonthly * INPS_EMPLOYEE_RATE);
+    const taxableIrpefMonthly = grossMonthly - inpsEmployee;
+    const annualizedTaxable = taxableIrpefMonthly * 12;
+    const annualIrpef = computeIllustrativeIrpef(annualizedTaxable);
+    const irpef = round2(annualIrpef / 12);
+    const net = round2(grossMonthly - inpsEmployee - irpef);
+    const inpsEmployer = round2(grossMonthly * INPS_EMPLOYER_RATE);
+    const inailEmployer = round2(grossMonthly * (inailRatePercent/100));
+    const tfr = round2(grossMonthly / TFR_DIVISOR);
+    return { gross: grossMonthly, inpsEmployee, irpef, net, inpsEmployer, inailEmployer, tfr };
+  }
+
+  function renderEmployeesList(){
+    const wrap = document.getElementById('employeesListWrap');
+    if(!wrap) return;
+    if(state.employees.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun dipendente ancora.</div>'; return; }
+    wrap.innerHTML = state.employees.map(emp => `
+      <div class="list-row">
+        <div class="list-main">
+          <span class="list-cat">${emp.name}</span>
+          <span class="list-note">Lordo mensile € ${fmt(emp.gross_monthly_salary)} · INAIL ${emp.inail_rate}%</span>
+        </div>
+        <div class="list-right">
+          <button class="icon-btn" data-del-emp="${emp.id}" title="Elimina">✕</button>
+        </div>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('[data-del-emp]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        await supabaseClient.from('biz_employees').delete().eq('id', btn.dataset.delEmp);
+        state.employees = state.employees.filter(e=>e.id !== btn.dataset.delEmp);
+        populatePayslipEmployeeSelect();
+        renderAll();
+      });
+    });
+  }
+
+  function populatePayslipEmployeeSelect(){
+    const sel = document.getElementById('payslipEmployeeSelect');
+    if(!sel) return;
+    sel.innerHTML = state.employees.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
+    updatePayslipPreview();
+  }
+
+  function populatePayslipMonthYearSelects(){
+    const monthSel = document.getElementById('payslipMonthSelect');
+    const yearSel = document.getElementById('payslipYearSelect');
+    if(!monthSel || !yearSel) return;
+    monthSel.innerHTML = Array.from({length:12}, (_,i)=>{
+      const label = new Date(2026,i,1).toLocaleDateString('it-IT',{month:'long'});
+      return '<option value="'+String(i+1).padStart(2,'0')+'">'+label.charAt(0).toUpperCase()+label.slice(1)+'</option>';
+    }).join('');
+    const currentYear = new Date().getFullYear();
+    yearSel.innerHTML = [currentYear, currentYear+1, currentYear-1].map(y=>'<option value="'+y+'">'+y+'</option>').join('');
+    monthSel.value = String(new Date().getMonth()+1).padStart(2,'0');
+  }
+
+  function updatePayslipPreview(){
+    const empId = document.getElementById('payslipEmployeeSelect').value;
+    const emp = state.employees.find(e=>e.id===empId);
+    const wrap = document.getElementById('payslipPreviewWrap');
+    if(!emp){ wrap.innerHTML = '<div class="hint">Aggiungi prima un dipendente.</div>'; return; }
+    const calc = calcPayslip(Number(emp.gross_monthly_salary), Number(emp.inail_rate));
+    wrap.innerHTML = `
+      <table>
+        <tr><td>Lordo</td><td style="text-align:right;" class="mono">€ ${fmt(calc.gross)}</td></tr>
+        <tr><td>INPS dipendente (9,19%)</td><td style="text-align:right;" class="mono">− € ${fmt(calc.inpsEmployee)}</td></tr>
+        <tr><td>IRPEF stimata</td><td style="text-align:right;" class="mono">− € ${fmt(calc.irpef)}</td></tr>
+        <tr style="border-top:2px solid var(--line);"><td><strong>Netto in busta</strong></td><td style="text-align:right;" class="mono"><strong>€ ${fmt(calc.net)}</strong></td></tr>
+        <tr><td style="padding-top:10px;color:var(--ink-faint);">INPS azienda (23,81%)</td><td style="text-align:right;color:var(--ink-faint);" class="mono">€ ${fmt(calc.inpsEmployer)}</td></tr>
+        <tr><td style="color:var(--ink-faint);">INAIL azienda</td><td style="text-align:right;" class="mono">€ ${fmt(calc.inailEmployer)}</td></tr>
+        <tr><td style="color:var(--ink-faint);">TFR accantonato</td><td style="text-align:right;" class="mono">€ ${fmt(calc.tfr)}</td></tr>
+      </table>
+    `;
+  }
+
+  function renderPayslipsList(){
+    const wrap = document.getElementById('payslipsListWrap');
+    if(!wrap) return;
+    if(state.payslips.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessuna busta paga ancora.</div>'; return; }
+    wrap.innerHTML = state.payslips.map(p=>{
+      const emp = state.employees.find(e=>e.id===p.employee_id);
+      const monthLabel = new Date(p.month+'-01').toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+      return `
+        <div class="list-row">
+          <div class="list-main">
+            <span class="list-cat">${emp ? emp.name : '(dipendente eliminato)'} — ${monthLabel}</span>
+            <span class="list-note">Lordo € ${fmt(p.gross)} · Netto € ${fmt(p.net)}</span>
+          </div>
+          <div class="list-right">
+            <button class="icon-btn" data-del-payslip="${p.id}" title="Elimina">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    wrap.querySelectorAll('[data-del-payslip]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const p = state.payslips.find(x=>x.id===btn.dataset.delPayslip);
+        if(p && p.entry_id){
+          await supabaseClient.from('biz_journal_lines').delete().eq('entry_id', p.entry_id);
+          await supabaseClient.from('biz_journal_entries').delete().eq('id', p.entry_id);
+          state.journalEntries = state.journalEntries.filter(e=>e.id !== p.entry_id);
+          state.journalLines = state.journalLines.filter(l=>l.entry_id !== p.entry_id);
+        }
+        await supabaseClient.from('biz_payslips').delete().eq('id', btn.dataset.delPayslip);
+        state.payslips = state.payslips.filter(x=>x.id !== btn.dataset.delPayslip);
+        renderAll();
+      });
+    });
+  }
+
   function renderJournalList(){
     const wrap = document.getElementById('journalListWrap');
     if(!wrap) return;
@@ -1178,6 +1386,8 @@
     renderBilanci();
     renderAssetsList();
     renderBankBalances();
+    renderEmployeesList();
+    renderPayslipsList();
   }
 
   // ---------- Autenticazione ----------
@@ -1211,10 +1421,13 @@
     await loadJournal();
     await loadInvoices();
     await loadAssets();
+    await loadEmployees();
     populateSimpleTemplateSelect();
     populateInvoiceAccountSelect();
     populateAssetAccountSelects();
     populateTransferSelects();
+    populatePayslipMonthYearSelects();
+    populatePayslipEmployeeSelect();
     renderInvoiceLines();
     document.getElementById('invNumberInput').value = nextInvoiceNumber(currentInvoiceType);
     document.getElementById('transferDateInput').value = dayKey(new Date());
@@ -1505,6 +1718,71 @@
     state.journalEntries.unshift(entryRow);
     state.journalLines.push(...lineRows);
     document.getElementById('transferAmountInput').value = '';
+    renderAll();
+  });
+
+  // ---------- Stipendi: eventi ----------
+  document.getElementById('addEmployeeBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('empNameInput').value.trim();
+    const salary = parseFloat(document.getElementById('empSalaryInput').value);
+    const inailRate = parseFloat(document.getElementById('empInailInput').value);
+    if(!name || isNaN(salary) || salary<=0){ alert('Scrivi nome e stipendio lordo validi.'); return; }
+    const row = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, name, gross_monthly_salary: salary, inail_rate: isNaN(inailRate)?1.0:inailRate };
+    const { error } = await supabaseClient.from('biz_employees').insert([row]);
+    if(error){ alert('Errore: ' + error.message); return; }
+    state.employees.push(row);
+    document.getElementById('empNameInput').value = '';
+    document.getElementById('empSalaryInput').value = '';
+    document.getElementById('empInailInput').value = '1.00';
+    populatePayslipEmployeeSelect();
+    renderAll();
+  });
+
+  document.getElementById('payslipEmployeeSelect').addEventListener('change', updatePayslipPreview);
+
+  document.getElementById('generatePayslipBtn').addEventListener('click', async ()=>{
+    const empId = document.getElementById('payslipEmployeeSelect').value;
+    const emp = state.employees.find(e=>e.id===empId);
+    if(!emp){ alert('Aggiungi prima un dipendente.'); return; }
+    const monthNum = document.getElementById('payslipMonthSelect').value;
+    const year = document.getElementById('payslipYearSelect').value;
+    const month = year + '-' + monthNum;
+    if(state.payslips.some(p => p.employee_id===empId && p.month===month)){
+      alert('Hai già registrato la busta paga di ' + emp.name + ' per questo mese.');
+      return;
+    }
+    const calc = calcPayslip(Number(emp.gross_monthly_salary), Number(emp.inail_rate));
+    // Conti necessari — se mancano, fermati con un messaggio chiaro invece di un errore criptico
+    const salariAcc = accountByCode('4200'), oneriAcc = accountByCode('4210'), tfrAccrualAcc = accountByCode('4220');
+    const debDipAcc = accountByCode('2250'), debInpsAcc = accountByCode('2220'), debInailAcc = accountByCode('2230'), ritenuteAcc = accountByCode('2240'), tfrDebAcc = accountByCode('2300');
+    if(!salariAcc || !oneriAcc || !tfrAccrualAcc || !debDipAcc || !debInpsAcc || !debInailAcc || !ritenuteAcc || !tfrDebAcc){
+      alert('Mancano alcuni conti standard nel Piano dei conti (Salari, Oneri sociali, TFR, Debiti verso dipendenti/INPS/INAIL, Ritenute) — usa "Aggiungi i conti mancanti dal modello base" nel Piano dei conti.');
+      return;
+    }
+    const entryId = uid();
+    const monthLabel = new Date(month+'-01').toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+    const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date: year+'-'+monthNum+'-'+String(new Date(Number(year), Number(monthNum), 0).getDate()).padStart(2,'0'), description: 'Stipendio '+monthLabel+' — '+emp.name, mode: 'payroll' };
+    const onericontributivi = calc.inpsEmployer + calc.inailEmployer;
+    const lineRows = [
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: salariAcc.id, debit: calc.gross, credit: 0 },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: oneriAcc.id, debit: onericontributivi, credit: 0 },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: tfrAccrualAcc.id, debit: calc.tfr, credit: 0 },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: debDipAcc.id, debit: 0, credit: calc.net },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: debInpsAcc.id, debit: 0, credit: calc.inpsEmployee + calc.inpsEmployer },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: debInailAcc.id, debit: 0, credit: calc.inailEmployer },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: ritenuteAcc.id, debit: 0, credit: calc.irpef },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: tfrDebAcc.id, debit: 0, credit: calc.tfr }
+    ];
+    const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
+    if(e1){ alert('Errore: ' + e1.message); return; }
+    const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
+    if(e2){ alert('Errore: ' + e2.message); return; }
+    state.journalEntries.unshift(entryRow);
+    state.journalLines.push(...lineRows);
+    const payslipRow = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, employee_id: empId, month, gross: calc.gross, inps_employee: calc.inpsEmployee, irpef: calc.irpef, net: calc.net, inps_employer: calc.inpsEmployer, inail_employer: calc.inailEmployer, tfr: calc.tfr, entry_id: entryId };
+    const { error: e3 } = await supabaseClient.from('biz_payslips').insert([payslipRow]);
+    if(e3){ alert('Errore: ' + e3.message); return; }
+    state.payslips.unshift(payslipRow);
     renderAll();
   });
 
