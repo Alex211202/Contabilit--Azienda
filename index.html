@@ -158,6 +158,12 @@
         <button class="ghost" id="cancelAccountEditBtn" type="button" style="display:none;">Annulla modifica</button>
       </div>
       <div class="card">
+        <h3>Modello base aggiornato</h3>
+        <div class="hint box">Il modello base del piano dei conti è cresciuto — aggiungi qui i conti nuovi che ancora non hai, senza toccare quelli che hai già (e senza duplicati).</div>
+        <button class="ghost" id="addMissingDefaultsBtn" type="button">Aggiungi i conti mancanti dal modello base</button>
+        <div id="addMissingDefaultsMsg" style="display:none;margin-top:10px;"></div>
+      </div>
+      <div class="card">
         <h3>I tuoi conti</h3>
         <div id="accountsListWrap"></div>
       </div>
@@ -236,25 +242,91 @@
 
   const CATEGORY_LABELS = { attivo:'Attivo', passivo:'Passivo', patrimonio_netto:'Patrimonio Netto', costi:'Costi', ricavi:'Ricavi' };
   const DEFAULT_ACCOUNTS = [
+    // Attivo — Disponibilità liquide
     { code:'1000', name:'Cassa', category:'attivo' },
     { code:'1010', name:'Banca c/c', category:'attivo' },
+    { code:'1020', name:'Banca c/c 2', category:'attivo' },
+    { code:'1030', name:'Depositi postali', category:'attivo' },
+    // Attivo — Crediti
     { code:'1100', name:'Crediti verso clienti', category:'attivo' },
+    { code:'1110', name:'Crediti verso clienti - fatture da emettere', category:'attivo' },
+    { code:'1120', name:'Crediti diversi', category:'attivo' },
+    { code:'1130', name:'Depositi cauzionali attivi', category:'attivo' },
+    { code:'1140', name:'IVA a credito', category:'attivo' },
+    // Attivo — Rimanenze
     { code:'1200', name:'Magazzino / Rimanenze', category:'attivo' },
+    { code:'1210', name:'Materie prime', category:'attivo' },
+    { code:'1220', name:'Prodotti finiti', category:'attivo' },
+    // Attivo — Immobilizzazioni materiali
     { code:'1500', name:'Immobilizzazioni materiali', category:'attivo' },
-    { code:'1510', name:'Immobilizzazioni immateriali', category:'attivo' },
+    { code:'1510', name:'Impianti e macchinari', category:'attivo' },
+    { code:'1520', name:'Attrezzature', category:'attivo' },
+    { code:'1530', name:'Automezzi', category:'attivo' },
+    { code:'1540', name:'Mobili e arredi', category:'attivo' },
+    { code:'1550', name:'Fondo ammortamento immobilizzazioni materiali', category:'attivo' },
+    // Attivo — Immobilizzazioni immateriali
+    { code:'1600', name:'Immobilizzazioni immateriali', category:'attivo' },
+    { code:'1610', name:'Software', category:'attivo' },
+    { code:'1620', name:'Brevetti e marchi', category:'attivo' },
+    { code:'1630', name:'Avviamento', category:'attivo' },
+
+    // Passivo — Debiti verso fornitori
     { code:'2000', name:'Debiti verso fornitori', category:'passivo' },
+    { code:'2010', name:'Debiti verso fornitori - fatture da ricevere', category:'passivo' },
+    // Passivo — Debiti finanziari
     { code:'2100', name:'Debiti verso banche', category:'passivo' },
+    { code:'2110', name:'Mutui passivi', category:'passivo' },
+    { code:'2120', name:'Finanziamenti a breve termine', category:'passivo' },
+    // Passivo — Debiti tributari e previdenziali
     { code:'2200', name:'Debiti tributari', category:'passivo' },
+    { code:'2210', name:'IVA a debito', category:'passivo' },
+    { code:'2220', name:'Debiti verso INPS', category:'passivo' },
+    { code:'2230', name:'Debiti verso INAIL', category:'passivo' },
+    { code:'2240', name:'Ritenute da versare', category:'passivo' },
+    // Passivo — Debiti verso dipendenti
+    { code:'2250', name:'Debiti verso dipendenti', category:'passivo' },
     { code:'2300', name:'TFR', category:'passivo' },
+    { code:'2310', name:'Debiti diversi', category:'passivo' },
+
+    // Patrimonio Netto
     { code:'3000', name:'Capitale sociale', category:'patrimonio_netto' },
+    { code:'3050', name:'Riserva legale', category:'patrimonio_netto' },
+    { code:'3060', name:'Altre riserve', category:'patrimonio_netto' },
     { code:'3100', name:'Utili portati a nuovo', category:'patrimonio_netto' },
     { code:'3200', name:"Utile/perdita d'esercizio", category:'patrimonio_netto' },
+
+    // Costi — Acquisti e servizi
     { code:'4000', name:'Acquisti materie prime/merci', category:'costi' },
+    { code:'4050', name:'Acquisti di beni strumentali minori', category:'costi' },
     { code:'4100', name:'Costi per servizi', category:'costi' },
+    { code:'4110', name:'Consulenze professionali', category:'costi' },
+    { code:'4120', name:'Utenze (luce, gas, acqua)', category:'costi' },
+    { code:'4130', name:'Telefonia e internet', category:'costi' },
+    { code:'4140', name:'Assicurazioni', category:'costi' },
+    { code:'4150', name:'Manutenzioni e riparazioni', category:'costi' },
+    { code:'4160', name:'Pubblicità e marketing', category:'costi' },
+    { code:'4170', name:'Affitti passivi', category:'costi' },
+    { code:'4180', name:'Trasporti e spedizioni', category:'costi' },
+    // Costi — Personale
     { code:'4200', name:'Salari e stipendi', category:'costi' },
-    { code:'4300', name:'Ammortamenti', category:'costi' },
+    { code:'4210', name:'Oneri sociali (INPS/INAIL a carico azienda)', category:'costi' },
+    { code:'4220', name:'Accantonamento TFR', category:'costi' },
+    // Costi — Ammortamenti e finanziari
+    { code:'4300', name:'Ammortamenti immobilizzazioni materiali', category:'costi' },
+    { code:'4310', name:'Ammortamenti immobilizzazioni immateriali', category:'costi' },
+    { code:'4400', name:'Interessi passivi', category:'costi' },
+    { code:'4410', name:'Spese e commissioni bancarie', category:'costi' },
+    // Costi — Altri
+    { code:'4500', name:'Imposte e tasse indeducibili', category:'costi' },
+    { code:'4510', name:'Sopravvenienze passive', category:'costi' },
+    { code:'4520', name:'Costi diversi di gestione', category:'costi' },
+
+    // Ricavi
     { code:'5000', name:'Ricavi delle vendite', category:'ricavi' },
-    { code:'5100', name:'Altri ricavi', category:'ricavi' }
+    { code:'5010', name:'Ricavi da prestazioni di servizi', category:'ricavi' },
+    { code:'5100', name:'Altri ricavi', category:'ricavi' },
+    { code:'5200', name:'Interessi attivi', category:'ricavi' },
+    { code:'5300', name:'Sopravvenienze attive', category:'ricavi' }
   ];
 
   // Modelli per la modalità semplice: ogni modello sa già quali conti muovere.
@@ -616,6 +688,25 @@
     renderAll();
   });
   document.getElementById('cancelAccountEditBtn').addEventListener('click', cancelAccountEdit);
+
+  document.getElementById('addMissingDefaultsBtn').addEventListener('click', async ()=>{
+    const existingCodes = new Set(state.accounts.map(a=>a.code));
+    const missing = DEFAULT_ACCOUNTS.filter(a => !existingCodes.has(a.code));
+    const msgEl = document.getElementById('addMissingDefaultsMsg');
+    if(missing.length === 0){
+      msgEl.textContent = 'Hai già tutti i conti del modello base — nessuno da aggiungere.';
+      msgEl.style.display = 'block';
+      return;
+    }
+    const rows = missing.map(a => ({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, code: a.code, name: a.name, category: a.category }));
+    const { error } = await supabaseClient.from('biz_accounts').insert(rows);
+    if(error){ alert('Errore: ' + error.message); return; }
+    state.accounts.push(...rows);
+    msgEl.textContent = 'Aggiunti ' + missing.length + ' nuovi conti dal modello base.';
+    msgEl.style.display = 'block';
+    populateSimpleTemplateSelect();
+    renderAll();
+  });
 
   // ---------- Modalità inserimento (semplice/avanzata) ----------
   document.querySelectorAll('#entryModeToggle button').forEach(btn=>{
