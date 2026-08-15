@@ -118,6 +118,8 @@
         <button class="tab active" data-panel="dashboard">Dashboard</button>
         <button class="tab" data-panel="conti">Piano dei conti</button>
         <button class="tab" data-panel="primanota">Prima nota</button>
+        <button class="tab" data-panel="fatture">Fatture</button>
+        <button class="tab" data-panel="bilanci">Bilanci</button>
       </div>
     </div>
 
@@ -228,9 +230,76 @@
       </div>
     </div>
 
+    <!-- FATTURE -->
+    <div class="panel" id="panel-fatture" style="display:none;">
+      <div class="card" style="padding:6px;margin-bottom:16px;">
+        <div class="segmented" id="invoiceTypeToggle">
+          <button data-type="emessa" class="active" type="button">Emesse</button>
+          <button data-type="ricevuta" type="button">Ricevute</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 id="invoiceFormTitle">Nuova fattura emessa</h3>
+        <div class="hint box" id="invoiceFormHint">Registra una fattura emessa a un cliente — genera da sola la scrittura contabile con IVA.</div>
+        <div class="form-grid">
+          <div>
+            <label>Numero</label>
+            <input type="text" id="invNumberInput" placeholder="es. 1/2026">
+          </div>
+          <div>
+            <label>Data</label>
+            <input type="date" id="invDateInput">
+          </div>
+          <div>
+            <label id="invCounterpartyLabel">Cliente</label>
+            <input type="text" id="invCounterpartyInput" placeholder="es. Bianchi Srl">
+          </div>
+          <div>
+            <label>Partita IVA (facoltativa)</label>
+            <input type="text" id="invVatInput" placeholder="es. IT01234567890">
+          </div>
+          <div>
+            <label>Scadenza pagamento (facoltativa)</label>
+            <input type="date" id="invDueDateInput">
+          </div>
+          <div>
+            <label id="invAccountLabel">Conto ricavo</label>
+            <select id="invAccountSelect"></select>
+          </div>
+        </div>
+        <div id="invoiceLinesWrap"></div>
+        <button class="ghost" id="addInvoiceLineBtn" type="button" style="margin-bottom:14px;">+ Aggiungi riga</button>
+        <div id="invoiceTotalsWrap" style="margin-bottom:14px;font-size:14px;"></div>
+        <button class="primary" id="saveInvoiceBtn" type="button">Registra fattura</button>
+      </div>
+      <div class="card">
+        <h3>Elenco fatture</h3>
+        <div id="invoicesListWrap"></div>
+      </div>
+    </div>
+
+    <!-- BILANCI -->
+    <div class="panel" id="panel-bilanci" style="display:none;">
+      <div class="card">
+        <h3>Bilancio dell'anno in corso</h3>
+        <div class="hint box">Generato in automatico dalle registrazioni di prima nota — non modificabile a mano.</div>
+        <label>Anno</label>
+        <select id="bilancioYearSelect"></select>
+      </div>
+      <div class="card">
+        <h3>Stato Patrimoniale</h3>
+        <div id="statoPatrimonialeWrap"></div>
+      </div>
+      <div class="card">
+        <h3>Conto Economico</h3>
+        <div id="contoEconomicoWrap"></div>
+      </div>
+    </div>
+
   </div>
 
 </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -364,9 +433,13 @@
   const state = {
     accounts: [],
     journalEntries: [],
-    journalLines: []
+    journalLines: [],
+    invoices: [],
+    invoiceLines: []
   };
   let editingAccountId = null;
+  let invoiceLinesDraft = [ {description:'', quantity:1, unitPrice:'', vatRate:22} ];
+  let currentInvoiceType = 'emessa';
 
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
   function fmt(n){ return (Number(n)||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -398,6 +471,16 @@
     const { data: lines, error: e2 } = await supabaseClient.from('biz_journal_lines').select('*').eq('company_id', currentCompany.id);
     if(e2){ console.error('loadJournal lines error', e2); state.journalLines = []; return; }
     state.journalLines = lines || [];
+  }
+
+  async function loadInvoices(){
+    if(!currentCompany) return;
+    const { data: invoices, error: e1 } = await supabaseClient.from('biz_invoices').select('*').eq('company_id', currentCompany.id).order('date', {ascending:false});
+    if(e1){ console.error('loadInvoices error', e1); state.invoices = []; return; }
+    state.invoices = invoices || [];
+    const { data: lines, error: e2 } = await supabaseClient.from('biz_invoice_lines').select('*').eq('company_id', currentCompany.id);
+    if(e2){ console.error('loadInvoiceLines error', e2); state.invoiceLines = []; return; }
+    state.invoiceLines = lines || [];
   }
 
   function accountByCode(code){ return state.accounts.find(a=>a.code===code); }
@@ -486,6 +569,97 @@
     return lines.reduce((s,l)=> s + Number(l.debit||0) - Number(l.credit||0), 0);
   }
 
+  function accountBalanceForYear(accountId, year){
+    const entryIdsInYear = new Set(state.journalEntries.filter(e => new Date(e.date).getFullYear() === year).map(e=>e.id));
+    const lines = state.journalLines.filter(l => l.account_id === accountId && entryIdsInYear.has(l.entry_id));
+    return lines.reduce((s,l)=> s + Number(l.debit||0) - Number(l.credit||0), 0);
+  }
+
+  function sumAccountsInRange(codeFrom, codeTo, year){
+    return state.accounts
+      .filter(a => a.code >= codeFrom && a.code <= codeTo)
+      .reduce((s,a) => s + accountBalanceForYear(a.id, year), 0);
+  }
+
+  function populateBilancioYearSelect(){
+    const sel = document.getElementById('bilancioYearSelect');
+    if(!sel) return;
+    const years = new Set(state.journalEntries.map(e => new Date(e.date).getFullYear()));
+    years.add(new Date().getFullYear());
+    const sorted = Array.from(years).sort((a,b)=>b-a);
+    const prevValue = sel.value;
+    sel.innerHTML = sorted.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
+    if(sorted.includes(Number(prevValue))) sel.value = prevValue;
+  }
+
+  function renderBilanci(){
+    populateBilancioYearSelect();
+    const yearSel = document.getElementById('bilancioYearSelect');
+    if(!yearSel || !yearSel.value) return;
+    const year = Number(yearSel.value);
+
+    // ---- Conto Economico ----
+    const valoreProduzione = sumAccountsInRange('5000','5199', year) * -1; // ricavi sono in avere -> saldo negativo, lo giriamo di segno per mostrarlo positivo
+    const costiProduzione = sumAccountsInRange('4000','4399', year);
+    const risultatoOperativo = valoreProduzione - costiProduzione;
+    const proventiFinanziari = sumAccountsInRange('5200','5299', year) * -1;
+    const oneriFinanziari = sumAccountsInRange('4400','4499', year);
+    const risultatoFinanziario = proventiFinanziari - oneriFinanziari;
+    const altriRicavi = sumAccountsInRange('5300','5399', year) * -1;
+    const altriCosti = sumAccountsInRange('4500','4599', year);
+    const utileEsercizio = risultatoOperativo + risultatoFinanziario + altriRicavi - altriCosti;
+
+    const ceWrap = document.getElementById('contoEconomicoWrap');
+    if(ceWrap){
+      ceWrap.innerHTML = `
+        <table>
+          <tr><td><strong>A) Valore della produzione</strong></td><td style="text-align:right;" class="mono">€ ${fmt(valoreProduzione)}</td></tr>
+          <tr><td><strong>B) Costi della produzione</strong></td><td style="text-align:right;" class="mono">€ ${fmt(costiProduzione)}</td></tr>
+          <tr><td>Differenza (A − B)</td><td style="text-align:right;" class="mono">€ ${fmt(risultatoOperativo)}</td></tr>
+          <tr><td><strong>C) Proventi e oneri finanziari</strong></td><td style="text-align:right;" class="mono">€ ${fmt(risultatoFinanziario)}</td></tr>
+          ${(altriRicavi!==0 || altriCosti!==0) ? `<tr><td>Altri ricavi/costi diversi</td><td style="text-align:right;" class="mono">€ ${fmt(altriRicavi-altriCosti)}</td></tr>` : ''}
+          <tr style="border-top:2px solid var(--line);"><td><strong>Utile/perdita d'esercizio</strong></td><td style="text-align:right;" class="mono ${utileEsercizio>=0?'balanced':'unbalanced'}"><strong>€ ${fmt(utileEsercizio)}</strong></td></tr>
+        </table>
+      `;
+    }
+
+    // ---- Stato Patrimoniale ----
+    const immobImmateriali = sumAccountsInRange('1600','1699', year);
+    const immobMateriali = sumAccountsInRange('1500','1599', year);
+    const rimanenze = sumAccountsInRange('1200','1299', year);
+    const crediti = sumAccountsInRange('1100','1199', year);
+    const disponibilitaLiquide = sumAccountsInRange('1000','1099', year);
+    const totaleAttivo = immobImmateriali + immobMateriali + rimanenze + crediti + disponibilitaLiquide;
+
+    const patrimonioNettoBase = sumAccountsInRange('3000','3199', year) * -1; // capitale/riserve sono in avere
+    const patrimonioNetto = patrimonioNettoBase + utileEsercizio; // include l'utile dell'esercizio calcolato dal Conto Economico
+    const debiti = sumAccountsInRange('2000','2399', year) * -1; // debiti sono in avere
+
+    const spWrap = document.getElementById('statoPatrimonialeWrap');
+    if(spWrap){
+      spWrap.innerHTML = `
+        <table>
+          <tr><td colspan="2"><strong>ATTIVO</strong></td></tr>
+          <tr><td>B.I Immobilizzazioni immateriali</td><td style="text-align:right;" class="mono">€ ${fmt(immobImmateriali)}</td></tr>
+          <tr><td>B.II Immobilizzazioni materiali</td><td style="text-align:right;" class="mono">€ ${fmt(immobMateriali)}</td></tr>
+          <tr><td>C.I Rimanenze</td><td style="text-align:right;" class="mono">€ ${fmt(rimanenze)}</td></tr>
+          <tr><td>C.II Crediti</td><td style="text-align:right;" class="mono">€ ${fmt(crediti)}</td></tr>
+          <tr><td>C.IV Disponibilità liquide</td><td style="text-align:right;" class="mono">€ ${fmt(disponibilitaLiquide)}</td></tr>
+          <tr style="border-top:2px solid var(--line);"><td><strong>Totale attivo</strong></td><td style="text-align:right;" class="mono"><strong>€ ${fmt(totaleAttivo)}</strong></td></tr>
+          <tr><td colspan="2" style="padding-top:16px;"><strong>PASSIVO</strong></td></tr>
+          <tr><td>A) Patrimonio netto (incluso utile/perdita)</td><td style="text-align:right;" class="mono">€ ${fmt(patrimonioNetto)}</td></tr>
+          <tr><td>D) Debiti</td><td style="text-align:right;" class="mono">€ ${fmt(debiti)}</td></tr>
+          <tr style="border-top:2px solid var(--line);"><td><strong>Totale passivo</strong></td><td style="text-align:right;" class="mono"><strong>€ ${fmt(patrimonioNetto+debiti)}</strong></td></tr>
+        </table>
+        <div class="hint" style="margin-top:12px;">
+          ${Math.abs(totaleAttivo - (patrimonioNetto+debiti)) < 0.01
+            ? '<span class="balanced">✓ Attivo e Passivo si bilanciano</span>'
+            : '<span class="unbalanced">✗ Attivo e Passivo non tornano — differenza di € '+fmt(Math.abs(totaleAttivo-(patrimonioNetto+debiti)))+' (probabilmente qualche registrazione fuori dagli intervalli standard del piano dei conti)</span>'}
+        </div>
+      `;
+    }
+  }
+
   function renderDashboard(){
     const wrap = document.getElementById('dashboardWrap');
     if(!wrap) return;
@@ -562,6 +736,167 @@
     }
   }
 
+  // ---------- Fatture ----------
+  function populateInvoiceAccountSelect(){
+    const sel = document.getElementById('invAccountSelect');
+    if(!sel) return;
+    const relevantCategory = currentInvoiceType === 'emessa' ? 'ricavi' : 'costi';
+    const accs = state.accounts.filter(a=>a.category===relevantCategory).sort((a,b)=> a.code < b.code ? -1 : 1);
+    sel.innerHTML = accs.map(a=>'<option value="'+a.id+'">'+a.code+' '+a.name+'</option>').join('');
+  }
+
+  function nextInvoiceNumber(type){
+    const year = new Date().getFullYear();
+    const sameType = state.invoices.filter(i => i.type === type && i.number && i.number.endsWith('/'+year));
+    const nums = sameType.map(i => parseInt(i.number.split('/')[0], 10)).filter(n=>!isNaN(n));
+    const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+    return next + '/' + year;
+  }
+
+  function renderInvoiceLines(){
+    const wrap = document.getElementById('invoiceLinesWrap');
+    wrap.innerHTML = invoiceLinesDraft.map((line, idx) => `
+      <div class="form-grid" data-inv-line="${idx}" style="border-top:1px solid var(--line);padding-top:12px;margin-top:12px;">
+        <div class="full">
+          <label>Descrizione</label>
+          <input type="text" class="inv-line-desc" placeholder="es. Consulenza mese di agosto" value="${line.description||''}">
+        </div>
+        <div>
+          <label>Quantità</label>
+          <input type="number" step="0.01" min="0" class="inv-line-qty" value="${line.quantity||1}">
+        </div>
+        <div>
+          <label>Prezzo unitario</label>
+          <input type="number" step="0.01" min="0" class="inv-line-price" value="${line.unitPrice||''}" placeholder="0.00">
+        </div>
+        <div class="full">
+          <label>Aliquota IVA</label>
+          <select class="inv-line-vat">
+            <option value="22" ${line.vatRate==22?'selected':''}>22%</option>
+            <option value="10" ${line.vatRate==10?'selected':''}>10%</option>
+            <option value="4" ${line.vatRate==4?'selected':''}>4%</option>
+            <option value="0" ${line.vatRate==0?'selected':''}>0% (esente)</option>
+          </select>
+        </div>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('[data-inv-line] input, [data-inv-line] select').forEach(el=>{
+      el.addEventListener('input', updateInvoiceTotals);
+      el.addEventListener('change', updateInvoiceTotals);
+    });
+    updateInvoiceTotals();
+  }
+
+  function readInvoiceLinesFromDom(){
+    const wrap = document.getElementById('invoiceLinesWrap');
+    return Array.from(wrap.querySelectorAll('[data-inv-line]')).map(el=>({
+      description: el.querySelector('.inv-line-desc').value,
+      quantity: parseFloat(el.querySelector('.inv-line-qty').value) || 0,
+      unitPrice: parseFloat(el.querySelector('.inv-line-price').value) || 0,
+      vatRate: parseFloat(el.querySelector('.inv-line-vat').value) || 0
+    }));
+  }
+
+  function computeInvoiceTotals(lines){
+    let imponibile = 0, iva = 0;
+    const ivaByRate = {};
+    lines.forEach(l=>{
+      const lineTotal = l.quantity * l.unitPrice;
+      imponibile += lineTotal;
+      const lineIva = lineTotal * (l.vatRate/100);
+      iva += lineIva;
+      ivaByRate[l.vatRate] = (ivaByRate[l.vatRate]||0) + lineIva;
+    });
+    return { imponibile: round2(imponibile), iva: round2(iva), totale: round2(imponibile+iva), ivaByRate };
+  }
+  function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+  function updateInvoiceTotals(){
+    const lines = readInvoiceLinesFromDom();
+    const totals = computeInvoiceTotals(lines);
+    document.getElementById('invoiceTotalsWrap').innerHTML =
+      'Imponibile: <strong>€ '+fmt(totals.imponibile)+'</strong> — IVA: <strong>€ '+fmt(totals.iva)+'</strong> — '+
+      '<span style="font-size:16px;">Totale: <strong>€ '+fmt(totals.totale)+'</strong></span>';
+  }
+
+  function renderInvoicesList(){
+    const wrap = document.getElementById('invoicesListWrap');
+    if(!wrap) return;
+    const list = state.invoices.filter(i=>i.type===currentInvoiceType);
+    if(list.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessuna fattura ancora.</div>'; return; }
+    wrap.innerHTML = list.map(inv=>{
+      const lines = state.invoiceLines.filter(l=>l.invoice_id===inv.id);
+      const totals = computeInvoiceTotals(lines.map(l=>({quantity:Number(l.quantity), unitPrice:Number(l.unit_price), vatRate:Number(l.vat_rate)})));
+      const dateLabel = new Date(inv.date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+      return `
+        <div class="list-row">
+          <div class="list-main">
+            <span class="list-cat">${inv.number} — ${inv.counterparty_name||'(senza nome)'}</span>
+            <span class="list-note">${dateLabel}${inv.due_date ? ' · scadenza '+new Date(inv.due_date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}) : ''}</span>
+          </div>
+          <div class="list-right">
+            <span class="list-amount">€ ${fmt(totals.totale)}</span>
+            ${inv.type==='emessa' ? '<button class="icon-btn" data-print-inv="'+inv.id+'" title="Stampa/PDF">🖨</button>' : ''}
+            <button class="icon-btn" data-del-inv="${inv.id}" title="Elimina">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    wrap.querySelectorAll('[data-del-inv]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const invId = btn.dataset.delInv;
+        const inv = state.invoices.find(i=>i.id===invId);
+        if(inv && inv.entry_id){
+          await supabaseClient.from('biz_journal_lines').delete().eq('entry_id', inv.entry_id);
+          await supabaseClient.from('biz_journal_entries').delete().eq('id', inv.entry_id);
+          state.journalEntries = state.journalEntries.filter(e=>e.id !== inv.entry_id);
+          state.journalLines = state.journalLines.filter(l=>l.entry_id !== inv.entry_id);
+        }
+        await supabaseClient.from('biz_invoice_lines').delete().eq('invoice_id', invId);
+        await supabaseClient.from('biz_invoices').delete().eq('id', invId);
+        state.invoices = state.invoices.filter(i=>i.id !== invId);
+        state.invoiceLines = state.invoiceLines.filter(l=>l.invoice_id !== invId);
+        renderAll();
+      });
+    });
+    wrap.querySelectorAll('[data-print-inv]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ printInvoice(btn.dataset.printInv); });
+    });
+  }
+
+  function printInvoice(invoiceId){
+    const inv = state.invoices.find(i=>i.id===invoiceId);
+    if(!inv) return;
+    const lines = state.invoiceLines.filter(l=>l.invoice_id===invoiceId);
+    const totals = computeInvoiceTotals(lines.map(l=>({quantity:Number(l.quantity), unitPrice:Number(l.unit_price), vatRate:Number(l.vat_rate)})));
+    const dateLabel = new Date(inv.date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const linesHtml = lines.map(l=>{
+      const lineTotal = Number(l.quantity) * Number(l.unit_price);
+      return '<tr><td>'+(l.description||'')+'</td><td style="text-align:right;">'+fmt(l.quantity)+'</td><td style="text-align:right;">€ '+fmt(l.unit_price)+'</td><td style="text-align:right;">'+l.vat_rate+'%</td><td style="text-align:right;">€ '+fmt(lineTotal)+'</td></tr>';
+    }).join('');
+    const win = window.open('', '_blank');
+    win.document.write(`
+      <html><head><title>Fattura ${inv.number}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:40px;color:#222;}
+        h1{font-size:22px;} table{width:100%;border-collapse:collapse;margin-top:20px;}
+        th,td{padding:8px;border-bottom:1px solid #ccc;text-align:left;font-size:13px;}
+        .tot{margin-top:20px;text-align:right;font-size:15px;}
+        .header{display:flex;justify-content:space-between;margin-bottom:30px;}
+      </style></head><body>
+      <div class="header">
+        <div><h1>${currentCompany.name}</h1>${currentCompany.vat_number ? '<div>P.IVA '+currentCompany.vat_number+'</div>' : ''}</div>
+        <div style="text-align:right;"><h1>Fattura n. ${inv.number}</h1><div>${dateLabel}</div></div>
+      </div>
+      <div><strong>Cliente:</strong> ${inv.counterparty_name||''}${inv.counterparty_vat ? ' — P.IVA '+inv.counterparty_vat : ''}</div>
+      <table><tr><th>Descrizione</th><th style="text-align:right;">Qtà</th><th style="text-align:right;">Prezzo unit.</th><th style="text-align:right;">IVA</th><th style="text-align:right;">Totale</th></tr>${linesHtml}</table>
+      <div class="tot">Imponibile: € ${fmt(totals.imponibile)}<br>IVA: € ${fmt(totals.iva)}<br><strong>Totale: € ${fmt(totals.totale)}</strong></div>
+      </body></html>
+    `);
+    win.document.close();
+    win.print();
+  }
+
   function renderJournalList(){
     const wrap = document.getElementById('journalListWrap');
     if(!wrap) return;
@@ -605,6 +940,8 @@
     renderDashboard();
     renderJournalList();
     updateSimplePreview();
+    renderInvoicesList();
+    renderBilanci();
   }
 
   // ---------- Autenticazione ----------
@@ -636,7 +973,11 @@
     document.getElementById('mainAppWrap').style.display = 'block';
     await loadAccounts();
     await loadJournal();
+    await loadInvoices();
     populateSimpleTemplateSelect();
+    populateInvoiceAccountSelect();
+    renderInvoiceLines();
+    document.getElementById('invNumberInput').value = nextInvoiceNumber(currentInvoiceType);
     renderAll();
   }
 
@@ -776,6 +1117,89 @@
     document.getElementById('advDescInput').value = '';
     advancedLines = [ {accountId:'', debit:'', credit:''}, {accountId:'', debit:'', credit:''} ];
     renderAdvancedLines(advancedLines);
+    renderAll();
+  });
+
+  // ---------- Fatture: eventi ----------
+  document.querySelectorAll('#invoiceTypeToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#invoiceTypeToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentInvoiceType = btn.dataset.type;
+      const isEmessa = currentInvoiceType === 'emessa';
+      document.getElementById('invoiceFormTitle').textContent = isEmessa ? 'Nuova fattura emessa' : 'Nuova fattura ricevuta';
+      document.getElementById('invoiceFormHint').textContent = isEmessa
+        ? 'Registra una fattura emessa a un cliente — genera da sola la scrittura contabile con IVA.'
+        : 'Registra una fattura ricevuta da un fornitore — genera da sola la scrittura contabile con IVA.';
+      document.getElementById('invCounterpartyLabel').textContent = isEmessa ? 'Cliente' : 'Fornitore';
+      document.getElementById('invAccountLabel').textContent = isEmessa ? 'Conto ricavo' : 'Conto costo';
+      document.getElementById('invNumberInput').value = nextInvoiceNumber(currentInvoiceType);
+      populateInvoiceAccountSelect();
+      renderInvoicesList();
+    });
+  });
+  document.getElementById('bilancioYearSelect').addEventListener('change', renderBilanci);
+  document.getElementById('addInvoiceLineBtn').addEventListener('click', ()=>{
+    const current = readInvoiceLinesFromDom();
+    current.push({ description:'', quantity:1, unitPrice:'', vatRate:22 });
+    invoiceLinesDraft = current;
+    renderInvoiceLines();
+  });
+  document.getElementById('saveInvoiceBtn').addEventListener('click', async ()=>{
+    const number = document.getElementById('invNumberInput').value.trim();
+    const date = document.getElementById('invDateInput').value || dayKey(new Date());
+    const dueDate = document.getElementById('invDueDateInput').value || null;
+    const counterpartyName = document.getElementById('invCounterpartyInput').value.trim();
+    const counterpartyVat = document.getElementById('invVatInput').value.trim();
+    const accountId = document.getElementById('invAccountSelect').value;
+    const lines = readInvoiceLinesFromDom().filter(l => l.description && l.quantity > 0 && l.unitPrice > 0);
+    if(!number){ alert('Scrivi il numero fattura.'); return; }
+    if(!accountId){ alert('Scegli il conto — aggiungi prima un conto di ricavo/costo nel Piano dei conti se non ne hai.'); return; }
+    if(lines.length === 0){ alert('Aggiungi almeno una riga valida (descrizione, quantità e prezzo).'); return; }
+    const totals = computeInvoiceTotals(lines);
+
+    // Genera la scrittura contabile collegata
+    const entryId = uid();
+    const isEmessa = currentInvoiceType === 'emessa';
+    const clientiFornitoriAcc = isEmessa ? accountByCode('1100') : accountByCode('2000'); // Crediti clienti / Debiti fornitori
+    const ivaAcc = isEmessa ? accountByCode('2210') : accountByCode('1140'); // IVA a debito / IVA a credito
+    if(!clientiFornitoriAcc){ alert('Manca il conto "'+(isEmessa?'1100 Crediti verso clienti':'2000 Debiti verso fornitori')+'" nel piano dei conti.'); return; }
+    const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date, description: 'Fattura '+(isEmessa?'emessa':'ricevuta')+' n. '+number+(counterpartyName?' - '+counterpartyName:''), mode: 'invoice' };
+    const lineRows = [];
+    if(isEmessa){
+      lineRows.push({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: clientiFornitoriAcc.id, debit: totals.totale, credit: 0 });
+      lineRows.push({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: accountId, debit: 0, credit: totals.imponibile });
+      if(totals.iva > 0 && ivaAcc) lineRows.push({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: ivaAcc.id, debit: 0, credit: totals.iva });
+    } else {
+      lineRows.push({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: accountId, debit: totals.imponibile, credit: 0 });
+      if(totals.iva > 0 && ivaAcc) lineRows.push({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: ivaAcc.id, debit: totals.iva, credit: 0 });
+      lineRows.push({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: clientiFornitoriAcc.id, debit: 0, credit: totals.totale });
+    }
+    const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
+    if(e1){ alert('Errore: ' + e1.message); return; }
+    const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
+    if(e2){ alert('Errore: ' + e2.message); return; }
+    state.journalEntries.unshift(entryRow);
+    state.journalLines.push(...lineRows);
+
+    // Salva la fattura e le sue righe
+    const invoiceId = uid();
+    const invoiceRow = { id: invoiceId, user_id: currentUserId, company_id: currentCompany.id, type: currentInvoiceType, number, date, due_date: dueDate, counterparty_name: counterpartyName, counterparty_vat: counterpartyVat, entry_id: entryId };
+    const invoiceLineRows = lines.map(l => ({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, invoice_id: invoiceId, description: l.description, quantity: l.quantity, unit_price: l.unitPrice, vat_rate: l.vatRate }));
+    const { error: e3 } = await supabaseClient.from('biz_invoices').insert([invoiceRow]);
+    if(e3){ alert('Errore: ' + e3.message); return; }
+    const { error: e4 } = await supabaseClient.from('biz_invoice_lines').insert(invoiceLineRows);
+    if(e4){ alert('Errore: ' + e4.message); return; }
+    state.invoices.unshift(invoiceRow);
+    state.invoiceLines.push(...invoiceLineRows);
+
+    // Reset del modulo
+    document.getElementById('invCounterpartyInput').value = '';
+    document.getElementById('invVatInput').value = '';
+    document.getElementById('invDueDateInput').value = '';
+    invoiceLinesDraft = [ {description:'', quantity:1, unitPrice:'', vatRate:22} ];
+    renderInvoiceLines();
+    document.getElementById('invNumberInput').value = nextInvoiceNumber(currentInvoiceType);
     renderAll();
   });
 
