@@ -120,6 +120,9 @@
         <button class="tab" data-panel="primanota">Prima nota</button>
         <button class="tab" data-panel="fatture">Fatture</button>
         <button class="tab" data-panel="bilanci">Bilanci</button>
+        <button class="tab" data-panel="iva">IVA</button>
+        <button class="tab" data-panel="ammortamenti">Ammortamenti</button>
+        <button class="tab" data-panel="contibancari">Conti bancari</button>
       </div>
     </div>
 
@@ -296,9 +299,105 @@
       </div>
     </div>
 
+    <!-- IVA -->
+    <div class="panel" id="panel-iva" style="display:none;">
+      <div class="card">
+        <h3>Registro IVA</h3>
+        <div class="hint box">Calcolato dalle fatture registrate — IVA a debito (vendite) meno IVA a credito (acquisti) per il periodo scelto.</div>
+        <div class="form-grid">
+          <div>
+            <label>Da</label>
+            <input type="date" id="ivaFromDate">
+          </div>
+          <div>
+            <label>A</label>
+            <input type="date" id="ivaToDate">
+          </div>
+        </div>
+        <button class="ghost" id="calcIvaBtn" type="button">Calcola</button>
+        <div id="ivaResultWrap" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- AMMORTAMENTI -->
+    <div class="panel" id="panel-ammortamenti" style="display:none;">
+      <div class="card">
+        <h3>Nuovo bene ammortizzabile</h3>
+        <div class="hint box">Registra un bene, e ogni anno potrai generare da qui la quota di ammortamento — calcolata a quote costanti.</div>
+        <div class="form-grid">
+          <div class="full">
+            <label>Nome del bene</label>
+            <input type="text" id="assetNameInput" placeholder="es. Furgone aziendale">
+          </div>
+          <div>
+            <label>Data di acquisto</label>
+            <input type="date" id="assetDateInput">
+          </div>
+          <div>
+            <label>Costo</label>
+            <input type="number" step="0.01" min="0" id="assetCostInput" placeholder="0.00">
+          </div>
+          <div>
+            <label>Vita utile (anni)</label>
+            <input type="number" step="1" min="1" id="assetLifeInput" placeholder="es. 5">
+          </div>
+          <div>
+            <label>Conto cespite</label>
+            <select id="assetAccountSelect"></select>
+          </div>
+          <div>
+            <label>Conto fondo ammortamento</label>
+            <select id="assetFundAccountSelect"></select>
+          </div>
+          <div class="full">
+            <label>Conto costo ammortamento (a conto economico)</label>
+            <select id="assetExpenseAccountSelect"></select>
+          </div>
+        </div>
+        <button class="primary" id="addAssetBtn" type="button">Aggiungi bene</button>
+      </div>
+      <div class="card">
+        <h3>I tuoi beni</h3>
+        <div id="assetsListWrap"></div>
+      </div>
+    </div>
+
+    <!-- CONTI BANCARI -->
+    <div class="panel" id="panel-contibancari" style="display:none;">
+      <div class="card">
+        <h3>Saldi liquidità</h3>
+        <div class="hint box">I conti di cassa/banca (codici 1000-1099) e il loro saldo attuale.</div>
+        <div id="bankBalancesWrap"></div>
+      </div>
+      <div class="card">
+        <h3>Trasferimento tra conti</h3>
+        <div class="hint box">Sposta soldi da un conto liquido a un altro — registra da sola la scrittura.</div>
+        <div class="form-grid">
+          <div>
+            <label>Da</label>
+            <select id="transferFromSelect"></select>
+          </div>
+          <div>
+            <label>A</label>
+            <select id="transferToSelect"></select>
+          </div>
+          <div>
+            <label>Data</label>
+            <input type="date" id="transferDateInput">
+          </div>
+          <div>
+            <label>Importo</label>
+            <input type="number" step="0.01" min="0" id="transferAmountInput" placeholder="0.00">
+          </div>
+        </div>
+        <button class="primary" id="doTransferBtn" type="button">Trasferisci</button>
+      </div>
+    </div>
+
   </div>
 
 </div>
+
 
 </div>
 
@@ -435,7 +534,9 @@
     journalEntries: [],
     journalLines: [],
     invoices: [],
-    invoiceLines: []
+    invoiceLines: [],
+    assets: [],
+    assetDepreciations: []
   };
   let editingAccountId = null;
   let invoiceLinesDraft = [ {description:'', quantity:1, unitPrice:'', vatRate:22} ];
@@ -481,6 +582,16 @@
     const { data: lines, error: e2 } = await supabaseClient.from('biz_invoice_lines').select('*').eq('company_id', currentCompany.id);
     if(e2){ console.error('loadInvoiceLines error', e2); state.invoiceLines = []; return; }
     state.invoiceLines = lines || [];
+  }
+
+  async function loadAssets(){
+    if(!currentCompany) return;
+    const { data: assets, error: e1 } = await supabaseClient.from('biz_assets').select('*').eq('company_id', currentCompany.id).order('purchase_date', {ascending:false});
+    if(e1){ console.error('loadAssets error', e1); state.assets = []; return; }
+    state.assets = assets || [];
+    const { data: deps, error: e2 } = await supabaseClient.from('biz_asset_depreciations').select('*').eq('company_id', currentCompany.id);
+    if(e2){ console.error('loadAssetDepreciations error', e2); state.assetDepreciations = []; return; }
+    state.assetDepreciations = deps || [];
   }
 
   function accountByCode(code){ return state.accounts.find(a=>a.code===code); }
@@ -897,6 +1008,129 @@
     win.print();
   }
 
+  // ---------- IVA ----------
+  function calcIva(fromDate, toDate){
+    const invoicesInRange = state.invoices.filter(i => i.date >= fromDate && i.date <= toDate);
+    let ivaDebito = 0, ivaCredito = 0;
+    invoicesInRange.forEach(inv=>{
+      const lines = state.invoiceLines.filter(l=>l.invoice_id===inv.id);
+      const totals = computeInvoiceTotals(lines.map(l=>({quantity:Number(l.quantity), unitPrice:Number(l.unit_price), vatRate:Number(l.vat_rate)})));
+      if(inv.type === 'emessa') ivaDebito += totals.iva;
+      else ivaCredito += totals.iva;
+    });
+    return { ivaDebito: round2(ivaDebito), ivaCredito: round2(ivaCredito), saldo: round2(ivaDebito-ivaCredito) };
+  }
+
+  // ---------- Ammortamenti ----------
+  function populateAssetAccountSelects(){
+    const immobAccounts = state.accounts.filter(a => a.code >= '1500' && a.code <= '1699').sort((a,b)=> a.code < b.code ? -1 : 1);
+    const expenseAccounts = state.accounts.filter(a => a.code >= '4300' && a.code <= '4399').sort((a,b)=> a.code < b.code ? -1 : 1);
+    const assetSel = document.getElementById('assetAccountSelect');
+    const fundSel = document.getElementById('assetFundAccountSelect');
+    const expenseSel = document.getElementById('assetExpenseAccountSelect');
+    if(assetSel) assetSel.innerHTML = immobAccounts.map(a=>'<option value="'+a.id+'">'+a.code+' '+a.name+'</option>').join('');
+    if(fundSel) fundSel.innerHTML = immobAccounts.map(a=>'<option value="'+a.id+'">'+a.code+' '+a.name+'</option>').join('');
+    if(expenseSel) expenseSel.innerHTML = expenseAccounts.map(a=>'<option value="'+a.id+'">'+a.code+' '+a.name+'</option>').join('');
+  }
+
+  function assetYearlyQuota(asset){
+    return round2(Number(asset.cost) / Number(asset.useful_life_years));
+  }
+
+  function renderAssetsList(){
+    const wrap = document.getElementById('assetsListWrap');
+    if(!wrap) return;
+    if(state.assets.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun bene ancora.</div>'; return; }
+    wrap.innerHTML = state.assets.map(asset=>{
+      const quota = assetYearlyQuota(asset);
+      const deps = state.assetDepreciations.filter(d=>d.asset_id===asset.id).sort((a,b)=>a.year-b.year);
+      const purchaseYear = new Date(asset.purchase_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const alreadyDepreciatedYears = new Set(deps.map(d=>d.year));
+      const yearsAvailable = [];
+      for(let y=purchaseYear; y<=currentYear; y++){ if(!alreadyDepreciatedYears.has(y)) yearsAvailable.push(y); }
+      const depsHtml = deps.map(d=>'<div style="font-size:12px;color:var(--ink-faint);">Anno '+d.year+': € '+fmt(d.amount)+' registrato</div>').join('');
+      const yearButtons = yearsAvailable.map(y=>'<button class="ghost" data-dep-asset="'+asset.id+'" data-dep-year="'+y+'" type="button" style="font-size:12px;padding:6px 10px;margin-right:6px;margin-top:6px;">Registra ammortamento '+y+'</button>').join('');
+      return `
+        <div class="list-row" style="flex-direction:column;align-items:stretch;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="list-main">
+              <span class="list-cat">${asset.name}</span>
+              <span class="list-note">Costo € ${fmt(asset.cost)} · ${asset.useful_life_years} anni · quota annua € ${fmt(quota)}</span>
+            </div>
+            <button class="icon-btn" data-del-asset="${asset.id}" title="Elimina">✕</button>
+          </div>
+          ${depsHtml}
+          <div>${yearButtons || '<span class="hint">Tutti gli anni disponibili sono già stati ammortizzati.</span>'}</div>
+        </div>
+      `;
+    }).join('');
+    wrap.querySelectorAll('[data-del-asset]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const assetId = btn.dataset.delAsset;
+        const deps = state.assetDepreciations.filter(d=>d.asset_id===assetId);
+        for(const dep of deps){
+          if(dep.entry_id){
+            await supabaseClient.from('biz_journal_lines').delete().eq('entry_id', dep.entry_id);
+            await supabaseClient.from('biz_journal_entries').delete().eq('id', dep.entry_id);
+            state.journalEntries = state.journalEntries.filter(e=>e.id !== dep.entry_id);
+            state.journalLines = state.journalLines.filter(l=>l.entry_id !== dep.entry_id);
+          }
+        }
+        await supabaseClient.from('biz_asset_depreciations').delete().eq('asset_id', assetId);
+        await supabaseClient.from('biz_assets').delete().eq('id', assetId);
+        state.assets = state.assets.filter(a=>a.id !== assetId);
+        state.assetDepreciations = state.assetDepreciations.filter(d=>d.asset_id !== assetId);
+        renderAll();
+      });
+    });
+    wrap.querySelectorAll('[data-dep-asset]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const asset = state.assets.find(a=>a.id===btn.dataset.depAsset);
+        const year = Number(btn.dataset.depYear);
+        if(!asset) return;
+        const quota = assetYearlyQuota(asset);
+        const entryId = uid();
+        const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date: year+'-12-31', description: 'Ammortamento '+year+' — '+asset.name, mode: 'depreciation' };
+        const lineRows = [
+          { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: asset.expense_account_id, debit: quota, credit: 0 },
+          { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: asset.fund_account_id, debit: 0, credit: quota }
+        ];
+        const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
+        if(e1){ alert('Errore: ' + e1.message); return; }
+        const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
+        if(e2){ alert('Errore: ' + e2.message); return; }
+        state.journalEntries.unshift(entryRow);
+        state.journalLines.push(...lineRows);
+        const depRow = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, asset_id: asset.id, year, amount: quota, entry_id: entryId };
+        const { error: e3 } = await supabaseClient.from('biz_asset_depreciations').insert([depRow]);
+        if(e3){ alert('Errore: ' + e3.message); return; }
+        state.assetDepreciations.push(depRow);
+        renderAll();
+      });
+    });
+  }
+
+  // ---------- Conti bancari ----------
+  function populateTransferSelects(){
+    const bankAccounts = state.accounts.filter(a => a.code >= '1000' && a.code <= '1099').sort((a,b)=> a.code < b.code ? -1 : 1);
+    const fromSel = document.getElementById('transferFromSelect');
+    const toSel = document.getElementById('transferToSelect');
+    const optionsHtml = bankAccounts.map(a=>'<option value="'+a.id+'">'+a.code+' '+a.name+'</option>').join('');
+    if(fromSel) fromSel.innerHTML = optionsHtml;
+    if(toSel) toSel.innerHTML = optionsHtml;
+  }
+
+  function renderBankBalances(){
+    const wrap = document.getElementById('bankBalancesWrap');
+    if(!wrap) return;
+    const bankAccounts = state.accounts.filter(a => a.code >= '1000' && a.code <= '1099').sort((a,b)=> a.code < b.code ? -1 : 1);
+    if(bankAccounts.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun conto liquido nel piano dei conti.</div>'; return; }
+    wrap.innerHTML = '<table><tr><th>Conto</th><th style="text-align:right;">Saldo</th></tr>' +
+      bankAccounts.map(a=>'<tr><td>'+a.code+' '+a.name+'</td><td style="text-align:right;" class="mono">€ '+fmt(accountBalance(a.id))+'</td></tr>').join('') +
+      '</table>';
+  }
+
   function renderJournalList(){
     const wrap = document.getElementById('journalListWrap');
     if(!wrap) return;
@@ -942,6 +1176,8 @@
     updateSimplePreview();
     renderInvoicesList();
     renderBilanci();
+    renderAssetsList();
+    renderBankBalances();
   }
 
   // ---------- Autenticazione ----------
@@ -974,10 +1210,14 @@
     await loadAccounts();
     await loadJournal();
     await loadInvoices();
+    await loadAssets();
     populateSimpleTemplateSelect();
     populateInvoiceAccountSelect();
+    populateAssetAccountSelects();
+    populateTransferSelects();
     renderInvoiceLines();
     document.getElementById('invNumberInput').value = nextInvoiceNumber(currentInvoiceType);
+    document.getElementById('transferDateInput').value = dayKey(new Date());
     renderAll();
   }
 
@@ -1200,6 +1440,71 @@
     invoiceLinesDraft = [ {description:'', quantity:1, unitPrice:'', vatRate:22} ];
     renderInvoiceLines();
     document.getElementById('invNumberInput').value = nextInvoiceNumber(currentInvoiceType);
+    renderAll();
+  });
+
+  // ---------- IVA: eventi ----------
+  document.getElementById('calcIvaBtn').addEventListener('click', ()=>{
+    const from = document.getElementById('ivaFromDate').value;
+    const to = document.getElementById('ivaToDate').value;
+    if(!from || !to){ alert('Scegli data di inizio e fine.'); return; }
+    const result = calcIva(from, to);
+    const wrap = document.getElementById('ivaResultWrap');
+    const label = result.saldo >= 0 ? 'IVA da versare' : 'IVA a credito';
+    const cls = result.saldo >= 0 ? 'unbalanced' : 'balanced';
+    wrap.innerHTML = `
+      <table>
+        <tr><td>IVA a debito (su vendite)</td><td style="text-align:right;" class="mono">€ ${fmt(result.ivaDebito)}</td></tr>
+        <tr><td>IVA a credito (su acquisti)</td><td style="text-align:right;" class="mono">€ ${fmt(result.ivaCredito)}</td></tr>
+        <tr style="border-top:2px solid var(--line);"><td><strong>${label}</strong></td><td style="text-align:right;" class="mono ${cls}"><strong>€ ${fmt(Math.abs(result.saldo))}</strong></td></tr>
+      </table>
+    `;
+  });
+
+  // ---------- Ammortamenti: eventi ----------
+  document.getElementById('addAssetBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('assetNameInput').value.trim();
+    const date = document.getElementById('assetDateInput').value;
+    const cost = parseFloat(document.getElementById('assetCostInput').value);
+    const life = parseFloat(document.getElementById('assetLifeInput').value);
+    const assetAccountId = document.getElementById('assetAccountSelect').value;
+    const fundAccountId = document.getElementById('assetFundAccountSelect').value;
+    const expenseAccountId = document.getElementById('assetExpenseAccountSelect').value;
+    if(!name || !date || isNaN(cost) || cost<=0 || isNaN(life) || life<=0){ alert('Compila tutti i campi con valori validi.'); return; }
+    if(!assetAccountId || !fundAccountId || !expenseAccountId){ alert('Servono i conti cespite, fondo ammortamento e costo — aggiungili nel Piano dei conti se mancano.'); return; }
+    const row = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, name, purchase_date: date, cost, useful_life_years: life, asset_account_id: assetAccountId, fund_account_id: fundAccountId, expense_account_id: expenseAccountId };
+    const { error } = await supabaseClient.from('biz_assets').insert([row]);
+    if(error){ alert('Errore: ' + error.message); return; }
+    state.assets.unshift(row);
+    document.getElementById('assetNameInput').value = '';
+    document.getElementById('assetCostInput').value = '';
+    document.getElementById('assetLifeInput').value = '';
+    renderAll();
+  });
+
+  // ---------- Conti bancari: eventi ----------
+  document.getElementById('doTransferBtn').addEventListener('click', async ()=>{
+    const fromId = document.getElementById('transferFromSelect').value;
+    const toId = document.getElementById('transferToSelect').value;
+    const date = document.getElementById('transferDateInput').value || dayKey(new Date());
+    const amount = parseFloat(document.getElementById('transferAmountInput').value);
+    if(!fromId || !toId){ alert('Servono almeno due conti liquidi nel piano dei conti.'); return; }
+    if(fromId === toId){ alert('Scegli due conti diversi.'); return; }
+    if(isNaN(amount) || amount<=0){ alert('Inserisci un importo valido.'); return; }
+    const fromAcc = accountById(fromId), toAcc = accountById(toId);
+    const entryId = uid();
+    const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date, description: 'Trasferimento da '+fromAcc.name+' a '+toAcc.name, mode: 'transfer' };
+    const lineRows = [
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: toId, debit: amount, credit: 0 },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: fromId, debit: 0, credit: amount }
+    ];
+    const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
+    if(e1){ alert('Errore: ' + e1.message); return; }
+    const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
+    if(e2){ alert('Errore: ' + e2.message); return; }
+    state.journalEntries.unshift(entryRow);
+    state.journalLines.push(...lineRows);
+    document.getElementById('transferAmountInput').value = '';
     renderAll();
   });
 
