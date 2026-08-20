@@ -525,52 +525,52 @@
     <div class="panel" id="panel-fatture" style="display:none;">
       <div class="card" style="padding:6px;margin-bottom:16px;">
         <div class="segmented" id="invoiceTypeToggle">
-          <button data-type="emessa" class="active" type="button">Emesse</button>
-          <button data-type="ricevuta" type="button">Ricevute</button>
+          <button data-type="emessa" class="active" type="button" data-i18n="fatt.issued">Emesse</button>
+          <button data-type="ricevuta" type="button" data-i18n="fatt.received">Ricevute</button>
         </div>
       </div>
       <div class="card">
-        <h3 id="invoiceFormTitle">Nuova fattura emessa</h3>
-        <div class="hint box" id="invoiceFormHint">Registra una fattura emessa a un cliente — genera da sola la scrittura contabile con IVA.</div>
+        <h3 id="invoiceFormTitle" data-i18n="fatt.newIssued">Nuova fattura emessa</h3>
+        <div class="hint box" id="invoiceFormHint" data-i18n="fatt.newIssuedHint">Registra una fattura emessa a un cliente — genera da sola la scrittura contabile con IVA.</div>
         <div class="form-grid">
           <div>
-            <label>Numero</label>
+            <label data-i18n="fatt.number">Numero</label>
             <input type="text" id="invNumberInput" placeholder="es. 1/2026">
           </div>
           <div>
-            <label>Data</label>
+            <label data-i18n="lbl.date">Data</label>
             <input type="date" id="invDateInput">
           </div>
           <div class="full">
-            <label id="invPartnerSelectLabel">Scegli da anagrafica (facoltativo)</label>
+            <label id="invPartnerSelectLabel" data-i18n="fatt.chooseFromPartners">Scegli da anagrafica (facoltativo)</label>
             <select id="invPartnerSelect">
-              <option value="">— Inserisci manualmente qui sotto —</option>
+              <option value="" data-i18n="fatt.manualEntry">— Inserisci manualmente qui sotto —</option>
             </select>
           </div>
           <div>
-            <label id="invCounterpartyLabel">Cliente</label>
+            <label id="invCounterpartyLabel" data-i18n="anag.client">Cliente</label>
             <input type="text" id="invCounterpartyInput" placeholder="es. Bianchi Srl">
           </div>
           <div>
-            <label>Partita IVA (facoltativa)</label>
+            <label data-i18n="anag.vatOptional">Partita IVA (facoltativa)</label>
             <input type="text" id="invVatInput" placeholder="es. IT01234567890">
           </div>
           <div>
-            <label>Scadenza pagamento (facoltativa)</label>
+            <label data-i18n="fatt.dueDate">Scadenza pagamento (facoltativa)</label>
             <input type="date" id="invDueDateInput">
           </div>
           <div>
-            <label id="invAccountLabel">Conto ricavo</label>
+            <label id="invAccountLabel" data-i18n="fatt.revenueAccount">Conto ricavo</label>
             <select id="invAccountSelect"></select>
           </div>
         </div>
         <div id="invoiceLinesWrap"></div>
-        <button class="ghost" id="addInvoiceLineBtn" type="button" style="margin-bottom:14px;">+ Aggiungi riga</button>
+        <button class="ghost" id="addInvoiceLineBtn" type="button" style="margin-bottom:14px;" data-i18n="primanota.addLine">+ Aggiungi riga</button>
         <div id="invoiceTotalsWrap" style="margin-bottom:14px;font-size:14px;"></div>
-        <button class="primary" id="saveInvoiceBtn" type="button">Registra fattura</button>
+        <button class="primary" id="saveInvoiceBtn" type="button" data-i18n="fatt.saveInvoice">Registra fattura</button>
       </div>
       <div class="card">
-        <h3>Elenco fatture</h3>
+        <h3 data-i18n="fatt.invoiceList">Elenco fatture</h3>
         <div id="invoicesListWrap"></div>
       </div>
     </div>
@@ -578,13 +578,13 @@
     <!-- SCADENZARIO -->
     <div class="panel" id="panel-scadenzario" style="display:none;">
       <div class="card">
-        <h3>📥 Da incassare</h3>
-        <div class="hint box">Fatture emesse non ancora segnate come incassate, ordinate per scadenza — quelle scadute o vicine sono evidenziate.</div>
+        <h3 data-i18n="scad.toCollect">📥 Da incassare</h3>
+        <div class="hint box" data-i18n="scad.toCollectHint">Fatture emesse non ancora segnate come incassate, ordinate per scadenza — quelle scadute o vicine sono evidenziate.</div>
         <div id="scadenzarioIncassareWrap"></div>
       </div>
       <div class="card">
-        <h3>📤 Da pagare</h3>
-        <div class="hint box">Fatture ricevute non ancora segnate come pagate, ordinate per scadenza.</div>
+        <h3 data-i18n="scad.toPay">📤 Da pagare</h3>
+        <div class="hint box" data-i18n="scad.toPayHint">Fatture ricevute non ancora segnate come pagate, ordinate per scadenza.</div>
         <div id="scadenzarioPagareWrap"></div>
       </div>
     </div>
@@ -592,13 +592,13 @@
     <!-- CASH FLOW -->
     <div class="panel" id="panel-cashflow" style="display:none;">
       <div class="card">
-        <h3>Liquidità attuale</h3>
-        <div class="hint box">Somma dei conti bancari/cassa nel piano dei conti (codici 1000–1099).</div>
+        <h3 data-i18n="cf.currentLiquidity">Liquidità attuale</h3>
+        <div class="hint box" data-i18n="cf.currentLiquidityHint">Somma dei conti bancari/cassa nel piano dei conti (codici 1000–1099).</div>
         <div id="cashflowCurrentWrap" style="font-size:22px;font-weight:700;font-family:var(--mono);"></div>
       </div>
       <div class="card">
-        <h3>Proiezione mese per mese</h3>
-        <div class="hint box">⚠️ Calcolata solo dalle fatture registrate con scadenza — non tiene conto di stipendi, F24, o altre spese/entrate non fatturate. Uno strumento indicativo, non un bilancio di previsione ufficiale.</div>
+        <h3 data-i18n="cf.projection">Proiezione mese per mese</h3>
+        <div class="hint box" data-i18n="cf.projectionHint">⚠️ Calcolata solo dalle fatture registrate con scadenza — non tiene conto di stipendi, F24, o altre spese/entrate non fatturate. Uno strumento indicativo, non un bilancio di previsione ufficiale.</div>
         <div id="cashflowProjectionWrap"></div>
       </div>
     </div>
@@ -1477,27 +1477,27 @@
     const wrap = document.getElementById('invoicesListWrap');
     if(!wrap) return;
     const list = state.invoices.filter(i=>i.type===currentInvoiceType);
-    if(list.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessuna fattura ancora.</div>'; return; }
+    if(list.length === 0){ wrap.innerHTML = '<div class="empty-state">'+t('fatt.noInvoicesYet')+'</div>'; return; }
     wrap.innerHTML = list.map(inv=>{
       const lines = state.invoiceLines.filter(l=>l.invoice_id===inv.id);
       const totals = computeInvoiceTotals(lines.map(l=>({quantity:Number(l.quantity), unitPrice:Number(l.unit_price), vatRate:Number(l.vat_rate)})));
-      const dateLabel = new Date(inv.date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
-      const paidLabel = inv.type==='emessa' ? 'Incassata' : 'Pagata';
-      const unpaidLabel = inv.type==='emessa' ? 'Da incassare' : 'Da pagare';
+      const dateLabel = new Date(inv.date).toLocaleDateString(localeTag(),{day:'2-digit',month:'2-digit',year:'numeric'});
+      const paidLabel = inv.type==='emessa' ? t('fatt.collected') : t('fatt.paidStatus');
+      const unpaidLabel = inv.type==='emessa' ? t('scad.toCollectShort') : t('scad.toPayShort');
       const statusBadge = inv.paid
         ? '<span class="badge" style="background:color-mix(in srgb, var(--green) 14%, transparent);color:var(--green);">'+paidLabel+'</span>'
         : '<span class="badge">'+unpaidLabel+'</span>';
       return `
         <div class="list-row">
           <div class="list-main">
-            <span class="list-cat">${inv.number} — ${inv.counterparty_name||'(senza nome)'}</span>
-            <span class="list-note">${dateLabel}${inv.due_date ? ' · scadenza '+new Date(inv.due_date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}) : ''}</span>
+            <span class="list-cat">${inv.number} — ${inv.counterparty_name||t('fatt.noName')}</span>
+            <span class="list-note">${dateLabel}${inv.due_date ? ' · '+t('fatt.due')+' '+new Date(inv.due_date).toLocaleDateString(localeTag(),{day:'2-digit',month:'2-digit',year:'numeric'}) : ''}</span>
           </div>
           <div class="list-right">
             <span class="list-amount">€ ${fmt(totals.totale)}</span>
-            <button class="icon-btn" data-toggle-paid="${inv.id}" title="${inv.paid ? 'Segna come non '+paidLabel.toLowerCase() : 'Segna come '+paidLabel.toLowerCase()}">${statusBadge}</button>
-            ${inv.type==='emessa' ? '<button class="icon-btn" data-print-inv="'+inv.id+'" title="Stampa/PDF">🖨</button>' : ''}
-            <button class="icon-btn" data-del-inv="${inv.id}" title="Elimina">✕</button>
+            <button class="icon-btn" data-toggle-paid="${inv.id}" title="${inv.paid ? t('fatt.markUnpaidPre')+paidLabel.toLowerCase() : t('fatt.markPaidPre')+paidLabel.toLowerCase()}">${statusBadge}</button>
+            ${inv.type==='emessa' ? '<button class="icon-btn" data-print-inv="'+inv.id+'" title="'+t('fatt.printPdf')+'">🖨</button>' : ''}
+            <button class="icon-btn" data-del-inv="${inv.id}" title="${t('btn.delete')}">✕</button>
           </div>
         </div>
       `;
@@ -1554,7 +1554,7 @@
           const d = new Date(inv.due_date); d.setHours(0,0,0,0);
           const diff = Math.round((d - today) / 86400000);
           overdue = diff < 0;
-          daysInfo = overdue ? 'scaduta da ' + Math.abs(diff) + ' giorni' : (diff===0 ? 'scade oggi' : 'tra ' + diff + ' giorni');
+          daysInfo = overdue ? t('scad.overdueBy') + ' ' + Math.abs(diff) + ' ' + t('scad.days') : (diff===0 ? t('scad.dueToday') : t('scad.inDays') + ' ' + diff + ' ' + t('scad.days'));
         }
         return { inv, totale: totals.totale, overdue, daysInfo };
       });
@@ -1567,14 +1567,14 @@
     }
 
     function renderGroup(wrap, rows){
-      if(rows.length === 0){ wrap.innerHTML = '<div class="empty-state">Niente in sospeso — tutto regolato.</div>'; return; }
+      if(rows.length === 0){ wrap.innerHTML = '<div class="empty-state">'+t('scad.nothingPending')+'</div>'; return; }
       wrap.innerHTML = rows.map(r=>{
-        const dueLabel = r.inv.due_date ? new Date(r.inv.due_date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}) : 'senza scadenza';
+        const dueLabel = r.inv.due_date ? new Date(r.inv.due_date).toLocaleDateString(localeTag(),{day:'2-digit',month:'2-digit',year:'numeric'}) : t('scad.noDueDate');
         const noteStyle = r.overdue ? 'color:var(--over);font-weight:600;' : 'color:var(--ink-faint);';
         return `
           <div class="list-row">
             <div class="list-main">
-              <span class="list-cat">${r.inv.number} — ${r.inv.counterparty_name||'(senza nome)'}</span>
+              <span class="list-cat">${r.inv.number} — ${r.inv.counterparty_name||t('fatt.noName')}</span>
               <span class="list-note" style="${noteStyle}">${dueLabel}${r.daysInfo ? ' · '+r.daysInfo : ''}</span>
             </div>
             <div class="list-right">
@@ -1601,7 +1601,7 @@
     // Raccogli fatture non saldate con scadenza (o data fattura se manca la scadenza)
     const unpaid = state.invoices.filter(i => !i.paid);
     if(unpaid.length === 0){
-      projWrap.innerHTML = '<div class="empty-state">Nessuna fattura in sospeso — nulla da proiettare, la liquidità resta quella attuale.</div>';
+      projWrap.innerHTML = '<div class="empty-state">'+t('cf.noPending')+'</div>';
       return;
     }
 
@@ -1620,12 +1620,12 @@
 
     const sortedKeys = Object.keys(monthBuckets).sort();
     let running = currentLiquidity;
-    projWrap.innerHTML = '<table><tr><th>Mese</th><th style="text-align:right;">Incassi previsti</th><th style="text-align:right;">Pagamenti previsti</th><th style="text-align:right;">Saldo cumulato</th></tr>' +
+    projWrap.innerHTML = '<table><tr><th>'+t('cf.month')+'</th><th style="text-align:right;">'+t('cf.expectedIn')+'</th><th style="text-align:right;">'+t('cf.expectedOut')+'</th><th style="text-align:right;">'+t('cf.runningBalance')+'</th></tr>' +
       sortedKeys.map(key=>{
         const b = monthBuckets[key];
         running = running + b.in - b.out;
         const [y,m] = key.split('-');
-        const label = new Date(Number(y), Number(m)-1, 1).toLocaleDateString('it-IT',{month:'long', year:'numeric'});
+        const label = new Date(Number(y), Number(m)-1, 1).toLocaleDateString(localeTag(),{month:'long', year:'numeric'});
         const runningStyle = running < 0 ? 'color:var(--over);font-weight:700;' : 'font-weight:700;';
         return '<tr><td>'+label.charAt(0).toUpperCase()+label.slice(1)+'</td>' +
           '<td style="text-align:right;color:var(--green);" class="mono">+ € '+fmt(b.in)+'</td>' +
@@ -1933,7 +1933,7 @@
     if(!sel) return;
     const wantType = currentInvoiceType === 'emessa' ? 'cliente' : 'fornitore';
     const relevant = state.partners.filter(p => p.type === wantType || p.type === 'entrambi');
-    sel.innerHTML = '<option value="">— Inserisci manualmente qui sotto —</option>' +
+    sel.innerHTML = '<option value="">' + t('fatt.manualEntry') + '</option>' +
       relevant.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   }
 
@@ -2372,12 +2372,10 @@
       btn.classList.add('active');
       currentInvoiceType = btn.dataset.type;
       const isEmessa = currentInvoiceType === 'emessa';
-      document.getElementById('invoiceFormTitle').textContent = isEmessa ? 'Nuova fattura emessa' : 'Nuova fattura ricevuta';
-      document.getElementById('invoiceFormHint').textContent = isEmessa
-        ? 'Registra una fattura emessa a un cliente — genera da sola la scrittura contabile con IVA.'
-        : 'Registra una fattura ricevuta da un fornitore — genera da sola la scrittura contabile con IVA.';
-      document.getElementById('invCounterpartyLabel').textContent = isEmessa ? 'Cliente' : 'Fornitore';
-      document.getElementById('invAccountLabel').textContent = isEmessa ? 'Conto ricavo' : 'Conto costo';
+      document.getElementById('invoiceFormTitle').textContent = isEmessa ? t('fatt.newIssued') : t('fatt.newReceived');
+      document.getElementById('invoiceFormHint').textContent = isEmessa ? t('fatt.newIssuedHint') : t('fatt.newReceivedHint');
+      document.getElementById('invCounterpartyLabel').textContent = isEmessa ? t('anag.client') : t('anag.supplier');
+      document.getElementById('invAccountLabel').textContent = isEmessa ? t('fatt.revenueAccount') : t('fatt.costAccount');
       document.getElementById('invNumberInput').value = nextInvoiceNumber(currentInvoiceType);
       populateInvoiceAccountSelect();
       populateInvoicePartnerSelect();
@@ -2667,6 +2665,24 @@
       'anag.vatOptional':'Partita IVA (facoltativa)', 'anag.taxCodeOptional':'Codice Fiscale (facoltativo)', 'anag.emailOptional':'Email (facoltativa)',
       'anag.phoneOptional':'Telefono (facoltativo)', 'anag.addressOptional':'Indirizzo (facoltativo)', 'anag.notesOptional':'Note (facoltative)',
       'btn.save':'Salva', 'anag.savedPartners':'Clienti e fornitori salvati',
+      'fatt.issued':'Emesse', 'fatt.received':'Ricevute', 'fatt.newIssued':'Nuova fattura emessa', 'fatt.newReceived':'Nuova fattura ricevuta',
+      'fatt.newIssuedHint':'Registra una fattura emessa a un cliente — genera da sola la scrittura contabile con IVA.',
+      'fatt.newReceivedHint':'Registra una fattura ricevuta da un fornitore — genera da sola la scrittura contabile con IVA.',
+      'fatt.number':'Numero', 'fatt.chooseFromPartners':'Scegli da anagrafica (facoltativo)', 'fatt.manualEntry':'— Inserisci manualmente qui sotto —',
+      'fatt.dueDate':'Scadenza pagamento (facoltativa)', 'fatt.revenueAccount':'Conto ricavo', 'fatt.costAccount':'Conto costo',
+      'fatt.saveInvoice':'Registra fattura', 'fatt.invoiceList':'Elenco fatture',
+      'fatt.collected':'Incassata', 'fatt.paidStatus':'Pagata', 'fatt.noName':'(senza nome)', 'fatt.due':'scadenza',
+      'fatt.markUnpaidPre':'Segna come non ', 'fatt.markPaidPre':'Segna come ', 'fatt.printPdf':'Stampa/PDF', 'fatt.noInvoicesYet':'Nessuna fattura ancora.',
+      'btn.delete':'Elimina',
+      'scad.toCollect':'📥 Da incassare', 'scad.toCollectHint':'Fatture emesse non ancora segnate come incassate, ordinate per scadenza — quelle scadute o vicine sono evidenziate.',
+      'scad.toPay':'📤 Da pagare', 'scad.toPayHint':'Fatture ricevute non ancora segnate come pagate, ordinate per scadenza.',
+      'scad.toCollectShort':'Da incassare', 'scad.toPayShort':'Da pagare',
+      'scad.overdueBy':'scaduta da', 'scad.days':'giorni', 'scad.dueToday':'scade oggi', 'scad.inDays':'tra',
+      'scad.nothingPending':'Niente in sospeso — tutto regolato.', 'scad.noDueDate':'senza scadenza',
+      'cf.currentLiquidity':'Liquidità attuale', 'cf.currentLiquidityHint':'Somma dei conti bancari/cassa nel piano dei conti (codici 1000–1099).',
+      'cf.projection':'Proiezione mese per mese', 'cf.projectionHint':'⚠️ Calcolata solo dalle fatture registrate con scadenza — non tiene conto di stipendi, F24, o altre spese/entrate non fatturate. Uno strumento indicativo, non un bilancio di previsione ufficiale.',
+      'cf.noPending':'Nessuna fattura in sospeso — nulla da proiettare, la liquidità resta quella attuale.',
+      'cf.month':'Mese', 'cf.expectedIn':'Incassi previsti', 'cf.expectedOut':'Pagamenti previsti', 'cf.runningBalance':'Saldo cumulato',
     },
     en: {
       'auth.subtitle':'Sign in with the same credentials as Le Mie Finanze, or sign up directly here.',
@@ -2711,6 +2727,24 @@
       'anag.vatOptional':'VAT number (optional)', 'anag.taxCodeOptional':'Tax code (optional)', 'anag.emailOptional':'Email (optional)',
       'anag.phoneOptional':'Phone (optional)', 'anag.addressOptional':'Address (optional)', 'anag.notesOptional':'Notes (optional)',
       'btn.save':'Save', 'anag.savedPartners':'Saved clients and suppliers',
+      'fatt.issued':'Issued', 'fatt.received':'Received', 'fatt.newIssued':'New issued invoice', 'fatt.newReceived':'New received invoice',
+      'fatt.newIssuedHint':'Record an invoice issued to a client — it automatically generates the accounting entry with VAT.',
+      'fatt.newReceivedHint':'Record an invoice received from a supplier — it automatically generates the accounting entry with VAT.',
+      'fatt.number':'Number', 'fatt.chooseFromPartners':'Choose from contacts (optional)', 'fatt.manualEntry':'— Enter manually below —',
+      'fatt.dueDate':'Payment due date (optional)', 'fatt.revenueAccount':'Revenue account', 'fatt.costAccount':'Cost account',
+      'fatt.saveInvoice':'Post invoice', 'fatt.invoiceList':'Invoice list',
+      'fatt.collected':'Collected', 'fatt.paidStatus':'Paid', 'fatt.noName':'(no name)', 'fatt.due':'due',
+      'fatt.markUnpaidPre':'Mark as not ', 'fatt.markPaidPre':'Mark as ', 'fatt.printPdf':'Print/PDF', 'fatt.noInvoicesYet':'No invoices yet.',
+      'btn.delete':'Delete',
+      'scad.toCollect':'📥 To collect', 'scad.toCollectHint':'Issued invoices not yet marked as collected, sorted by due date — overdue or upcoming ones are highlighted.',
+      'scad.toPay':'📤 To pay', 'scad.toPayHint':'Received invoices not yet marked as paid, sorted by due date.',
+      'scad.toCollectShort':'To collect', 'scad.toPayShort':'To pay',
+      'scad.overdueBy':'overdue by', 'scad.days':'days', 'scad.dueToday':'due today', 'scad.inDays':'in',
+      'scad.nothingPending':'Nothing pending — all settled.', 'scad.noDueDate':'no due date',
+      'cf.currentLiquidity':'Current liquidity', 'cf.currentLiquidityHint':'Sum of bank/cash accounts in the chart of accounts (codes 1000–1099).',
+      'cf.projection':'Month-by-month projection', 'cf.projectionHint':"⚠️ Calculated only from invoices with a due date — doesn't account for payroll, tax payments, or other unbilled expenses/income. An indicative tool, not an official forecast statement.",
+      'cf.noPending':'No pending invoices — nothing to project, liquidity stays as is.',
+      'cf.month':'Month', 'cf.expectedIn':'Expected income', 'cf.expectedOut':'Expected payments', 'cf.runningBalance':'Running balance',
     },
     de: {
       'auth.subtitle':'Melde dich mit denselben Zugangsdaten wie bei Le Mie Finanze an, oder registriere dich direkt hier.',
@@ -2755,6 +2789,24 @@
       'anag.vatOptional':'USt-IdNr. (optional)', 'anag.taxCodeOptional':'Steuernummer (optional)', 'anag.emailOptional':'E-Mail (optional)',
       'anag.phoneOptional':'Telefon (optional)', 'anag.addressOptional':'Adresse (optional)', 'anag.notesOptional':'Notizen (optional)',
       'btn.save':'Speichern', 'anag.savedPartners':'Gespeicherte Kunden und Lieferanten',
+      'fatt.issued':'Ausgestellt', 'fatt.received':'Erhalten', 'fatt.newIssued':'Neue ausgestellte Rechnung', 'fatt.newReceived':'Neue erhaltene Rechnung',
+      'fatt.newIssuedHint':'Erfasse eine an einen Kunden ausgestellte Rechnung — die Buchung mit MwSt. wird automatisch erstellt.',
+      'fatt.newReceivedHint':'Erfasse eine von einem Lieferanten erhaltene Rechnung — die Buchung mit MwSt. wird automatisch erstellt.',
+      'fatt.number':'Nummer', 'fatt.chooseFromPartners':'Aus Kontakten wählen (optional)', 'fatt.manualEntry':'— Unten manuell eingeben —',
+      'fatt.dueDate':'Zahlungsfrist (optional)', 'fatt.revenueAccount':'Ertragskonto', 'fatt.costAccount':'Kostenkonto',
+      'fatt.saveInvoice':'Rechnung buchen', 'fatt.invoiceList':'Rechnungsliste',
+      'fatt.collected':'Eingegangen', 'fatt.paidStatus':'Bezahlt', 'fatt.noName':'(kein Name)', 'fatt.due':'fällig',
+      'fatt.markUnpaidPre':'Als nicht markieren: ', 'fatt.markPaidPre':'Markieren als ', 'fatt.printPdf':'Drucken/PDF', 'fatt.noInvoicesYet':'Noch keine Rechnungen.',
+      'btn.delete':'Löschen',
+      'scad.toCollect':'📥 Offene Forderungen', 'scad.toCollectHint':'Ausgestellte Rechnungen, die noch nicht als eingegangen markiert sind, nach Fälligkeit sortiert — überfällige oder bald fällige sind hervorgehoben.',
+      'scad.toPay':'📤 Offene Verbindlichkeiten', 'scad.toPayHint':'Erhaltene Rechnungen, die noch nicht als bezahlt markiert sind, nach Fälligkeit sortiert.',
+      'scad.toCollectShort':'Offen', 'scad.toPayShort':'Offen',
+      'scad.overdueBy':'überfällig seit', 'scad.days':'Tagen', 'scad.dueToday':'heute fällig', 'scad.inDays':'in',
+      'scad.nothingPending':'Nichts offen — alles beglichen.', 'scad.noDueDate':'keine Fälligkeit',
+      'cf.currentLiquidity':'Aktuelle Liquidität', 'cf.currentLiquidityHint':'Summe der Bank-/Kassenkonten im Kontenplan (Codes 1000–1099).',
+      'cf.projection':'Monatliche Prognose', 'cf.projectionHint':'⚠️ Nur aus Rechnungen mit Fälligkeitsdatum berechnet — berücksichtigt keine Gehälter, Steuerzahlungen oder andere nicht fakturierte Ausgaben/Einnahmen. Ein Richtwert, keine offizielle Planbilanz.',
+      'cf.noPending':'Keine offenen Rechnungen — nichts zu prognostizieren, die Liquidität bleibt unverändert.',
+      'cf.month':'Monat', 'cf.expectedIn':'Erwartete Einnahmen', 'cf.expectedOut':'Erwartete Zahlungen', 'cf.runningBalance':'Kumulierter Saldo',
     }
   };
   function currentLang(){ return (currentCompany && currentCompany.language) || (function(){ try{ return localStorage.getItem('bizLang') || 'it'; }catch(e){ return 'it'; } })(); }
