@@ -58,6 +58,21 @@
   button.icon-btn{background:none;border:none;color:var(--ink-faint);padding:4px 8px;font-size:15px;}
   button.icon-btn:hover{color:var(--accent);}
   .theme-appearance-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);cursor:pointer;background:var(--surface);color:var(--ink-soft);position:relative;overflow:hidden;}
+  .currency-picker{position:relative;}
+  .currency-picker-btn{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer;font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink-soft);height:34px;box-sizing:border-box;}
+  .currency-picker-btn:hover{color:var(--accent);border-color:var(--accent);}
+  .currency-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);box-shadow:var(--card-shadow);padding:6px;min-width:200px;max-width:calc(100vw - 32px);z-index:1200;backdrop-filter:blur(var(--card-blur));}
+  .currency-menu.open{display:block;}
+  .currency-menu button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);}
+  .currency-menu button:hover{background:var(--accent-soft);color:var(--accent);}
+  .currency-menu button.active{background:var(--accent);color:var(--accent-contrast);}
+  .currency-menu .cur-sym{font-family:var(--mono);width:34px;flex-shrink:0;font-weight:700;}
+  .currency-menu .cur-label{margin-left:auto;font-size:11px;font-weight:500;color:var(--ink-faint);}
+  .currency-menu button.active .cur-label{color:rgba(255,255,255,0.75);}
+  @media(max-width:640px){
+    .currency-menu{position:fixed;top:auto;left:0;right:0;bottom:0;border-radius:16px 16px 0 0;max-width:100%;min-width:0;max-height:70vh;overflow-y:auto;padding:14px;}
+    .currency-menu button{padding:14px 10px;font-size:14px;}
+  }
   .theme-appearance-btn:hover{border-color:var(--accent);}
   #accentColorPicker{position:absolute;inset:0;opacity:0;cursor:pointer;}
   html[data-hide-amounts="true"] .mono,
@@ -114,6 +129,17 @@
 <div id="authScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
   <div class="card" style="width:100%;max-width:400px;position:relative;">
     <div style="position:absolute;top:14px;right:14px;display:flex;gap:8px;">
+      <div class="currency-picker" id="authLangPicker">
+        <button type="button" class="currency-picker-btn" id="authLangPickerBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.7 4 6 4 9s-1.5 6.3-4 9c-2.5-2.7-4-6-4-9s1.5-6.3 4-9z" stroke="currentColor" stroke-width="1.6"/></svg>
+          <span id="authLangPickerCode">IT</span>
+        </button>
+        <div class="currency-menu" id="authLangMenu">
+          <button type="button" class="auth-lang-btn" data-lang="it"><span class="cur-sym">IT</span> Italiano</button>
+          <button type="button" class="auth-lang-btn" data-lang="en"><span class="cur-sym">EN</span> English</button>
+          <button type="button" class="auth-lang-btn" data-lang="de"><span class="cur-sym">DE</span> Deutsch</button>
+        </div>
+      </div>
       <button class="theme-appearance-btn" id="accentColorSwatchAuth" title="Colore accento">
         <input type="color" id="accentColorPickerAuth" title="Colore accento">
       </button>
@@ -123,13 +149,13 @@
       </button>
     </div>
     <h1 style="font-size:26px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
-    <p class="hint" style="margin-bottom:20px;">Accedi con le stesse credenziali di Le Mie Finanze, oppure registrati direttamente qui.</p>
+    <p class="hint" style="margin-bottom:20px;" data-i18n="auth.subtitle">Accedi con le stesse credenziali di Le Mie Finanze, oppure registrati direttamente qui.</p>
     <div id="authError" style="display:none;margin-top:0;margin-bottom:14px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--over-bg);color:var(--over);font-size:13px;"></div>
 
     <div id="loginFormWrap">
-      <label>Email</label>
+      <label data-i18n="lbl.email">Email</label>
       <input type="email" id="authEmail" placeholder="tu@esempio.com" autocomplete="username">
-      <label>Password</label>
+      <label data-i18n="lbl.password">Password</label>
       <div style="position:relative;">
         <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" style="padding-right:42px;">
         <button type="button" class="password-toggle-btn" data-target="authPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-faint);padding:4px;display:flex;">
@@ -137,15 +163,15 @@
           <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A10.9 10.9 0 0112 5c7 0 11 7 11 7a17.6 17.6 0 01-3.2 4M6.5 6.6C3.7 8.3 1 12 1 12s2.3 4 6 5.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
       </div>
-      <button class="primary" id="authLoginBtn" type="button" style="width:100%;">Accedi</button>
-      <button class="ghost" id="authSignupBtn" type="button" style="width:100%;margin-top:8px;" disabled>Non hai un account? Registrati</button>
+      <button class="primary" id="authLoginBtn" type="button" style="width:100%;" data-i18n="btn.login">Accedi</button>
+      <button class="ghost" id="authSignupBtn" type="button" style="width:100%;margin-top:8px;" disabled data-i18n="btn.signup">Non hai un account? Registrati</button>
       <div style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;width:100%;box-sizing:border-box;">
         <input type="checkbox" id="acceptTermsCheckbox" style="flex:0 0 auto;width:16px;height:16px;margin:2px 0 0 0;">
-        <label for="acceptTermsCheckbox" style="display:block;flex:1 1 0%;min-width:0;margin:0;padding:0;font-weight:400;font-size:12.5px;line-height:1.4;color:var(--ink-soft);">Ho letto e accetto <a href="#" id="openPrivacyLink" style="color:var(--accent);">l'Informativa Privacy</a> e i <a href="#" id="openTermsLink" style="color:var(--accent);">Termini di Servizio</a>.</label>
+        <label for="acceptTermsCheckbox" id="acceptTermsLabel" style="display:block;flex:1 1 0%;min-width:0;margin:0;padding:0;font-weight:400;font-size:12.5px;line-height:1.4;color:var(--ink-soft);">Ho letto e accetto <a href="#" id="openPrivacyLink" style="color:var(--accent);">l'Informativa Privacy</a> e i <a href="#" id="openTermsLink" style="color:var(--accent);">Termini di Servizio</a>.</label>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin:16px 0;">
         <div style="flex:1;height:1px;background:var(--line);"></div>
-        <span style="font-size:12px;color:var(--ink-faint);">oppure</span>
+        <span style="font-size:12px;color:var(--ink-faint);" data-i18n="auth.orDivider">oppure</span>
         <div style="flex:1;height:1px;background:var(--line);"></div>
       </div>
       <button class="ghost" id="googleSignInBtn" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;">
@@ -155,26 +181,26 @@
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        <span>Accedi con Google</span>
+        <span data-i18n="auth.googleSignIn">Accedi con Google</span>
       </button>
       <div style="text-align:center;margin-top:14px;">
-        <a href="#" id="authForgotLink" style="font-size:12.5px;color:var(--ink-soft);">Password dimenticata?</a>
+        <a href="#" id="authForgotLink" style="font-size:12.5px;color:var(--ink-soft);" data-i18n="auth.forgotLink">Password dimenticata?</a>
       </div>
     </div>
 
     <div id="forgotFormWrap" style="display:none;">
-      <div class="hint" style="margin-bottom:14px;">Inserisci la tua email — ti mandiamo un link per reimpostare la password.</div>
-      <label>Email</label>
+      <div class="hint" style="margin-bottom:14px;" data-i18n="auth.forgotHint">Inserisci la tua email — ti mandiamo un link per reimpostare la password.</div>
+      <label data-i18n="lbl.email">Email</label>
       <input type="email" id="forgotEmail" placeholder="tu@esempio.com" autocomplete="username">
-      <button class="primary" id="forgotSendBtn" type="button" style="width:100%;margin-top:6px;">Invia link a email</button>
+      <button class="primary" id="forgotSendBtn" type="button" style="width:100%;margin-top:6px;" data-i18n="auth.forgotSendBtn">Invia link a email</button>
       <div style="text-align:center;margin-top:14px;">
-        <a href="#" id="forgotBackLink" style="font-size:12.5px;color:var(--ink-soft);">← Torna al login</a>
+        <a href="#" id="forgotBackLink" style="font-size:12.5px;color:var(--ink-soft);" data-i18n="auth.forgotBackLink">← Torna al login</a>
       </div>
     </div>
 
     <div id="resetFormWrap" style="display:none;">
-      <div class="hint" style="margin-bottom:14px;">Scegli la tua nuova password.</div>
-      <label>Nuova password</label>
+      <div class="hint" style="margin-bottom:14px;" data-i18n="auth.resetHint">Scegli la tua nuova password.</div>
+      <label data-i18n="auth.newPassword">Nuova password</label>
       <div style="position:relative;">
         <input type="password" id="resetNewPassword" placeholder="••••••••" autocomplete="new-password" style="padding-right:42px;">
         <button type="button" class="password-toggle-btn" data-target="resetNewPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-faint);padding:4px;display:flex;">
@@ -182,10 +208,10 @@
           <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A10.9 10.9 0 0112 5c7 0 11 7 11 7a17.6 17.6 0 01-3.2 4M6.5 6.6C3.7 8.3 1 12 1 12s2.3 4 6 5.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
       </div>
-      <button class="primary" id="resetConfirmBtn" type="button" style="width:100%;margin-top:6px;">Salva nuova password</button>
+      <button class="primary" id="resetConfirmBtn" type="button" style="width:100%;margin-top:6px;" data-i18n="auth.resetConfirmBtn">Salva nuova password</button>
     </div>
 
-    <div id="authLoading" style="display:none;text-align:center;margin-top:14px;font-size:13px;color:var(--ink-soft);">Un momento…</div>
+    <div id="authLoading" style="display:none;text-align:center;margin-top:14px;font-size:13px;color:var(--ink-soft);" data-i18n="auth.loading">Un momento…</div>
   </div>
 </div>
 
@@ -260,6 +286,29 @@
     <h1 style="font-size:22px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
     <div style="display:flex;align-items:center;gap:10px;">
       <span class="hint" id="companyNameLabel"></span>
+      <div class="currency-picker" id="langPicker">
+        <button type="button" class="currency-picker-btn" id="langPickerBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.7 4 6 4 9s-1.5 6.3-4 9c-2.5-2.7-4-6-4-9s1.5-6.3 4-9z" stroke="currentColor" stroke-width="1.6"/></svg>
+          <span id="langPickerCode">IT</span>
+        </button>
+        <div class="currency-menu" id="langMenu">
+          <button type="button" data-lang="it"><span class="cur-sym">IT</span> Italiano</button>
+          <button type="button" data-lang="en"><span class="cur-sym">EN</span> English</button>
+          <button type="button" data-lang="de"><span class="cur-sym">DE</span> Deutsch</button>
+        </div>
+      </div>
+      <div class="currency-picker" id="currencyPicker">
+        <button type="button" class="currency-picker-btn" id="currencyPickerBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="15" r="6.5" stroke="currentColor" stroke-width="1.6"/></svg>
+          <span id="currencyPickerCode">EUR</span>
+        </button>
+        <div class="currency-menu" id="currencyMenu">
+          <button type="button" data-cur="EUR"><span class="cur-sym">€</span> EUR <span class="cur-label">Euro</span></button>
+          <button type="button" data-cur="CHF"><span class="cur-sym">CHF</span> CHF <span class="cur-label">Franco svizzero</span></button>
+          <button type="button" data-cur="GBP"><span class="cur-sym">£</span> GBP <span class="cur-label">Sterlina inglese</span></button>
+          <button type="button" data-cur="USD"><span class="cur-sym">$</span> USD <span class="cur-label">Dollaro americano</span></button>
+        </div>
+      </div>
       <button class="theme-appearance-btn" id="hideAmountsBtn" type="button" title="Nascondi/mostra i numeri">
         <svg id="hideAmountsIconEye" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
         <svg id="hideAmountsIconEyeOff" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A10.9 10.9 0 0112 5c7 0 11 7 11 7a17.6 17.6 0 01-3.2 4M6.5 6.6C3.7 8.3 1 12 1 12s2.3 4 6 5.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -301,34 +350,34 @@
   <div id="mainAppWrap" style="display:none;">
     <div class="card" style="padding:6px;margin-bottom:16px;">
       <div class="tabs">
-        <button class="tab active" data-panel="dashboard">Dashboard</button>
-        <button class="tab" data-panel="conti">Piano dei conti</button>
-        <button class="tab" data-panel="primanota">Prima nota</button>
-        <button class="tab" data-panel="anagrafica">Anagrafica</button>
-        <button class="tab" data-panel="fatture">Fatture</button>
-        <button class="tab" data-panel="scadenzario">Scadenzario</button>
-        <button class="tab" data-panel="cashflow">Cash Flow</button>
-        <button class="tab" data-panel="bilanci">Bilanci</button>
-        <button class="tab" data-panel="iva">IVA</button>
-        <button class="tab" data-panel="ammortamenti">Ammortamenti</button>
-        <button class="tab" data-panel="contibancari">Conti bancari</button>
-        <button class="tab" data-panel="stipendi">Stipendi</button>
+        <button class="tab active" data-panel="dashboard" data-i18n="tab.dashboard">Dashboard</button>
+        <button class="tab" data-panel="conti" data-i18n="tab.conti">Piano dei conti</button>
+        <button class="tab" data-panel="primanota" data-i18n="tab.primanota">Prima nota</button>
+        <button class="tab" data-panel="anagrafica" data-i18n="tab.anagrafica">Anagrafica</button>
+        <button class="tab" data-panel="fatture" data-i18n="tab.fatture">Fatture</button>
+        <button class="tab" data-panel="scadenzario" data-i18n="tab.scadenzario">Scadenzario</button>
+        <button class="tab" data-panel="cashflow" data-i18n="tab.cashflow">Cash Flow</button>
+        <button class="tab" data-panel="bilanci" data-i18n="tab.bilanci">Bilanci</button>
+        <button class="tab" data-panel="iva" data-i18n="tab.iva">IVA</button>
+        <button class="tab" data-panel="ammortamenti" data-i18n="tab.ammortamenti">Ammortamenti</button>
+        <button class="tab" data-panel="contibancari" data-i18n="tab.contibancari">Conti bancari</button>
+        <button class="tab" data-panel="stipendi" data-i18n="tab.stipendi">Stipendi</button>
       </div>
     </div>
 
     <!-- DASHBOARD -->
     <div class="panel" id="panel-dashboard">
       <div class="card">
-        <h3>Situazione generale</h3>
-        <div class="hint box" id="dashboardYearHint">Anno in corso — i numeri sotto sommano tutte le registrazioni dell'anno.</div>
+        <h3 data-i18n="dash.overview">Situazione generale</h3>
+        <div class="hint box" id="dashboardYearHint" data-i18n="dash.yearHint">Anno in corso — i numeri sotto sommano tutte le registrazioni dell'anno.</div>
         <div id="dashboardStatsWrap" class="stat-grid"></div>
       </div>
       <div class="card">
-        <h3>Ricavi e costi mese per mese</h3>
+        <h3 data-i18n="dash.chartTitle">Ricavi e costi mese per mese</h3>
         <div class="chart-wrap"><canvas id="dashboardChart"></canvas></div>
       </div>
       <div class="card">
-        <h3>Dettaglio conti</h3>
+        <h3 data-i18n="dash.accountsDetail">Dettaglio conti</h3>
         <div id="dashboardWrap"></div>
       </div>
     </div>
@@ -747,37 +796,37 @@
   <div style="position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;gap:12px;z-index:1;">
     <button id="closeSettingsBtn" type="button" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--ink);">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Chiudi</span>
+      <span data-i18n="btn.close">Chiudi</span>
     </button>
-    <h2 style="margin:0;font-size:18px;">Impostazioni</h2>
+    <h2 style="margin:0;font-size:18px;" data-i18n="settings.title">Impostazioni</h2>
   </div>
   <div style="max-width:680px;margin:0 auto;padding:20px;">
     <div class="card">
-      <h3>Dati azienda</h3>
-      <div class="hint box">Modifica i dati della tua azienda — usati nell'intestazione delle fatture stampate.</div>
+      <h3 data-i18n="settings.companyData">Dati azienda</h3>
+      <div class="hint box" data-i18n="settings.companyDataHint">Modifica i dati della tua azienda — usati nell'intestazione delle fatture stampate.</div>
       <div class="form-grid">
         <div class="full">
-          <label>Nome azienda</label>
+          <label data-i18n="settings.companyName">Nome azienda</label>
           <input type="text" id="settingsCompanyNameInput" placeholder="es. Rossi Srl">
         </div>
         <div>
-          <label>Partita IVA (facoltativo)</label>
+          <label data-i18n="settings.vatOptional">Partita IVA (facoltativo)</label>
           <input type="text" id="settingsCompanyVatInput" placeholder="es. IT01234567890">
         </div>
         <div>
-          <label>Forma di bilancio</label>
+          <label data-i18n="settings.balanceForm">Forma di bilancio</label>
           <select id="settingsCompanyFormSelect">
-            <option value="abbreviated">Abbreviata</option>
-            <option value="ordinary">Ordinaria</option>
+            <option value="abbreviated" data-i18n="settings.abbreviated">Abbreviata</option>
+            <option value="ordinary" data-i18n="settings.ordinary">Ordinaria</option>
           </select>
         </div>
       </div>
-      <button class="primary" id="saveCompanySettingsBtn" type="button">Salva modifiche</button>
+      <button class="primary" id="saveCompanySettingsBtn" type="button" data-i18n="btn.saveChanges">Salva modifiche</button>
       <div id="saveCompanySettingsMsg" style="display:none;margin-top:10px;"></div>
     </div>
     <div class="card">
-      <h3>Aspetto</h3>
-      <div class="hint box">Puoi cambiare tema e colore anche dai pulsanti in alto, vicino a "Esci" — sono gli stessi controlli, qui solo più comodi da trovare.</div>
+      <h3 data-i18n="settings.appearance">Aspetto</h3>
+      <div class="hint box" data-i18n="settings.appearanceHint">Puoi cambiare tema e colore anche dai pulsanti in alto, vicino a "Esci" — sono gli stessi controlli, qui solo più comodi da trovare.</div>
       <div style="display:flex;gap:12px;align-items:center;">
         <button class="theme-appearance-btn" id="accentColorSwatchSettings" title="Colore accento" style="width:44px;height:44px;">
           <input type="color" id="accentColorPickerSettings" title="Colore accento">
@@ -785,15 +834,15 @@
         <button class="ghost" id="themeToggleBtnSettings" type="button" style="display:flex;align-items:center;gap:8px;">
           <svg id="themeIconSunSettings" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.5M12 19v2.5M21.5 12H19M5 12H2.5M18.36 5.64l-1.77 1.77M7.41 16.59l-1.77 1.77M18.36 18.36l-1.77-1.77M7.41 7.41L5.64 5.64" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <svg id="themeIconMoonSettings" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
-          <span>Tema chiaro/scuro</span>
+          <span data-i18n="settings.themeLabel">Tema chiaro/scuro</span>
         </button>
       </div>
     </div>
     <div class="card">
-      <h3>Documenti legali</h3>
+      <h3 data-i18n="settings.legalDocs">Documenti legali</h3>
       <div style="display:flex;gap:14px;flex-wrap:wrap;">
-        <a href="#" id="settingsOpenPrivacyLink" style="color:var(--accent);font-size:13px;">Informativa Privacy</a>
-        <a href="#" id="settingsOpenTermsLink" style="color:var(--accent);font-size:13px;">Termini di Servizio</a>
+        <a href="#" id="settingsOpenPrivacyLink" style="color:var(--accent);font-size:13px;" data-i18n="legal.privacy">Informativa Privacy</a>
+        <a href="#" id="settingsOpenTermsLink" style="color:var(--accent);font-size:13px;" data-i18n="legal.terms">Termini di Servizio</a>
       </div>
     </div>
   </div>
@@ -1209,27 +1258,30 @@
     const ricavi = sumAccountsInRange('5000','5199', year) * -1;
     const costi = sumAccountsInRange('4000','4399', year);
     const utile = ricavi - costi;
+    const sym = symbol();
+    const fv = (n)=> sym + ' ' + fmtCur(displayAmount(n));
     wrap.innerHTML = `
       <div class="stat-card">
-        <div class="stat-label">💰 Liquidità</div>
-        <div class="stat-value">€ ${fmt(liquidita)}</div>
-        <div class="stat-sub">Conti bancari e cassa, oggi</div>
+        <div class="stat-label">💰 ${t('dash.liquidity')}</div>
+        <div class="stat-value">${fv(liquidita)}</div>
+        <div class="stat-sub">${t('dash.liquiditySub')}</div>
       </div>
       <div class="stat-card stat-green">
-        <div class="stat-label">📈 Ricavi ${year}</div>
-        <div class="stat-value stat-green">€ ${fmt(ricavi)}</div>
-        <div class="stat-sub">Da inizio anno</div>
+        <div class="stat-label">📈 ${t('dash.revenue')} ${year}</div>
+        <div class="stat-value stat-green">${fv(ricavi)}</div>
+        <div class="stat-sub">${t('dash.ytdSub')}</div>
       </div>
       <div class="stat-card stat-red">
-        <div class="stat-label">📉 Costi ${year}</div>
-        <div class="stat-value stat-red">€ ${fmt(costi)}</div>
-        <div class="stat-sub">Da inizio anno</div>
+        <div class="stat-label">📉 ${t('dash.costs')} ${year}</div>
+        <div class="stat-value stat-red">${fv(costi)}</div>
+        <div class="stat-sub">${t('dash.ytdSub')}</div>
       </div>
       <div class="stat-card ${utile>=0?'stat-green':'stat-red'}">
-        <div class="stat-label">⚖️ Utile netto ${year}</div>
-        <div class="stat-value ${utile>=0?'stat-green':'stat-red'}">€ ${fmt(utile)}</div>
-        <div class="stat-sub">Ricavi − costi (gestione operativa)</div>
+        <div class="stat-label">⚖️ ${t('dash.netProfit')} ${year}</div>
+        <div class="stat-value ${utile>=0?'stat-green':'stat-red'}">${fv(utile)}</div>
+        <div class="stat-sub">${t('dash.netProfitSub')}</div>
       </div>
+      ${currentCurrency()!=='EUR' ? '<div style="grid-column:1/-1;font-size:11px;color:var(--ink-faint);margin-top:-4px;">'+ (currentLang()==='it' ? 'Solo visualizzazione — la contabilità resta in euro. Cambio: 1€ = '+fmtCur(currentRate())+' '+currentCurrency() : currentLang()==='de' ? 'Nur Anzeige — die Buchhaltung bleibt in Euro. Kurs: 1€ = '+fmtCur(currentRate())+' '+currentCurrency() : 'Display only — the ledger stays in euros. Rate: 1€ = '+fmtCur(currentRate())+' '+currentCurrency()) +'</div>' : ''}
     `;
   }
 
@@ -2151,6 +2203,20 @@
     document.getElementById('mainAppWrap').style.display = 'block';
     applyTheme(currentCompany.theme || 'dark');
     applyAccentColor(currentCompany.accent_color || (currentCompany.theme==='light' ? '#8C6A2F' : '#E0B255'));
+    document.documentElement.lang = currentCompany.language || 'it';
+    applyStaticTranslations();
+    ['langPickerCode','authLangPickerCode'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.textContent = (currentCompany.language || 'it').toUpperCase();
+    });
+    document.querySelectorAll('#langMenu button, #authLangMenu button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.lang === (currentCompany.language || 'it'));
+    });
+    document.getElementById('currencyPickerCode').textContent = currentCompany.currency || 'EUR';
+    document.querySelectorAll('#currencyMenu button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.cur === (currentCompany.currency || 'EUR'));
+    });
+    updateExchangeRatesFromAPI();
     document.getElementById('settingsCompanyNameInput').value = currentCompany.name || '';
     document.getElementById('settingsCompanyVatInput').value = currentCompany.vat_number || '';
     document.getElementById('settingsCompanyFormSelect').value = currentCompany.balance_sheet_form || 'abbreviated';
@@ -2575,6 +2641,200 @@
     renderAll();
   });
 
+  // ---------- Lingua e traduzioni ----------
+  const I18N = {
+    it: {
+      'auth.subtitle':'Accedi con le stesse credenziali di Le Mie Finanze, oppure registrati direttamente qui.',
+      'lbl.email':'Email', 'lbl.password':'Password',
+      'btn.login':'Accedi', 'btn.signup':'Non hai un account? Registrati',
+      'auth.orDivider':'oppure', 'auth.googleSignIn':'Accedi con Google', 'auth.forgotLink':'Password dimenticata?',
+      'auth.forgotHint':'Inserisci la tua email — ti mandiamo un link per reimpostare la password.',
+      'auth.forgotSendBtn':'Invia link a email', 'auth.forgotBackLink':'← Torna al login',
+      'auth.resetHint':'Scegli la tua nuova password.', 'auth.newPassword':'Nuova password', 'auth.resetConfirmBtn':'Salva nuova password',
+      'auth.loading':'Un momento…',
+      'terms.acceptPre':"Ho letto e accetto ", 'terms.privacy':"l'Informativa Privacy", 'terms.and':' e i ', 'terms.terms':'Termini di Servizio',
+      'tab.dashboard':'Dashboard', 'tab.conti':'Piano dei conti', 'tab.primanota':'Prima nota', 'tab.anagrafica':'Anagrafica',
+      'tab.fatture':'Fatture', 'tab.scadenzario':'Scadenzario', 'tab.cashflow':'Cash Flow', 'tab.bilanci':'Bilanci',
+      'tab.iva':'IVA', 'tab.ammortamenti':'Ammortamenti', 'tab.contibancari':'Conti bancari', 'tab.stipendi':'Stipendi',
+      'dash.overview':'Situazione generale', 'dash.yearHint':"Anno in corso — i numeri sotto sommano tutte le registrazioni dell'anno.",
+      'dash.chartTitle':'Ricavi e costi mese per mese', 'dash.accountsDetail':'Dettaglio conti',
+      'dash.liquidity':'Liquidità', 'dash.liquiditySub':'Conti bancari e cassa, oggi',
+      'dash.revenue':'Ricavi', 'dash.costs':'Costi', 'dash.netProfit':'Utile netto', 'dash.ytdSub':'Da inizio anno',
+      'dash.netProfitSub':'Ricavi − costi (gestione operativa)',
+      'btn.close':'Chiudi', 'btn.saveChanges':'Salva modifiche',
+      'settings.title':'Impostazioni', 'settings.companyData':'Dati azienda',
+      'settings.companyDataHint':"Modifica i dati della tua azienda — usati nell'intestazione delle fatture stampate.",
+      'settings.companyName':'Nome azienda', 'settings.vatOptional':'Partita IVA (facoltativo)', 'settings.balanceForm':'Forma di bilancio',
+      'settings.abbreviated':'Abbreviata', 'settings.ordinary':'Ordinaria',
+      'settings.appearance':'Aspetto', 'settings.appearanceHint':'Puoi cambiare tema e colore anche dai pulsanti in alto, vicino a "Esci" — sono gli stessi controlli, qui solo più comodi da trovare.',
+      'settings.themeLabel':'Tema chiaro/scuro', 'settings.legalDocs':'Documenti legali',
+      'legal.privacy':'Informativa Privacy', 'legal.terms':'Termini di Servizio',
+      'settings.saved':'✓ Salvato.',
+    },
+    en: {
+      'auth.subtitle':'Sign in with the same credentials as Le Mie Finanze, or sign up directly here.',
+      'lbl.email':'Email', 'lbl.password':'Password',
+      'btn.login':'Sign in', 'btn.signup':"Don't have an account? Sign up",
+      'auth.orDivider':'or', 'auth.googleSignIn':'Sign in with Google', 'auth.forgotLink':'Forgot password?',
+      'auth.forgotHint':"Enter your email — we'll send you a link to reset your password.",
+      'auth.forgotSendBtn':'Send link to email', 'auth.forgotBackLink':'← Back to login',
+      'auth.resetHint':'Choose your new password.', 'auth.newPassword':'New password', 'auth.resetConfirmBtn':'Save new password',
+      'auth.loading':'One moment…',
+      'terms.acceptPre':"I have read and accept the ", 'terms.privacy':"Privacy Policy", 'terms.and':' and the ', 'terms.terms':'Terms of Service',
+      'tab.dashboard':'Dashboard', 'tab.conti':'Chart of accounts', 'tab.primanota':'Ledger', 'tab.anagrafica':'Contacts',
+      'tab.fatture':'Invoices', 'tab.scadenzario':'Due dates', 'tab.cashflow':'Cash Flow', 'tab.bilanci':'Financial statements',
+      'tab.iva':'VAT', 'tab.ammortamenti':'Depreciation', 'tab.contibancari':'Bank accounts', 'tab.stipendi':'Payroll',
+      'dash.overview':'Overview', 'dash.yearHint':"Current year — the numbers below add up all this year's entries.",
+      'dash.chartTitle':'Revenue and costs by month', 'dash.accountsDetail':'Account detail',
+      'dash.liquidity':'Liquidity', 'dash.liquiditySub':'Bank and cash accounts, today',
+      'dash.revenue':'Revenue', 'dash.costs':'Costs', 'dash.netProfit':'Net profit', 'dash.ytdSub':'Year to date',
+      'dash.netProfitSub':'Revenue − costs (operating result)',
+      'btn.close':'Close', 'btn.saveChanges':'Save changes',
+      'settings.title':'Settings', 'settings.companyData':'Company data',
+      'settings.companyDataHint':'Edit your company data — used in the header of printed invoices.',
+      'settings.companyName':'Company name', 'settings.vatOptional':'VAT number (optional)', 'settings.balanceForm':'Financial statement format',
+      'settings.abbreviated':'Abbreviated', 'settings.ordinary':'Ordinary',
+      'settings.appearance':'Appearance', 'settings.appearanceHint':'You can also change theme and colour from the buttons up top, next to "Logout" — same controls, just handier to find here.',
+      'settings.themeLabel':'Light/dark theme', 'settings.legalDocs':'Legal documents',
+      'legal.privacy':'Privacy Policy', 'legal.terms':'Terms of Service',
+      'settings.saved':'✓ Saved.',
+    },
+    de: {
+      'auth.subtitle':'Melde dich mit denselben Zugangsdaten wie bei Le Mie Finanze an, oder registriere dich direkt hier.',
+      'lbl.email':'E-Mail', 'lbl.password':'Passwort',
+      'btn.login':'Anmelden', 'btn.signup':'Noch kein Konto? Registrieren',
+      'auth.orDivider':'oder', 'auth.googleSignIn':'Mit Google anmelden', 'auth.forgotLink':'Passwort vergessen?',
+      'auth.forgotHint':'Gib deine E-Mail ein — wir senden dir einen Link zum Zurücksetzen des Passworts.',
+      'auth.forgotSendBtn':'Link per E-Mail senden', 'auth.forgotBackLink':'← Zurück zum Login',
+      'auth.resetHint':'Wähle dein neues Passwort.', 'auth.newPassword':'Neues Passwort', 'auth.resetConfirmBtn':'Neues Passwort speichern',
+      'auth.loading':'Einen Moment…',
+      'terms.acceptPre':'Ich habe die ', 'terms.privacy':'Datenschutzerklärung', 'terms.and':' und die ', 'terms.terms':'Nutzungsbedingungen gelesen und akzeptiere sie.',
+      'tab.dashboard':'Dashboard', 'tab.conti':'Kontenplan', 'tab.primanota':'Journal', 'tab.anagrafica':'Kontakte',
+      'tab.fatture':'Rechnungen', 'tab.scadenzario':'Fälligkeiten', 'tab.cashflow':'Cashflow', 'tab.bilanci':'Bilanzen',
+      'tab.iva':'MwSt.', 'tab.ammortamenti':'Abschreibungen', 'tab.contibancari':'Bankkonten', 'tab.stipendi':'Gehaltsabrechnung',
+      'dash.overview':'Gesamtübersicht', 'dash.yearHint':'Laufendes Jahr — die Zahlen unten summieren alle Buchungen des Jahres.',
+      'dash.chartTitle':'Umsatz und Kosten pro Monat', 'dash.accountsDetail':'Kontendetail',
+      'dash.liquidity':'Liquidität', 'dash.liquiditySub':'Bank- und Kassenkonten, heute',
+      'dash.revenue':'Umsatz', 'dash.costs':'Kosten', 'dash.netProfit':'Nettogewinn', 'dash.ytdSub':'Seit Jahresbeginn',
+      'dash.netProfitSub':'Umsatz − Kosten (operatives Ergebnis)',
+      'btn.close':'Schließen', 'btn.saveChanges':'Änderungen speichern',
+      'settings.title':'Einstellungen', 'settings.companyData':'Firmendaten',
+      'settings.companyDataHint':'Bearbeite die Daten deines Unternehmens — verwendet im Kopf gedruckter Rechnungen.',
+      'settings.companyName':'Firmenname', 'settings.vatOptional':'USt-IdNr. (optional)', 'settings.balanceForm':'Bilanzform',
+      'settings.abbreviated':'Verkürzt', 'settings.ordinary':'Ordentlich',
+      'settings.appearance':'Erscheinungsbild', 'settings.appearanceHint':'Du kannst Thema und Farbe auch über die Schaltflächen oben neben "Abmelden" ändern — gleiche Einstellungen, hier nur bequemer zu finden.',
+      'settings.themeLabel':'Hell-/Dunkelmodus', 'settings.legalDocs':'Rechtliche Dokumente',
+      'legal.privacy':'Datenschutzerklärung', 'legal.terms':'Nutzungsbedingungen',
+      'settings.saved':'✓ Gespeichert.',
+    }
+  };
+  function currentLang(){ return (currentCompany && currentCompany.language) || (function(){ try{ return localStorage.getItem('bizLang') || 'it'; }catch(e){ return 'it'; } })(); }
+  function localeTag(){ return { it:'it-IT', en:'en-GB', de:'de-CH' }[currentLang()] || 'it-IT'; }
+  function t(key, vars){
+    let str = (I18N[currentLang()] && I18N[currentLang()][key]) || I18N.it[key] || key;
+    if(vars){ Object.keys(vars).forEach(k=>{ str = str.split('{'+k+'}').join(vars[k]); }); }
+    return str;
+  }
+  function updateTermsLabel(){
+    const el = document.getElementById('acceptTermsLabel');
+    if(!el) return;
+    el.innerHTML = t('terms.acceptPre') + '<a href="#" id="openPrivacyLink" style="color:var(--accent);">' + t('terms.privacy') + '</a>' + t('terms.and') + '<a href="#" id="openTermsLink" style="color:var(--accent);">' + t('terms.terms') + '</a>.';
+    document.getElementById('openPrivacyLink').addEventListener('click', (e)=>{ e.preventDefault(); document.getElementById('privacyOverlay').style.display = 'block'; });
+    document.getElementById('openTermsLink').addEventListener('click', (e)=>{ e.preventDefault(); document.getElementById('termsOverlay').style.display = 'block'; });
+  }
+  function applyStaticTranslations(){
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    updateTermsLabel();
+  }
+  async function applyLanguage(lang){
+    try{ localStorage.setItem('bizLang', lang); }catch(err){}
+    document.documentElement.lang = lang;
+    applyStaticTranslations();
+    ['langPickerCode','authLangPickerCode'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.textContent = lang.toUpperCase();
+    });
+    document.querySelectorAll('#langMenu button, #authLangMenu button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.lang === lang);
+    });
+    if(currentCompany){
+      currentCompany.language = lang;
+      await supabaseClient.from('biz_companies').update({ language: lang }).eq('id', currentCompany.id);
+    }
+    renderAll();
+  }
+  document.querySelectorAll('#langMenu button, #authLangMenu button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      applyLanguage(btn.dataset.lang);
+      document.getElementById('langMenu').classList.remove('open');
+      document.getElementById('authLangMenu').classList.remove('open');
+    });
+  });
+  document.getElementById('langPickerBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.getElementById('langMenu').classList.toggle('open');
+  });
+  document.getElementById('authLangPickerBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.getElementById('authLangMenu').classList.toggle('open');
+  });
+  document.addEventListener('click', ()=>{
+    document.getElementById('langMenu').classList.remove('open');
+    document.getElementById('authLangMenu').classList.remove('open');
+    document.getElementById('currencyMenu').classList.remove('open');
+  });
+
+  // ---------- Valuta ----------
+  const CURRENCY_SYMBOLS = { EUR:'€', CHF:'CHF', GBP:'£', USD:'$' };
+  function currentCurrency(){ return (currentCompany && currentCompany.currency) || 'EUR'; }
+  function symbol(){ return CURRENCY_SYMBOLS[currentCurrency()] || currentCurrency(); }
+  function currentRate(){
+    const cur = currentCurrency();
+    if(cur === 'EUR') return 1;
+    return (currentCompany && currentCompany.rates && currentCompany.rates[cur]) || 1;
+  }
+  function displayAmount(amountInEur){ return amountInEur * currentRate(); }
+  function fmtCur(n){
+    const v = (n===undefined||n===null||isNaN(n)) ? 0 : n;
+    return v.toLocaleString(localeTag(), {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  async function updateExchangeRatesFromAPI(){
+    try{
+      const res = await fetch('https://api.frankfurter.dev/v1/latest?base=EUR&symbols=CHF,GBP,USD');
+      if(!res.ok) return;
+      const data = await res.json();
+      if(data.rates && data.rates.CHF && data.rates.GBP && data.rates.USD && currentCompany){
+        currentCompany.rates = { CHF: data.rates.CHF, GBP: data.rates.GBP, USD: data.rates.USD };
+        currentCompany.ratesUpdatedAt = data.date;
+        await supabaseClient.from('biz_companies').update({ rates: currentCompany.rates, rates_updated_at: data.date }).eq('id', currentCompany.id);
+        renderAll();
+      }
+    }catch(err){ console.error('aggiornamento tassi fallito', err); }
+  }
+  async function applyCurrency(cur){
+    if(currentCompany){
+      currentCompany.currency = cur;
+      await supabaseClient.from('biz_companies').update({ currency: cur }).eq('id', currentCompany.id);
+    }
+    document.getElementById('currencyPickerCode').textContent = cur;
+    document.querySelectorAll('#currencyMenu button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.cur === cur);
+    });
+    renderAll();
+  }
+  document.querySelectorAll('#currencyMenu button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      applyCurrency(btn.dataset.cur);
+      document.getElementById('currencyMenu').classList.remove('open');
+    });
+  });
+  document.getElementById('currencyPickerBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.getElementById('currencyMenu').classList.toggle('open');
+  });
+
   // ---------- Tema chiaro/scuro e colore accento ----------
   function applyTheme(theme){
     document.documentElement.setAttribute('data-theme', theme);
@@ -2681,6 +2941,17 @@
     let savedAccent = null;
     try{ savedAccent = localStorage.getItem('bizAccent'); }catch(err){}
     applyAccentColor(savedAccent || (savedTheme==='light' ? '#8C6A2F' : '#E0B255'));
+    let savedLang = 'it';
+    try{ savedLang = localStorage.getItem('bizLang') || 'it'; }catch(err){}
+    applyStaticTranslations();
+    document.documentElement.lang = savedLang;
+    ['langPickerCode','authLangPickerCode'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.textContent = savedLang.toUpperCase();
+    });
+    document.querySelectorAll('#langMenu button, #authLangMenu button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.lang === savedLang);
+    });
   })();
 
   // ---------- Avvio ----------
