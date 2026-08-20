@@ -10,7 +10,7 @@
     --ink:#1B2A2E; --ink-soft:#4A5C60; --ink-faint:#8A9A9D;
     --bg:#F7F5EF; --surface:#FFFFFF; --input-bg:#FBFAF6;
     --line:#DDD8C8; --accent:#8C6A2F; --accent-soft:#F0E6D2;
-    --green:#2F6B4F; --over:#B3432B;
+    --green:#2F6B4F; --over:#B3432B; --over-bg:#FBE9E5;
     --radius:16px; --radius-sm:10px;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     --serif:Georgia,'Times New Roman',serif;
@@ -19,7 +19,7 @@
   [data-theme="dark"]{
     --ink:#F0EDE4; --ink-soft:#B8B2A0; --ink-faint:#7A7565;
     --bg:#181611; --surface:#221F19; --input-bg:#2A271F;
-    --line:#3A3527; --accent:#D4A94F; --accent-soft:#3A3020;
+    --line:#3A3527; --accent:#D4A94F; --accent-soft:#3A3020; --over-bg:#3A1717;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
@@ -74,13 +74,39 @@
 <div id="authScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
   <div class="card" style="width:100%;max-width:400px;">
     <h1 style="font-size:26px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
-    <p class="hint" style="margin-bottom:20px;">Accedi con le stesse credenziali di Le Mie Finanze.</p>
-    <label>Email</label>
-    <input type="email" id="authEmail" placeholder="tu@esempio.com">
-    <label>Password</label>
-    <input type="password" id="authPassword" placeholder="••••••••">
-    <button class="primary" id="authLoginBtn" type="button" style="width:100%;">Accedi</button>
-    <div id="authError" style="display:none;margin-top:12px;padding:10px 12px;border-radius:var(--radius-sm);background:#FBE9E5;color:var(--over);font-size:13px;"></div>
+    <p class="hint" style="margin-bottom:20px;">Accedi con le stesse credenziali di Le Mie Finanze, oppure registrati direttamente qui.</p>
+    <div id="authError" style="display:none;margin-top:0;margin-bottom:14px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--over-bg);color:var(--over);font-size:13px;"></div>
+
+    <div id="loginFormWrap">
+      <label>Email</label>
+      <input type="email" id="authEmail" placeholder="tu@esempio.com" autocomplete="username">
+      <label>Password</label>
+      <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+      <button class="primary" id="authLoginBtn" type="button" style="width:100%;">Accedi</button>
+      <button class="ghost" id="authSignupBtn" type="button" style="width:100%;margin-top:8px;">Non hai un account? Registrati</button>
+      <div style="text-align:center;margin-top:14px;">
+        <a href="#" id="authForgotLink" style="font-size:12.5px;color:var(--ink-soft);">Password dimenticata?</a>
+      </div>
+    </div>
+
+    <div id="forgotFormWrap" style="display:none;">
+      <div class="hint" style="margin-bottom:14px;">Inserisci la tua email — ti mandiamo un link per reimpostare la password.</div>
+      <label>Email</label>
+      <input type="email" id="forgotEmail" placeholder="tu@esempio.com" autocomplete="username">
+      <button class="primary" id="forgotSendBtn" type="button" style="width:100%;margin-top:6px;">Invia link a email</button>
+      <div style="text-align:center;margin-top:14px;">
+        <a href="#" id="forgotBackLink" style="font-size:12.5px;color:var(--ink-soft);">← Torna al login</a>
+      </div>
+    </div>
+
+    <div id="resetFormWrap" style="display:none;">
+      <div class="hint" style="margin-bottom:14px;">Scegli la tua nuova password.</div>
+      <label>Nuova password</label>
+      <input type="password" id="resetNewPassword" placeholder="••••••••" autocomplete="new-password">
+      <button class="primary" id="resetConfirmBtn" type="button" style="width:100%;margin-top:6px;">Salva nuova password</button>
+    </div>
+
+    <div id="authLoading" style="display:none;text-align:center;margin-top:14px;font-size:13px;color:var(--ink-soft);">Un momento…</div>
   </div>
 </div>
 
@@ -696,10 +722,18 @@
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
   function fmt(n){ return (Number(n)||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   function dayKey(d){ const dt = new Date(d); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
-  function showAuthError(msg){
+  function showAuthError(msg, isInfo){
     const el = document.getElementById('authError');
     el.textContent = msg;
+    el.style.background = isInfo ? 'var(--accent-soft)' : 'var(--over-bg)';
+    el.style.color = isInfo ? 'var(--accent)' : 'var(--over)';
     el.style.display = 'block';
+  }
+  function hideAuthError(){
+    document.getElementById('authError').style.display = 'none';
+  }
+  function setAuthLoading(on){
+    document.getElementById('authLoading').style.display = on ? 'block' : 'none';
   }
 
   async function loadCompany(){
@@ -1692,12 +1726,70 @@
 
   // ---------- Autenticazione ----------
   document.getElementById('authLoginBtn').addEventListener('click', async ()=>{
+    hideAuthError();
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
     if(!email || !password){ showAuthError('Inserisci email e password.'); return; }
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if(error){ showAuthError(error.message); return; }
     await enterApp(data.session);
+  });
+  document.getElementById('authSignupBtn').addEventListener('click', async ()=>{
+    hideAuthError();
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if(!email || !password){ showAuthError('Inserisci email e password.'); return; }
+    if(password.length < 6){ showAuthError('La password deve avere almeno 6 caratteri.'); return; }
+    setAuthLoading(true);
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    setAuthLoading(false);
+    if(error){ showAuthError(error.message); return; }
+    if(data.session){
+      await enterApp(data.session);
+    } else {
+      showAuthError('Controlla la tua email per confermare la registrazione.', true);
+    }
+  });
+  document.getElementById('authForgotLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    hideAuthError();
+    document.getElementById('loginFormWrap').style.display = 'none';
+    document.getElementById('forgotFormWrap').style.display = 'block';
+    document.getElementById('forgotEmail').value = document.getElementById('authEmail').value;
+  });
+  document.getElementById('forgotBackLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    hideAuthError();
+    document.getElementById('forgotFormWrap').style.display = 'none';
+    document.getElementById('loginFormWrap').style.display = 'block';
+  });
+  document.getElementById('forgotSendBtn').addEventListener('click', async ()=>{
+    hideAuthError();
+    const email = document.getElementById('forgotEmail').value.trim();
+    if(!email){ showAuthError('Inserisci la tua email.'); return; }
+    setAuthLoading(true);
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    setAuthLoading(false);
+    if(error){ showAuthError(error.message); return; }
+    showAuthError("Ti abbiamo mandato un'email con il link per reimpostare la password. Controlla la posta.", true);
+  });
+  document.getElementById('resetConfirmBtn').addEventListener('click', async ()=>{
+    hideAuthError();
+    const newPassword = document.getElementById('resetNewPassword').value;
+    if(!newPassword || newPassword.length < 6){ showAuthError('La password deve avere almeno 6 caratteri.'); return; }
+    setAuthLoading(true);
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    setAuthLoading(false);
+    if(error){ showAuthError(error.message); return; }
+    const { data } = await supabaseClient.auth.getSession();
+    if(data.session) await enterApp(data.session);
+  });
+  supabaseClient.auth.onAuthStateChange((event, session)=>{
+    if(event === 'PASSWORD_RECOVERY'){
+      document.getElementById('loginFormWrap').style.display = 'none';
+      document.getElementById('forgotFormWrap').style.display = 'none';
+      document.getElementById('resetFormWrap').style.display = 'block';
+    }
   });
   document.getElementById('logoutBtn').addEventListener('click', async ()=>{
     await supabaseClient.auth.signOut();
