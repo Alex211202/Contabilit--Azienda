@@ -284,7 +284,7 @@
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
     <h1 style="font-size:22px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
       <span class="hint" id="companyNameLabel"></span>
       <div class="currency-picker" id="langPicker">
         <button type="button" class="currency-picker-btn" id="langPickerBtn">
@@ -465,6 +465,21 @@
 
       <div class="card">
         <h3 data-i18n="primanota.entries">Registrazioni</h3>
+        <div class="form-grid" style="margin-bottom:10px;">
+          <div class="full">
+            <label data-i18n="primanota.search">Cerca</label>
+            <input type="text" id="journalSearchInput" placeholder="Descrizione o conto…" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label data-i18n="lbl.from">Da</label>
+            <input type="date" id="journalFilterFrom" style="margin-bottom:0;">
+          </div>
+          <div>
+            <label data-i18n="lbl.to">A</label>
+            <input type="date" id="journalFilterTo" style="margin-bottom:0;">
+          </div>
+        </div>
+        <button class="ghost" id="journalFilterResetBtn" type="button" style="margin-bottom:14px;font-size:12px;padding:6px 12px;" data-i18n="btn.resetFilters">Azzera filtri</button>
         <div id="journalListWrap"></div>
       </div>
     </div>
@@ -586,6 +601,11 @@
         <h3 data-i18n="scad.toPay">📤 Da pagare</h3>
         <div class="hint box" data-i18n="scad.toPayHint">Fatture ricevute non ancora segnate come pagate, ordinate per scadenza.</div>
         <div id="scadenzarioPagareWrap"></div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="scad.f24Title">📋 Scadenze F24 (contributi e ritenute)</h3>
+        <div class="hint box" data-i18n="scad.f24Hint">Calcolate dalle buste paga generate — INPS, INAIL e IRPEF si versano di norma entro il 16 del mese successivo. Verifica sempre le scadenze ufficiali con un consulente del lavoro.</div>
+        <div id="scadenzarioF24Wrap"></div>
       </div>
     </div>
 
@@ -1587,6 +1607,43 @@
 
     renderGroup(wrapIn, buildRows('emessa'));
     renderGroup(wrapOut, buildRows('ricevuta'));
+    renderF24Deadlines();
+  }
+
+  function renderF24Deadlines(){
+    const wrap = document.getElementById('scadenzarioF24Wrap');
+    if(!wrap) return;
+    if(state.payslips.length === 0){ wrap.innerHTML = '<div class="empty-state">'+t('scad.f24Empty')+'</div>'; return; }
+    const today = new Date(); today.setHours(0,0,0,0);
+    const rows = state.payslips.map(p=>{
+      const emp = state.employees.find(e=>e.id===p.employee_id);
+      const [y,m] = p.month.split('-').map(Number);
+      // Scadenza: il 16 del mese successivo al periodo di paga
+      let dueMonth = m + 1, dueYear = y;
+      if(dueMonth > 12){ dueMonth = 1; dueYear += 1; }
+      const dueDate = new Date(dueYear, dueMonth-1, 16);
+      const totale = Number(p.inps_employee||0) + Number(p.inps_employer||0) + Number(p.inail_employer||0) + Number(p.irpef||0);
+      const diff = Math.round((dueDate - today) / 86400000);
+      const overdue = diff < 0;
+      const daysInfo = overdue ? t('scad.overdueBy')+' '+Math.abs(diff)+' '+t('scad.days') : (diff===0 ? t('scad.dueToday') : t('scad.inDays')+' '+diff+' '+t('scad.days'));
+      const monthLabel = new Date(p.month+'-01').toLocaleDateString(localeTag(),{month:'long',year:'numeric'});
+      return { empName: emp ? emp.name : t('stip.deletedEmployee'), monthLabel, dueDate, totale, overdue, daysInfo };
+    }).sort((a,b)=> a.dueDate - b.dueDate);
+    wrap.innerHTML = rows.map(r=>{
+      const dueLabel = r.dueDate.toLocaleDateString(localeTag(),{day:'2-digit',month:'2-digit',year:'numeric'});
+      const noteStyle = r.overdue ? 'color:var(--over);font-weight:600;' : 'color:var(--ink-faint);';
+      return `
+        <div class="list-row">
+          <div class="list-main">
+            <span class="list-cat">${r.empName} — ${r.monthLabel}</span>
+            <span class="list-note" style="${noteStyle}">${dueLabel} · ${r.daysInfo}</span>
+          </div>
+          <div class="list-right">
+            <span class="list-amount">€ ${fmt(r.totale)}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   function renderCashflow(){
@@ -2014,24 +2071,44 @@
   function renderJournalList(){
     const wrap = document.getElementById('journalListWrap');
     if(!wrap) return;
-    if(state.journalEntries.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessuna registrazione ancora.</div>'; return; }
-    wrap.innerHTML = state.journalEntries.map(entry=>{
+    const searchEl = document.getElementById('journalSearchInput');
+    const fromEl = document.getElementById('journalFilterFrom');
+    const toEl = document.getElementById('journalFilterTo');
+    const search = (searchEl && searchEl.value || '').trim().toLowerCase();
+    const fromVal = fromEl && fromEl.value;
+    const toVal = toEl && toEl.value;
+    let entries = state.journalEntries;
+    if(fromVal) entries = entries.filter(e => e.date >= fromVal);
+    if(toVal) entries = entries.filter(e => e.date <= toVal);
+    if(search){
+      entries = entries.filter(entry=>{
+        const lines = state.journalLines.filter(l=>l.entry_id===entry.id);
+        const descMatch = (entry.description||'').toLowerCase().includes(search);
+        const acctMatch = lines.some(l=>{
+          const acc = accountById(l.account_id);
+          return acc && (acc.name.toLowerCase().includes(search) || acc.code.includes(search));
+        });
+        return descMatch || acctMatch;
+      });
+    }
+    if(entries.length === 0){ wrap.innerHTML = '<div class="empty-state">'+(state.journalEntries.length===0 ? t('primanota.noEntriesYet') : t('primanota.noMatchingEntries'))+'</div>'; return; }
+    wrap.innerHTML = entries.map(entry=>{
       const lines = state.journalLines.filter(l=>l.entry_id===entry.id);
-      const dateLabel = new Date(entry.date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const dateLabel = new Date(entry.date).toLocaleDateString(localeTag(),{day:'2-digit',month:'2-digit',year:'numeric'});
       const linesHtml = lines.map(l=>{
         const acc = accountById(l.account_id);
-        const accLabel = acc ? (acc.code+' '+acc.name) : '(conto eliminato)';
-        const side = Number(l.debit||0) > 0 ? ('Dare € '+fmt(l.debit)) : ('Avere € '+fmt(l.credit));
+        const accLabel = acc ? (acc.code+' '+acc.name) : t('primanota.deletedAccount');
+        const side = Number(l.debit||0) > 0 ? (t('primanota.debit')+' € '+fmt(l.debit)) : (t('primanota.credit')+' € '+fmt(l.credit));
         return '<div style="font-size:12px;color:var(--ink-faint);padding-left:12px;">'+accLabel+' — '+side+'</div>';
       }).join('');
       return `
         <div class="list-row" style="flex-direction:column;align-items:stretch;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div class="list-main">
-              <span class="list-cat">${entry.description || '(senza descrizione)'}</span>
-              <span class="list-note">${dateLabel} · ${entry.mode === 'simple' ? 'modalità semplice' : 'modalità avanzata'}</span>
+              <span class="list-cat">${entry.description || t('primanota.noDescription')}</span>
+              <span class="list-note">${dateLabel} · ${entry.mode === 'simple' ? t('primanota.simpleMode') : t('primanota.advancedMode')}</span>
             </div>
-            <button class="icon-btn" data-del-entry="${entry.id}" title="Elimina">✕</button>
+            <button class="icon-btn" data-del-entry="${entry.id}" title="${t('btn.delete')}">✕</button>
           </div>
           ${linesHtml}
         </div>
@@ -2341,6 +2418,15 @@
     current.push({ accountId:'', debit:'', credit:'' });
     advancedLines = current;
     renderAdvancedLines(advancedLines);
+  });
+  document.getElementById('journalSearchInput').addEventListener('input', renderJournalList);
+  document.getElementById('journalFilterFrom').addEventListener('change', renderJournalList);
+  document.getElementById('journalFilterTo').addEventListener('change', renderJournalList);
+  document.getElementById('journalFilterResetBtn').addEventListener('click', ()=>{
+    document.getElementById('journalSearchInput').value = '';
+    document.getElementById('journalFilterFrom').value = '';
+    document.getElementById('journalFilterTo').value = '';
+    renderJournalList();
   });
   document.getElementById('addAdvancedEntryBtn').addEventListener('click', async ()=>{
     const date = document.getElementById('advDateInput').value || dayKey(new Date());
@@ -2698,6 +2784,11 @@
       'stip.addEmployee':'Aggiungi dipendente', 'stip.yourEmployees':'I tuoi dipendenti',
       'stip.generatePayslip':'Genera busta paga', 'stip.generatePayslipHint':'Calcolo mensile — IRPEF stimata a scaglioni annualizzati, semplificata.',
       'stip.employee':'Dipendente', 'stip.month':'Mese', 'stip.generateAndSave':'Genera e registra busta paga', 'stip.registeredPayslips':'Buste paga registrate',
+      'primanota.search':'Cerca', 'btn.resetFilters':'Azzera filtri', 'primanota.noEntriesYet':'Nessuna registrazione ancora.',
+      'primanota.noMatchingEntries':'Nessuna registrazione corrisponde ai filtri.', 'primanota.deletedAccount':'(conto eliminato)',
+      'primanota.debit':'Dare', 'primanota.credit':'Avere', 'primanota.noDescription':'(senza descrizione)',
+      'scad.f24Title':'📋 Scadenze F24 (contributi e ritenute)', 'scad.f24Hint':'Calcolate dalle buste paga generate — INPS, INAIL e IRPEF si versano di norma entro il 16 del mese successivo. Verifica sempre le scadenze ufficiali con un consulente del lavoro.',
+      'scad.f24Empty':'Nessuna busta paga registrata ancora — qui vedrai le scadenze F24 non appena ne generi una.', 'stip.deletedEmployee':'(dipendente eliminato)',
     },
     en: {
       'auth.subtitle':'Sign in with the same credentials as Le Mie Finanze, or sign up directly here.',
@@ -2775,6 +2866,11 @@
       'stip.addEmployee':'Add employee', 'stip.yourEmployees':'Your employees',
       'stip.generatePayslip':'Generate payslip', 'stip.generatePayslipHint':'Monthly calculation — income tax estimated on annualised brackets, simplified.',
       'stip.employee':'Employee', 'stip.month':'Month', 'stip.generateAndSave':'Generate and post payslip', 'stip.registeredPayslips':'Recorded payslips',
+      'primanota.search':'Search', 'btn.resetFilters':'Reset filters', 'primanota.noEntriesYet':'No entries yet.',
+      'primanota.noMatchingEntries':'No entries match the filters.', 'primanota.deletedAccount':'(deleted account)',
+      'primanota.debit':'Debit', 'primanota.credit':'Credit', 'primanota.noDescription':'(no description)',
+      'scad.f24Title':'📋 F24 deadlines (contributions and withholdings)', 'scad.f24Hint':'Calculated from generated payslips — INPS, INAIL and income tax withholding are normally due by the 16th of the following month. Always check the official deadlines with a labour consultant.',
+      'scad.f24Empty':"No payslips recorded yet — you'll see F24 deadlines here as soon as you generate one.", 'stip.deletedEmployee':'(deleted employee)',
     },
     de: {
       'auth.subtitle':'Melde dich mit denselben Zugangsdaten wie bei Le Mie Finanze an, oder registriere dich direkt hier.',
@@ -2852,6 +2948,11 @@
       'stip.addEmployee':'Mitarbeiter hinzufügen', 'stip.yourEmployees':'Deine Mitarbeiter',
       'stip.generatePayslip':'Gehaltsabrechnung erstellen', 'stip.generatePayslipHint':'Monatliche Berechnung — Einkommensteuer geschätzt nach hochgerechneten Stufen, vereinfacht.',
       'stip.employee':'Mitarbeiter', 'stip.month':'Monat', 'stip.generateAndSave':'Gehaltsabrechnung erstellen und buchen', 'stip.registeredPayslips':'Erfasste Gehaltsabrechnungen',
+      'primanota.search':'Suche', 'btn.resetFilters':'Filter zurücksetzen', 'primanota.noEntriesYet':'Noch keine Buchungen.',
+      'primanota.noMatchingEntries':'Keine Buchungen entsprechen den Filtern.', 'primanota.deletedAccount':'(gelöschtes Konto)',
+      'primanota.debit':'Soll', 'primanota.credit':'Haben', 'primanota.noDescription':'(keine Beschreibung)',
+      'scad.f24Title':'📋 F24-Fristen (Beiträge und Abzüge)', 'scad.f24Hint':'Berechnet aus den erstellten Gehaltsabrechnungen — INPS, INAIL und Lohnsteuer sind normalerweise bis zum 16. des Folgemonats fällig. Prüfe die offiziellen Fristen immer mit einem Lohnberater.',
+      'scad.f24Empty':'Noch keine Gehaltsabrechnungen erfasst — hier siehst du F24-Fristen, sobald du eine erstellst.', 'stip.deletedEmployee':'(gelöschter Mitarbeiter)',
     }
   };
   function currentLang(){ return (currentCompany && currentCompany.language) || (function(){ try{ return localStorage.getItem('bizLang') || 'it'; }catch(e){ return 'it'; } })(); }
