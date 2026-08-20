@@ -120,6 +120,7 @@
         <button class="tab" data-panel="primanota">Prima nota</button>
         <button class="tab" data-panel="anagrafica">Anagrafica</button>
         <button class="tab" data-panel="fatture">Fatture</button>
+        <button class="tab" data-panel="scadenzario">Scadenzario</button>
         <button class="tab" data-panel="bilanci">Bilanci</button>
         <button class="tab" data-panel="iva">IVA</button>
         <button class="tab" data-panel="ammortamenti">Ammortamenti</button>
@@ -338,6 +339,20 @@
       <div class="card">
         <h3>Elenco fatture</h3>
         <div id="invoicesListWrap"></div>
+      </div>
+    </div>
+
+    <!-- SCADENZARIO -->
+    <div class="panel" id="panel-scadenzario" style="display:none;">
+      <div class="card">
+        <h3>📥 Da incassare</h3>
+        <div class="hint box">Fatture emesse non ancora segnate come incassate, ordinate per scadenza — quelle scadute o vicine sono evidenziate.</div>
+        <div id="scadenzarioIncassareWrap"></div>
+      </div>
+      <div class="card">
+        <h3>📤 Da pagare</h3>
+        <div class="hint box">Fatture ricevute non ancora segnate come pagate, ordinate per scadenza.</div>
+        <div id="scadenzarioPagareWrap"></div>
       </div>
     </div>
 
@@ -1077,6 +1092,11 @@
       const lines = state.invoiceLines.filter(l=>l.invoice_id===inv.id);
       const totals = computeInvoiceTotals(lines.map(l=>({quantity:Number(l.quantity), unitPrice:Number(l.unit_price), vatRate:Number(l.vat_rate)})));
       const dateLabel = new Date(inv.date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const paidLabel = inv.type==='emessa' ? 'Incassata' : 'Pagata';
+      const unpaidLabel = inv.type==='emessa' ? 'Da incassare' : 'Da pagare';
+      const statusBadge = inv.paid
+        ? '<span class="badge" style="background:rgba(47,107,79,0.12);color:var(--green);">'+paidLabel+'</span>'
+        : '<span class="badge">'+unpaidLabel+'</span>';
       return `
         <div class="list-row">
           <div class="list-main">
@@ -1085,12 +1105,27 @@
           </div>
           <div class="list-right">
             <span class="list-amount">€ ${fmt(totals.totale)}</span>
+            <button class="icon-btn" data-toggle-paid="${inv.id}" title="${inv.paid ? 'Segna come non '+paidLabel.toLowerCase() : 'Segna come '+paidLabel.toLowerCase()}">${statusBadge}</button>
             ${inv.type==='emessa' ? '<button class="icon-btn" data-print-inv="'+inv.id+'" title="Stampa/PDF">🖨</button>' : ''}
             <button class="icon-btn" data-del-inv="${inv.id}" title="Elimina">✕</button>
           </div>
         </div>
       `;
     }).join('');
+    wrap.querySelectorAll('[data-toggle-paid]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const invId = btn.dataset.togglePaid;
+        const inv = state.invoices.find(i=>i.id===invId);
+        if(!inv) return;
+        const newPaid = !inv.paid;
+        const newPaidDate = newPaid ? dayKey(new Date()) : null;
+        const { error } = await supabaseClient.from('biz_invoices').update({ paid: newPaid, paid_date: newPaidDate }).eq('id', invId);
+        if(error){ alert('Errore: ' + error.message); return; }
+        inv.paid = newPaid;
+        inv.paid_date = newPaidDate;
+        renderAll();
+      });
+    });
     wrap.querySelectorAll('[data-del-inv]').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
         const invId = btn.dataset.delInv;
@@ -1111,6 +1146,57 @@
     wrap.querySelectorAll('[data-print-inv]').forEach(btn=>{
       btn.addEventListener('click', ()=>{ printInvoice(btn.dataset.printInv); });
     });
+  }
+
+  function renderScadenzario(){
+    const wrapIn = document.getElementById('scadenzarioIncassareWrap');
+    const wrapOut = document.getElementById('scadenzarioPagareWrap');
+    if(!wrapIn || !wrapOut) return;
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    function buildRows(type){
+      const list = state.invoices.filter(i => i.type===type && !i.paid);
+      const withDates = list.map(inv=>{
+        const lines = state.invoiceLines.filter(l=>l.invoice_id===inv.id);
+        const totals = computeInvoiceTotals(lines.map(l=>({quantity:Number(l.quantity), unitPrice:Number(l.unit_price), vatRate:Number(l.vat_rate)})));
+        let daysInfo = null, overdue = false;
+        if(inv.due_date){
+          const d = new Date(inv.due_date); d.setHours(0,0,0,0);
+          const diff = Math.round((d - today) / 86400000);
+          overdue = diff < 0;
+          daysInfo = overdue ? 'scaduta da ' + Math.abs(diff) + ' giorni' : (diff===0 ? 'scade oggi' : 'tra ' + diff + ' giorni');
+        }
+        return { inv, totale: totals.totale, overdue, daysInfo };
+      });
+      withDates.sort((a,b)=>{
+        if(!a.inv.due_date) return 1;
+        if(!b.inv.due_date) return -1;
+        return new Date(a.inv.due_date) - new Date(b.inv.due_date);
+      });
+      return withDates;
+    }
+
+    function renderGroup(wrap, rows){
+      if(rows.length === 0){ wrap.innerHTML = '<div class="empty-state">Niente in sospeso — tutto regolato.</div>'; return; }
+      wrap.innerHTML = rows.map(r=>{
+        const dueLabel = r.inv.due_date ? new Date(r.inv.due_date).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}) : 'senza scadenza';
+        const noteStyle = r.overdue ? 'color:var(--over);font-weight:600;' : 'color:var(--ink-faint);';
+        return `
+          <div class="list-row">
+            <div class="list-main">
+              <span class="list-cat">${r.inv.number} — ${r.inv.counterparty_name||'(senza nome)'}</span>
+              <span class="list-note" style="${noteStyle}">${dueLabel}${r.daysInfo ? ' · '+r.daysInfo : ''}</span>
+            </div>
+            <div class="list-right">
+              <span class="list-amount">€ ${fmt(r.totale)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderGroup(wrapIn, buildRows('emessa'));
+    renderGroup(wrapOut, buildRows('ricevuta'));
   }
 
   function printInvoice(invoiceId){
@@ -1523,6 +1609,7 @@
     renderJournalList();
     updateSimplePreview();
     renderInvoicesList();
+    renderScadenzario();
     renderBilanci();
     renderAssetsList();
     renderBankBalances();
