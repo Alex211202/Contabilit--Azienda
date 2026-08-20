@@ -606,17 +606,17 @@
     <!-- BILANCI -->
     <div class="panel" id="panel-bilanci" style="display:none;">
       <div class="card">
-        <h3>Bilancio dell'anno in corso</h3>
-        <div class="hint box">Generato in automatico dalle registrazioni di prima nota — non modificabile a mano.</div>
-        <label>Anno</label>
+        <h3 data-i18n="bil.currentYear">Bilancio dell'anno in corso</h3>
+        <div class="hint box" data-i18n="bil.currentYearHint">Generato in automatico dalle registrazioni di prima nota — non modificabile a mano.</div>
+        <label data-i18n="bil.year">Anno</label>
         <select id="bilancioYearSelect"></select>
       </div>
       <div class="card">
-        <h3>Stato Patrimoniale</h3>
+        <h3 data-i18n="bil.balanceSheet">Stato Patrimoniale</h3>
         <div id="statoPatrimonialeWrap"></div>
       </div>
       <div class="card">
-        <h3>Conto Economico</h3>
+        <h3 data-i18n="bil.incomeStatement">Conto Economico</h3>
         <div id="contoEconomicoWrap"></div>
       </div>
     </div>
@@ -624,19 +624,19 @@
     <!-- IVA -->
     <div class="panel" id="panel-iva" style="display:none;">
       <div class="card">
-        <h3>Registro IVA</h3>
-        <div class="hint box">Calcolato dalle fatture registrate — IVA a debito (vendite) meno IVA a credito (acquisti) per il periodo scelto.</div>
+        <h3 data-i18n="iva.registry">Registro IVA</h3>
+        <div class="hint box" data-i18n="iva.registryHint">Calcolato dalle fatture registrate — IVA a debito (vendite) meno IVA a credito (acquisti) per il periodo scelto.</div>
         <div class="form-grid">
           <div>
-            <label>Da</label>
+            <label data-i18n="lbl.from">Da</label>
             <input type="date" id="ivaFromDate">
           </div>
           <div>
-            <label>A</label>
+            <label data-i18n="lbl.to">A</label>
             <input type="date" id="ivaToDate">
           </div>
         </div>
-        <button class="ghost" id="calcIvaBtn" type="button">Calcola</button>
+        <button class="ghost" id="calcIvaBtn" type="button" data-i18n="btn.calculate">Calcola</button>
         <div id="ivaResultWrap" style="margin-top:16px;"></div>
       </div>
     </div>
@@ -644,42 +644,42 @@
     <!-- AMMORTAMENTI -->
     <div class="panel" id="panel-ammortamenti" style="display:none;">
       <div class="card">
-        <h3>Nuovo bene ammortizzabile</h3>
-        <div class="hint box">Registra un bene, e ogni anno potrai generare da qui la quota di ammortamento — calcolata a quote costanti.</div>
+        <h3 data-i18n="amm.newAsset">Nuovo bene ammortizzabile</h3>
+        <div class="hint box" data-i18n="amm.newAssetHint">Registra un bene, e ogni anno potrai generare da qui la quota di ammortamento — calcolata a quote costanti.</div>
         <div class="form-grid">
           <div class="full">
-            <label>Nome del bene</label>
+            <label data-i18n="amm.assetName">Nome del bene</label>
             <input type="text" id="assetNameInput" placeholder="es. Furgone aziendale">
           </div>
           <div>
-            <label>Data di acquisto</label>
+            <label data-i18n="amm.purchaseDate">Data di acquisto</label>
             <input type="date" id="assetDateInput">
           </div>
           <div>
-            <label>Costo</label>
+            <label data-i18n="amm.cost">Costo</label>
             <input type="number" step="0.01" min="0" id="assetCostInput" placeholder="0.00">
           </div>
           <div>
-            <label>Vita utile (anni)</label>
+            <label data-i18n="amm.usefulLife">Vita utile (anni)</label>
             <input type="number" step="1" min="1" id="assetLifeInput" placeholder="es. 5">
           </div>
           <div>
-            <label>Conto cespite</label>
+            <label data-i18n="amm.assetAccount">Conto cespite</label>
             <select id="assetAccountSelect"></select>
           </div>
           <div>
-            <label>Conto fondo ammortamento</label>
+            <label data-i18n="amm.fundAccount">Conto fondo ammortamento</label>
             <select id="assetFundAccountSelect"></select>
           </div>
           <div class="full">
-            <label>Conto costo ammortamento (a conto economico)</label>
+            <label data-i18n="amm.expenseAccount">Conto costo ammortamento (a conto economico)</label>
             <select id="assetExpenseAccountSelect"></select>
           </div>
         </div>
-        <button class="primary" id="addAssetBtn" type="button">Aggiungi bene</button>
+        <button class="primary" id="addAssetBtn" type="button" data-i18n="amm.addAsset">Aggiungi bene</button>
       </div>
       <div class="card">
-        <h3>I tuoi beni</h3>
+        <h3 data-i18n="amm.yourAssets">I tuoi beni</h3>
         <div id="assetsListWrap"></div>
       </div>
     </div>
@@ -687,88 +687,88 @@
     <!-- CONTI BANCARI -->
     <div class="panel" id="panel-contibancari" style="display:none;">
       <div class="card">
-        <h3>Saldi liquidità</h3>
-        <div class="hint box">I conti di cassa/banca (codici 1000-1099) e il loro saldo attuale.</div>
+        <h3 data-i18n="bank.balances">Saldi liquidità</h3>
+        <div class="hint box" data-i18n="bank.balancesHint">I conti di cassa/banca (codici 1000-1099) e il loro saldo attuale.</div>
         <div id="bankBalancesWrap"></div>
       </div>
       <div class="card">
-        <h3>Trasferimento tra conti</h3>
-        <div class="hint box">Sposta soldi da un conto liquido a un altro — registra da sola la scrittura.</div>
+        <h3 data-i18n="bank.transfer">Trasferimento tra conti</h3>
+        <div class="hint box" data-i18n="bank.transferHint">Sposta soldi da un conto liquido a un altro — registra da sola la scrittura.</div>
         <div class="form-grid">
           <div>
-            <label>Da</label>
+            <label data-i18n="lbl.from">Da</label>
             <select id="transferFromSelect"></select>
           </div>
           <div>
-            <label>A</label>
+            <label data-i18n="lbl.to">A</label>
             <select id="transferToSelect"></select>
           </div>
           <div>
-            <label>Data</label>
+            <label data-i18n="lbl.date">Data</label>
             <input type="date" id="transferDateInput">
           </div>
           <div>
-            <label>Importo</label>
+            <label data-i18n="lbl.amount">Importo</label>
             <input type="number" step="0.01" min="0" id="transferAmountInput" placeholder="0.00">
           </div>
         </div>
-        <button class="primary" id="doTransferBtn" type="button">Trasferisci</button>
+        <button class="primary" id="doTransferBtn" type="button" data-i18n="bank.doTransfer">Trasferisci</button>
       </div>
     </div>
 
     <!-- STIPENDI -->
     <div class="panel" id="panel-stipendi" style="display:none;">
       <div class="card" style="border:1px solid var(--over);">
-        <div class="hint box" style="border-color:var(--over);background:rgba(179,67,43,0.08);">⚠️ Calcolo illustrativo e semplificato — non tiene conto delle detrazioni da lavoro dipendente, del CCNL applicato, o di casi particolari. L'aliquota INAIL varia molto da settore a settore: verificala con un consulente del lavoro. Non usarlo come busta paga ufficiale — serve solo per farti un'idea e per esercitarti.</div>
+        <div class="hint box" style="border-color:var(--over);background:rgba(179,67,43,0.08);" data-i18n="stip.disclaimer">⚠️ Calcolo illustrativo e semplificato — non tiene conto delle detrazioni da lavoro dipendente, del CCNL applicato, o di casi particolari. L'aliquota INAIL varia molto da settore a settore: verificala con un consulente del lavoro. Non usarlo come busta paga ufficiale — serve solo per farti un'idea e per esercitarti.</div>
       </div>
 
       <div class="card">
-        <h3>Nuovo dipendente</h3>
+        <h3 data-i18n="stip.newEmployee">Nuovo dipendente</h3>
         <div class="form-grid">
           <div class="full">
-            <label>Nome</label>
+            <label data-i18n="stip.name">Nome</label>
             <input type="text" id="empNameInput" placeholder="es. Mario Bianchi">
           </div>
           <div>
-            <label>Stipendio lordo mensile</label>
+            <label data-i18n="stip.grossSalary">Stipendio lordo mensile</label>
             <input type="number" step="0.01" min="0" id="empSalaryInput" placeholder="0.00">
           </div>
           <div>
-            <label>Aliquota INAIL (%, a carico azienda)</label>
+            <label data-i18n="stip.inailRate">Aliquota INAIL (%, a carico azienda)</label>
             <input type="number" step="0.01" min="0" id="empInailInput" placeholder="es. 1.00" value="1.00">
           </div>
         </div>
-        <button class="primary" id="addEmployeeBtn" type="button">Aggiungi dipendente</button>
+        <button class="primary" id="addEmployeeBtn" type="button" data-i18n="stip.addEmployee">Aggiungi dipendente</button>
       </div>
 
       <div class="card">
-        <h3>I tuoi dipendenti</h3>
+        <h3 data-i18n="stip.yourEmployees">I tuoi dipendenti</h3>
         <div id="employeesListWrap"></div>
       </div>
 
       <div class="card">
-        <h3>Genera busta paga</h3>
-        <div class="hint box">Calcolo mensile — IRPEF stimata a scaglioni annualizzati, semplificata.</div>
+        <h3 data-i18n="stip.generatePayslip">Genera busta paga</h3>
+        <div class="hint box" data-i18n="stip.generatePayslipHint">Calcolo mensile — IRPEF stimata a scaglioni annualizzati, semplificata.</div>
         <div class="form-grid">
           <div>
-            <label>Dipendente</label>
+            <label data-i18n="stip.employee">Dipendente</label>
             <select id="payslipEmployeeSelect"></select>
           </div>
           <div>
-            <label>Mese</label>
+            <label data-i18n="stip.month">Mese</label>
             <select id="payslipMonthSelect"></select>
           </div>
           <div>
-            <label>Anno</label>
+            <label data-i18n="bil.year">Anno</label>
             <select id="payslipYearSelect"></select>
           </div>
         </div>
         <div id="payslipPreviewWrap" style="margin-bottom:14px;"></div>
-        <button class="primary" id="generatePayslipBtn" type="button">Genera e registra busta paga</button>
+        <button class="primary" id="generatePayslipBtn" type="button" data-i18n="stip.generateAndSave">Genera e registra busta paga</button>
       </div>
 
       <div class="card">
-        <h3>Buste paga registrate</h3>
+        <h3 data-i18n="stip.registeredPayslips">Buste paga registrate</h3>
         <div id="payslipsListWrap"></div>
       </div>
     </div>
@@ -2683,6 +2683,21 @@
       'cf.projection':'Proiezione mese per mese', 'cf.projectionHint':'⚠️ Calcolata solo dalle fatture registrate con scadenza — non tiene conto di stipendi, F24, o altre spese/entrate non fatturate. Uno strumento indicativo, non un bilancio di previsione ufficiale.',
       'cf.noPending':'Nessuna fattura in sospeso — nulla da proiettare, la liquidità resta quella attuale.',
       'cf.month':'Mese', 'cf.expectedIn':'Incassi previsti', 'cf.expectedOut':'Pagamenti previsti', 'cf.runningBalance':'Saldo cumulato',
+      'bil.currentYear':"Bilancio dell'anno in corso", 'bil.currentYearHint':'Generato in automatico dalle registrazioni di prima nota — non modificabile a mano.',
+      'bil.year':'Anno', 'bil.balanceSheet':'Stato Patrimoniale', 'bil.incomeStatement':'Conto Economico',
+      'iva.registry':'Registro IVA', 'iva.registryHint':'Calcolato dalle fatture registrate — IVA a debito (vendite) meno IVA a credito (acquisti) per il periodo scelto.',
+      'lbl.from':'Da', 'lbl.to':'A', 'btn.calculate':'Calcola',
+      'amm.newAsset':'Nuovo bene ammortizzabile', 'amm.newAssetHint':'Registra un bene, e ogni anno potrai generare da qui la quota di ammortamento — calcolata a quote costanti.',
+      'amm.assetName':'Nome del bene', 'amm.purchaseDate':'Data di acquisto', 'amm.cost':'Costo', 'amm.usefulLife':'Vita utile (anni)',
+      'amm.assetAccount':'Conto cespite', 'amm.fundAccount':'Conto fondo ammortamento', 'amm.expenseAccount':'Conto costo ammortamento (a conto economico)',
+      'amm.addAsset':'Aggiungi bene', 'amm.yourAssets':'I tuoi beni',
+      'bank.balances':'Saldi liquidità', 'bank.balancesHint':'I conti di cassa/banca (codici 1000-1099) e il loro saldo attuale.',
+      'bank.transfer':'Trasferimento tra conti', 'bank.transferHint':'Sposta soldi da un conto liquido a un altro — registra da sola la scrittura.', 'bank.doTransfer':'Trasferisci',
+      'stip.disclaimer':"⚠️ Calcolo illustrativo e semplificato — non tiene conto delle detrazioni da lavoro dipendente, del CCNL applicato, o di casi particolari. L'aliquota INAIL varia molto da settore a settore: verificala con un consulente del lavoro. Non usarlo come busta paga ufficiale — serve solo per farti un'idea e per esercitarti.",
+      'stip.newEmployee':'Nuovo dipendente', 'stip.name':'Nome', 'stip.grossSalary':'Stipendio lordo mensile', 'stip.inailRate':'Aliquota INAIL (%, a carico azienda)',
+      'stip.addEmployee':'Aggiungi dipendente', 'stip.yourEmployees':'I tuoi dipendenti',
+      'stip.generatePayslip':'Genera busta paga', 'stip.generatePayslipHint':'Calcolo mensile — IRPEF stimata a scaglioni annualizzati, semplificata.',
+      'stip.employee':'Dipendente', 'stip.month':'Mese', 'stip.generateAndSave':'Genera e registra busta paga', 'stip.registeredPayslips':'Buste paga registrate',
     },
     en: {
       'auth.subtitle':'Sign in with the same credentials as Le Mie Finanze, or sign up directly here.',
@@ -2745,6 +2760,21 @@
       'cf.projection':'Month-by-month projection', 'cf.projectionHint':"⚠️ Calculated only from invoices with a due date — doesn't account for payroll, tax payments, or other unbilled expenses/income. An indicative tool, not an official forecast statement.",
       'cf.noPending':'No pending invoices — nothing to project, liquidity stays as is.',
       'cf.month':'Month', 'cf.expectedIn':'Expected income', 'cf.expectedOut':'Expected payments', 'cf.runningBalance':'Running balance',
+      'bil.currentYear':'Current year statements', 'bil.currentYearHint':'Automatically generated from ledger entries — not manually editable.',
+      'bil.year':'Year', 'bil.balanceSheet':'Balance Sheet', 'bil.incomeStatement':'Income Statement',
+      'iva.registry':'VAT register', 'iva.registryHint':'Calculated from recorded invoices — output VAT (sales) minus input VAT (purchases) for the chosen period.',
+      'lbl.from':'From', 'lbl.to':'To', 'btn.calculate':'Calculate',
+      'amm.newAsset':'New depreciable asset', 'amm.newAssetHint':'Record an asset, and each year you can generate the depreciation instalment from here — calculated on a straight-line basis.',
+      'amm.assetName':'Asset name', 'amm.purchaseDate':'Purchase date', 'amm.cost':'Cost', 'amm.usefulLife':'Useful life (years)',
+      'amm.assetAccount':'Asset account', 'amm.fundAccount':'Accumulated depreciation account', 'amm.expenseAccount':'Depreciation expense account (income statement)',
+      'amm.addAsset':'Add asset', 'amm.yourAssets':'Your assets',
+      'bank.balances':'Liquidity balances', 'bank.balancesHint':'Cash/bank accounts (codes 1000-1099) and their current balance.',
+      'bank.transfer':'Transfer between accounts', 'bank.transferHint':'Move money from one liquid account to another — it posts the entry automatically.', 'bank.doTransfer':'Transfer',
+      'stip.disclaimer':"⚠️ Illustrative, simplified calculation — doesn't account for employee tax deductions, the applicable collective agreement, or special cases. The INAIL rate varies a lot by sector: check it with a labour consultant. Don't use it as an official payslip — it's only for getting an idea and practicing.",
+      'stip.newEmployee':'New employee', 'stip.name':'Name', 'stip.grossSalary':'Gross monthly salary', 'stip.inailRate':'INAIL rate (%, employer-paid)',
+      'stip.addEmployee':'Add employee', 'stip.yourEmployees':'Your employees',
+      'stip.generatePayslip':'Generate payslip', 'stip.generatePayslipHint':'Monthly calculation — income tax estimated on annualised brackets, simplified.',
+      'stip.employee':'Employee', 'stip.month':'Month', 'stip.generateAndSave':'Generate and post payslip', 'stip.registeredPayslips':'Recorded payslips',
     },
     de: {
       'auth.subtitle':'Melde dich mit denselben Zugangsdaten wie bei Le Mie Finanze an, oder registriere dich direkt hier.',
@@ -2807,6 +2837,21 @@
       'cf.projection':'Monatliche Prognose', 'cf.projectionHint':'⚠️ Nur aus Rechnungen mit Fälligkeitsdatum berechnet — berücksichtigt keine Gehälter, Steuerzahlungen oder andere nicht fakturierte Ausgaben/Einnahmen. Ein Richtwert, keine offizielle Planbilanz.',
       'cf.noPending':'Keine offenen Rechnungen — nichts zu prognostizieren, die Liquidität bleibt unverändert.',
       'cf.month':'Monat', 'cf.expectedIn':'Erwartete Einnahmen', 'cf.expectedOut':'Erwartete Zahlungen', 'cf.runningBalance':'Kumulierter Saldo',
+      'bil.currentYear':'Jahresabschluss laufendes Jahr', 'bil.currentYearHint':'Automatisch aus den Journalbuchungen erstellt — nicht manuell bearbeitbar.',
+      'bil.year':'Jahr', 'bil.balanceSheet':'Bilanz', 'bil.incomeStatement':'Gewinn- und Verlustrechnung',
+      'iva.registry':'MwSt.-Register', 'iva.registryHint':'Berechnet aus den erfassten Rechnungen — MwSt. auf Verkäufe abzüglich Vorsteuer auf Einkäufe für den gewählten Zeitraum.',
+      'lbl.from':'Von', 'lbl.to':'Bis', 'btn.calculate':'Berechnen',
+      'amm.newAsset':'Neues abschreibbares Anlagegut', 'amm.newAssetHint':'Erfasse ein Anlagegut, und jedes Jahr kannst du hier die Abschreibungsrate generieren — linear berechnet.',
+      'amm.assetName':'Name des Anlageguts', 'amm.purchaseDate':'Kaufdatum', 'amm.cost':'Kosten', 'amm.usefulLife':'Nutzungsdauer (Jahre)',
+      'amm.assetAccount':'Anlagekonto', 'amm.fundAccount':'Konto kumulierte Abschreibung', 'amm.expenseAccount':'Abschreibungsaufwandskonto (GuV)',
+      'amm.addAsset':'Anlagegut hinzufügen', 'amm.yourAssets':'Deine Anlagegüter',
+      'bank.balances':'Liquiditätssalden', 'bank.balancesHint':'Kassen-/Bankkonten (Codes 1000-1099) und ihr aktueller Saldo.',
+      'bank.transfer':'Umbuchung zwischen Konten', 'bank.transferHint':'Verschiebe Geld von einem liquiden Konto zu einem anderen — die Buchung wird automatisch erstellt.', 'bank.doTransfer':'Umbuchen',
+      'stip.disclaimer':'⚠️ Illustrative, vereinfachte Berechnung — berücksichtigt keine Arbeitnehmerabzüge, den geltenden Tarifvertrag oder Sonderfälle. Der INAIL-Satz variiert stark je nach Branche: prüfe ihn mit einem Lohnberater. Nicht als offizielle Gehaltsabrechnung verwenden — dient nur zur Orientierung und zum Üben.',
+      'stip.newEmployee':'Neuer Mitarbeiter', 'stip.name':'Name', 'stip.grossSalary':'Bruttomonatsgehalt', 'stip.inailRate':'INAIL-Satz (%, zu Lasten des Unternehmens)',
+      'stip.addEmployee':'Mitarbeiter hinzufügen', 'stip.yourEmployees':'Deine Mitarbeiter',
+      'stip.generatePayslip':'Gehaltsabrechnung erstellen', 'stip.generatePayslipHint':'Monatliche Berechnung — Einkommensteuer geschätzt nach hochgerechneten Stufen, vereinfacht.',
+      'stip.employee':'Mitarbeiter', 'stip.month':'Monat', 'stip.generateAndSave':'Gehaltsabrechnung erstellen und buchen', 'stip.registeredPayslips':'Erfasste Gehaltsabrechnungen',
     }
   };
   function currentLang(){ return (currentCompany && currentCompany.language) || (function(){ try{ return localStorage.getItem('bizLang') || 'it'; }catch(e){ return 'it'; } })(); }
