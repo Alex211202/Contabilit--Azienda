@@ -143,6 +143,20 @@
         <input type="checkbox" id="acceptTermsCheckbox" style="flex:0 0 auto;width:16px;height:16px;margin:2px 0 0 0;">
         <label for="acceptTermsCheckbox" style="display:block;flex:1 1 0%;min-width:0;margin:0;padding:0;font-weight:400;font-size:12.5px;line-height:1.4;color:var(--ink-soft);">Ho letto e accetto <a href="#" id="openPrivacyLink" style="color:var(--accent);">l'Informativa Privacy</a> e i <a href="#" id="openTermsLink" style="color:var(--accent);">Termini di Servizio</a>.</label>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:16px 0;">
+        <div style="flex:1;height:1px;background:var(--line);"></div>
+        <span style="font-size:12px;color:var(--ink-faint);">oppure</span>
+        <div style="flex:1;height:1px;background:var(--line);"></div>
+      </div>
+      <button class="ghost" id="googleSignInBtn" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        <span>Accedi con Google</span>
+      </button>
       <div style="text-align:center;margin-top:14px;">
         <a href="#" id="authForgotLink" style="font-size:12.5px;color:var(--ink-soft);">Password dimenticata?</a>
       </div>
@@ -257,6 +271,12 @@
         <svg id="themeIconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.5M12 19v2.5M21.5 12H19M5 12H2.5M18.36 5.64l-1.77 1.77M7.41 16.59l-1.77 1.77M18.36 18.36l-1.77-1.77M7.41 7.41L5.64 5.64" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         <svg id="themeIconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
       </button>
+      <button class="theme-appearance-btn" id="openSettingsBtn" type="button" title="Impostazioni">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M19.4 13a7.6 7.6 0 000-2l2-1.5-2-3.4-2.4.6a7.7 7.7 0 00-1.7-1L15 3h-4l-.3 2.7a7.7 7.7 0 00-1.7 1l-2.4-.6-2 3.4L6.6 11a7.6 7.6 0 000 2l-2 1.5 2 3.4 2.4-.6a7.7 7.7 0 001.7 1L11 21h4l.3-2.7a7.7 7.7 0 001.7-1l2.4.6 2-3.4-2-1.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </button>
       <button class="ghost" id="logoutBtn" type="button" style="padding:8px 14px;font-size:12px;">Esci</button>
     </div>
   </div>
@@ -293,7 +313,6 @@
         <button class="tab" data-panel="ammortamenti">Ammortamenti</button>
         <button class="tab" data-panel="contibancari">Conti bancari</button>
         <button class="tab" data-panel="stipendi">Stipendi</button>
-        <button class="tab" data-panel="impostazioni">⚙️ Impostazioni</button>
       </div>
     </div>
 
@@ -717,59 +736,67 @@
       </div>
     </div>
 
-    <!-- IMPOSTAZIONI -->
-    <div class="panel" id="panel-impostazioni" style="display:none;">
-      <div class="card">
-        <h3>Dati azienda</h3>
-        <div class="hint box">Modifica i dati della tua azienda — usati nell'intestazione delle fatture stampate.</div>
-        <div class="form-grid">
-          <div class="full">
-            <label>Nome azienda</label>
-            <input type="text" id="settingsCompanyNameInput" placeholder="es. Rossi Srl">
-          </div>
-          <div>
-            <label>Partita IVA (facoltativo)</label>
-            <input type="text" id="settingsCompanyVatInput" placeholder="es. IT01234567890">
-          </div>
-          <div>
-            <label>Forma di bilancio</label>
-            <select id="settingsCompanyFormSelect">
-              <option value="abbreviated">Abbreviata</option>
-              <option value="ordinary">Ordinaria</option>
-            </select>
-          </div>
-        </div>
-        <button class="primary" id="saveCompanySettingsBtn" type="button">Salva modifiche</button>
-        <div id="saveCompanySettingsMsg" style="display:none;margin-top:10px;"></div>
-      </div>
-      <div class="card">
-        <h3>Aspetto</h3>
-        <div class="hint box">Puoi cambiare tema e colore anche dai due pulsanti in alto, vicino a "Esci" — sono gli stessi controlli, qui solo più comodi da trovare.</div>
-        <div style="display:flex;gap:12px;align-items:center;">
-          <button class="theme-appearance-btn" id="accentColorSwatchSettings" title="Colore accento" style="width:44px;height:44px;">
-            <input type="color" id="accentColorPickerSettings" title="Colore accento">
-          </button>
-          <button class="ghost" id="themeToggleBtnSettings" type="button" style="display:flex;align-items:center;gap:8px;">
-            <svg id="themeIconSunSettings" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.5M12 19v2.5M21.5 12H19M5 12H2.5M18.36 5.64l-1.77 1.77M7.41 16.59l-1.77 1.77M18.36 18.36l-1.77-1.77M7.41 7.41L5.64 5.64" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <svg id="themeIconMoonSettings" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
-            <span>Tema chiaro/scuro</span>
-          </button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Documenti legali</h3>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;">
-          <a href="#" id="settingsOpenPrivacyLink" style="color:var(--accent);font-size:13px;">Informativa Privacy</a>
-          <a href="#" id="settingsOpenTermsLink" style="color:var(--accent);font-size:13px;">Termini di Servizio</a>
-        </div>
-      </div>
-    </div>
-
   </div>
 
 </div>
 
+</div>
 
+<!-- IMPOSTAZIONI -->
+<div id="settingsOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:1100;overflow-y:auto;">
+  <div style="position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;gap:12px;z-index:1;">
+    <button id="closeSettingsBtn" type="button" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--ink);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Chiudi</span>
+    </button>
+    <h2 style="margin:0;font-size:18px;">Impostazioni</h2>
+  </div>
+  <div style="max-width:680px;margin:0 auto;padding:20px;">
+    <div class="card">
+      <h3>Dati azienda</h3>
+      <div class="hint box">Modifica i dati della tua azienda — usati nell'intestazione delle fatture stampate.</div>
+      <div class="form-grid">
+        <div class="full">
+          <label>Nome azienda</label>
+          <input type="text" id="settingsCompanyNameInput" placeholder="es. Rossi Srl">
+        </div>
+        <div>
+          <label>Partita IVA (facoltativo)</label>
+          <input type="text" id="settingsCompanyVatInput" placeholder="es. IT01234567890">
+        </div>
+        <div>
+          <label>Forma di bilancio</label>
+          <select id="settingsCompanyFormSelect">
+            <option value="abbreviated">Abbreviata</option>
+            <option value="ordinary">Ordinaria</option>
+          </select>
+        </div>
+      </div>
+      <button class="primary" id="saveCompanySettingsBtn" type="button">Salva modifiche</button>
+      <div id="saveCompanySettingsMsg" style="display:none;margin-top:10px;"></div>
+    </div>
+    <div class="card">
+      <h3>Aspetto</h3>
+      <div class="hint box">Puoi cambiare tema e colore anche dai pulsanti in alto, vicino a "Esci" — sono gli stessi controlli, qui solo più comodi da trovare.</div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <button class="theme-appearance-btn" id="accentColorSwatchSettings" title="Colore accento" style="width:44px;height:44px;">
+          <input type="color" id="accentColorPickerSettings" title="Colore accento">
+        </button>
+        <button class="ghost" id="themeToggleBtnSettings" type="button" style="display:flex;align-items:center;gap:8px;">
+          <svg id="themeIconSunSettings" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.5M12 19v2.5M21.5 12H19M5 12H2.5M18.36 5.64l-1.77 1.77M7.41 16.59l-1.77 1.77M18.36 18.36l-1.77-1.77M7.41 7.41L5.64 5.64" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg id="themeIconMoonSettings" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
+          <span>Tema chiaro/scuro</span>
+        </button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Documenti legali</h3>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;">
+        <a href="#" id="settingsOpenPrivacyLink" style="color:var(--accent);font-size:13px;">Informativa Privacy</a>
+        <a href="#" id="settingsOpenTermsLink" style="color:var(--accent);font-size:13px;">Termini di Servizio</a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -2030,6 +2057,14 @@
   document.getElementById('closeTermsBtn').addEventListener('click', ()=>{
     document.getElementById('termsOverlay').style.display = 'none';
   });
+  document.getElementById('googleSignInBtn').addEventListener('click', async ()=>{
+    hideAuthError();
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
+    if(error){ showAuthError(error.message); }
+  });
   document.getElementById('authLoginBtn').addEventListener('click', async ()=>{
     hideAuthError();
     const email = document.getElementById('authEmail').value.trim();
@@ -2159,6 +2194,12 @@
       tab.classList.add('active');
       document.getElementById('panel-'+tab.dataset.panel).style.display = 'block';
     });
+  });
+  document.getElementById('openSettingsBtn').addEventListener('click', ()=>{
+    document.getElementById('settingsOverlay').style.display = 'block';
+  });
+  document.getElementById('closeSettingsBtn').addEventListener('click', ()=>{
+    document.getElementById('settingsOverlay').style.display = 'none';
   });
 
   // ---------- Piano dei conti ----------
