@@ -121,6 +121,7 @@
         <button class="tab" data-panel="anagrafica">Anagrafica</button>
         <button class="tab" data-panel="fatture">Fatture</button>
         <button class="tab" data-panel="scadenzario">Scadenzario</button>
+        <button class="tab" data-panel="cashflow">Cash Flow</button>
         <button class="tab" data-panel="bilanci">Bilanci</button>
         <button class="tab" data-panel="iva">IVA</button>
         <button class="tab" data-panel="ammortamenti">Ammortamenti</button>
@@ -353,6 +354,20 @@
         <h3>📤 Da pagare</h3>
         <div class="hint box">Fatture ricevute non ancora segnate come pagate, ordinate per scadenza.</div>
         <div id="scadenzarioPagareWrap"></div>
+      </div>
+    </div>
+
+    <!-- CASH FLOW -->
+    <div class="panel" id="panel-cashflow" style="display:none;">
+      <div class="card">
+        <h3>Liquidità attuale</h3>
+        <div class="hint box">Somma dei conti bancari/cassa nel piano dei conti (codici 1000–1099).</div>
+        <div id="cashflowCurrentWrap" style="font-size:22px;font-weight:700;font-family:var(--mono);"></div>
+      </div>
+      <div class="card">
+        <h3>Proiezione mese per mese</h3>
+        <div class="hint box">⚠️ Calcolata solo dalle fatture registrate con scadenza — non tiene conto di stipendi, F24, o altre spese/entrate non fatturate. Uno strumento indicativo, non un bilancio di previsione ufficiale.</div>
+        <div id="cashflowProjectionWrap"></div>
       </div>
     </div>
 
@@ -1199,6 +1214,52 @@
     renderGroup(wrapOut, buildRows('ricevuta'));
   }
 
+  function renderCashflow(){
+    const currentWrap = document.getElementById('cashflowCurrentWrap');
+    const projWrap = document.getElementById('cashflowProjectionWrap');
+    if(!currentWrap || !projWrap) return;
+
+    const bankAccounts = state.accounts.filter(a => a.code >= '1000' && a.code <= '1099');
+    const currentLiquidity = bankAccounts.reduce((s,a)=> s + accountBalance(a.id), 0);
+    currentWrap.textContent = '€ ' + fmt(currentLiquidity);
+
+    // Raccogli fatture non saldate con scadenza (o data fattura se manca la scadenza)
+    const unpaid = state.invoices.filter(i => !i.paid);
+    if(unpaid.length === 0){
+      projWrap.innerHTML = '<div class="empty-state">Nessuna fattura in sospeso — nulla da proiettare, la liquidità resta quella attuale.</div>';
+      return;
+    }
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const monthBuckets = {}; // 'YYYY-MM' -> { in: 0, out: 0 }
+    unpaid.forEach(inv=>{
+      const refDate = inv.due_date || inv.date;
+      const d = new Date(refDate);
+      const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      if(!monthBuckets[key]) monthBuckets[key] = { in:0, out:0 };
+      const lines = state.invoiceLines.filter(l=>l.invoice_id===inv.id);
+      const totals = computeInvoiceTotals(lines.map(l=>({quantity:Number(l.quantity), unitPrice:Number(l.unit_price), vatRate:Number(l.vat_rate)})));
+      if(inv.type==='emessa') monthBuckets[key].in += totals.totale;
+      else monthBuckets[key].out += totals.totale;
+    });
+
+    const sortedKeys = Object.keys(monthBuckets).sort();
+    let running = currentLiquidity;
+    projWrap.innerHTML = '<table><tr><th>Mese</th><th style="text-align:right;">Incassi previsti</th><th style="text-align:right;">Pagamenti previsti</th><th style="text-align:right;">Saldo cumulato</th></tr>' +
+      sortedKeys.map(key=>{
+        const b = monthBuckets[key];
+        running = running + b.in - b.out;
+        const [y,m] = key.split('-');
+        const label = new Date(Number(y), Number(m)-1, 1).toLocaleDateString('it-IT',{month:'long', year:'numeric'});
+        const runningStyle = running < 0 ? 'color:var(--over);font-weight:700;' : 'font-weight:700;';
+        return '<tr><td>'+label.charAt(0).toUpperCase()+label.slice(1)+'</td>' +
+          '<td style="text-align:right;color:var(--green);" class="mono">+ € '+fmt(b.in)+'</td>' +
+          '<td style="text-align:right;color:var(--over);" class="mono">− € '+fmt(b.out)+'</td>' +
+          '<td style="text-align:right;'+runningStyle+'" class="mono">€ '+fmt(running)+'</td></tr>';
+      }).join('') +
+      '</table>';
+  }
+
   function printInvoice(invoiceId){
     const inv = state.invoices.find(i=>i.id===invoiceId);
     if(!inv) return;
@@ -1398,17 +1459,27 @@
     const wrap = document.getElementById('employeesListWrap');
     if(!wrap) return;
     if(state.employees.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun dipendente ancora.</div>'; return; }
-    wrap.innerHTML = state.employees.map(emp => `
-      <div class="list-row">
-        <div class="list-main">
-          <span class="list-cat">${emp.name}</span>
-          <span class="list-note">Lordo mensile € ${fmt(emp.gross_monthly_salary)} · INAIL ${emp.inail_rate}%</span>
+    wrap.innerHTML = state.employees.map(emp => {
+      const empPayslips = state.payslips.filter(p=>p.employee_id===emp.id);
+      const tfrAccrued = empPayslips.reduce((s,p)=> s + Number(p.tfr||0), 0);
+      const tfrLine = empPayslips.length > 0
+        ? '<div style="font-size:12px;color:var(--ink-faint);margin-top:2px;">TFR maturato: <strong style="color:var(--ink-soft);">€ '+fmt(tfrAccrued)+'</strong> ('+empPayslips.length+' bust'+(empPayslips.length===1?'a':'e')+' paga registrat'+(empPayslips.length===1?'a':'e')+')</div>'
+        : '';
+      return `
+      <div class="list-row" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="list-main">
+            <span class="list-cat">${emp.name}</span>
+            <span class="list-note">Lordo mensile € ${fmt(emp.gross_monthly_salary)} · INAIL ${emp.inail_rate}%</span>
+          </div>
+          <div class="list-right">
+            <button class="icon-btn" data-del-emp="${emp.id}" title="Elimina">✕</button>
+          </div>
         </div>
-        <div class="list-right">
-          <button class="icon-btn" data-del-emp="${emp.id}" title="Elimina">✕</button>
-        </div>
+        ${tfrLine}
       </div>
-    `).join('');
+    `;
+    }).join('');
     wrap.querySelectorAll('[data-del-emp]').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
         await supabaseClient.from('biz_employees').delete().eq('id', btn.dataset.delEmp);
@@ -1610,6 +1681,7 @@
     updateSimplePreview();
     renderInvoicesList();
     renderScadenzario();
+    renderCashflow();
     renderBilanci();
     renderAssetsList();
     renderBankBalances();
