@@ -373,39 +373,39 @@
     <!-- PIANO DEI CONTI -->
     <div class="panel" id="panel-conti" style="display:none;">
       <div class="card">
-        <h3>Piano dei conti</h3>
-        <div class="hint box">L'elenco dei conti su cui registri i movimenti — parte già con una base universale, aggiungine altri se ti servono.</div>
+        <h3 data-i18n="conti.title">Piano dei conti</h3>
+        <div class="hint box" data-i18n="conti.hint">L'elenco dei conti su cui registri i movimenti — parte già con una base universale, aggiungine altri se ti servono.</div>
         <div class="form-grid">
           <div>
-            <label>Codice</label>
+            <label data-i18n="conti.code">Codice</label>
             <input type="text" id="acctCodeInput" placeholder="es. 1050">
           </div>
           <div>
-            <label>Nome conto</label>
+            <label data-i18n="conti.accountName">Nome conto</label>
             <input type="text" id="acctNameInput" placeholder="es. Cassa contanti">
           </div>
           <div class="full">
-            <label>Categoria</label>
+            <label data-i18n="conti.category">Categoria</label>
             <select id="acctCategorySelect">
-              <option value="attivo">Attivo</option>
-              <option value="passivo">Passivo</option>
-              <option value="patrimonio_netto">Patrimonio Netto</option>
-              <option value="costi">Costi</option>
-              <option value="ricavi">Ricavi</option>
+              <option value="attivo" data-i18n="conti.catAsset">Attivo</option>
+              <option value="passivo" data-i18n="conti.catLiability">Passivo</option>
+              <option value="patrimonio_netto" data-i18n="conti.catEquity">Patrimonio Netto</option>
+              <option value="costi" data-i18n="conti.catCosts">Costi</option>
+              <option value="ricavi" data-i18n="conti.catRevenue">Ricavi</option>
             </select>
           </div>
         </div>
-        <button class="primary" id="addAccountBtn" type="button">Aggiungi conto</button>
-        <button class="ghost" id="cancelAccountEditBtn" type="button" style="display:none;">Annulla modifica</button>
+        <button class="primary" id="addAccountBtn" type="button" data-i18n="conti.addAccount">Aggiungi conto</button>
+        <button class="ghost" id="cancelAccountEditBtn" type="button" style="display:none;" data-i18n="btn.cancelEdit">Annulla modifica</button>
       </div>
       <div class="card">
-        <h3>Modello base aggiornato</h3>
-        <div class="hint box">Il modello base del piano dei conti è cresciuto — aggiungi qui i conti nuovi che ancora non hai, senza toccare quelli che hai già (e senza duplicati).</div>
-        <button class="ghost" id="addMissingDefaultsBtn" type="button">Aggiungi i conti mancanti dal modello base</button>
+        <h3 data-i18n="conti.updatedModelTitle">Modello base aggiornato</h3>
+        <div class="hint box" data-i18n="conti.updatedModelHint">Il modello base del piano dei conti è cresciuto — aggiungi qui i conti nuovi che ancora non hai, senza toccare quelli che hai già (e senza duplicati).</div>
+        <button class="ghost" id="addMissingDefaultsBtn" type="button" data-i18n="conti.addMissing">Aggiungi i conti mancanti dal modello base</button>
         <div id="addMissingDefaultsMsg" style="display:none;margin-top:10px;"></div>
       </div>
       <div class="card">
-        <h3>I tuoi conti</h3>
+        <h3 data-i18n="conti.yourAccounts">I tuoi conti</h3>
         <div id="accountsListWrap"></div>
       </div>
     </div>
@@ -414,57 +414,57 @@
     <div class="panel" id="panel-primanota" style="display:none;">
       <div class="card" style="padding:6px;margin-bottom:16px;">
         <div class="segmented" id="entryModeToggle">
-          <button data-mode="simple" class="active" type="button">Modalità semplice</button>
-          <button data-mode="advanced" type="button">Modalità avanzata</button>
+          <button data-mode="simple" class="active" type="button" data-i18n="primanota.simpleMode">Modalità semplice</button>
+          <button data-mode="advanced" type="button" data-i18n="primanota.advancedMode">Modalità avanzata</button>
         </div>
       </div>
 
       <!-- MODALITÀ SEMPLICE -->
       <div class="card" id="simpleEntryCard">
-        <h3>Nuova registrazione (modalità semplice)</h3>
-        <div class="hint box">Scegli cosa è successo — l'app sa già quali conti muovere.</div>
-        <label>Cosa è successo</label>
+        <h3 data-i18n="primanota.newSimple">Nuova registrazione (modalità semplice)</h3>
+        <div class="hint box" data-i18n="primanota.simpleHint">Scegli cosa è successo — l'app sa già quali conti muovere.</div>
+        <label data-i18n="primanota.whatHappened">Cosa è successo</label>
         <select id="simpleTemplateSelect"></select>
         <div class="form-grid">
           <div>
-            <label>Data</label>
+            <label data-i18n="lbl.date">Data</label>
             <input type="date" id="simpleDateInput">
           </div>
           <div>
-            <label>Importo</label>
+            <label data-i18n="lbl.amount">Importo</label>
             <input type="number" step="0.01" min="0" id="simpleAmountInput" placeholder="0.00">
           </div>
           <div class="full">
-            <label>Descrizione (facoltativa)</label>
+            <label data-i18n="lbl.descOptional">Descrizione (facoltativa)</label>
             <input type="text" id="simpleDescInput" placeholder="es. Fattura n. 12 - Cliente Bianchi">
           </div>
         </div>
         <div class="hint" id="simplePreview" style="margin-bottom:14px;"></div>
-        <button class="primary" id="addSimpleEntryBtn" type="button">Registra</button>
+        <button class="primary" id="addSimpleEntryBtn" type="button" data-i18n="btn.register">Registra</button>
       </div>
 
       <!-- MODALITÀ AVANZATA -->
       <div class="card" id="advancedEntryCard" style="display:none;">
-        <h3>Nuova registrazione (modalità avanzata)</h3>
-        <div class="hint box">Dare e avere liberi — scegli tu i conti, quante righe ti servono.</div>
+        <h3 data-i18n="primanota.newAdvanced">Nuova registrazione (modalità avanzata)</h3>
+        <div class="hint box" data-i18n="primanota.advancedHint">Dare e avere liberi — scegli tu i conti, quante righe ti servono.</div>
         <div class="form-grid">
           <div>
-            <label>Data</label>
+            <label data-i18n="lbl.date">Data</label>
             <input type="date" id="advDateInput">
           </div>
           <div>
-            <label>Descrizione</label>
+            <label data-i18n="lbl.desc">Descrizione</label>
             <input type="text" id="advDescInput" placeholder="es. Acquisto materiali">
           </div>
         </div>
         <div id="advancedLinesWrap"></div>
-        <button class="ghost" id="addAdvancedLineBtn" type="button" style="margin-bottom:14px;">+ Aggiungi riga</button>
+        <button class="ghost" id="addAdvancedLineBtn" type="button" style="margin-bottom:14px;" data-i18n="primanota.addLine">+ Aggiungi riga</button>
         <div id="advancedBalanceCheck" style="margin-bottom:14px;font-weight:600;"></div>
-        <button class="primary" id="addAdvancedEntryBtn" type="button">Registra</button>
+        <button class="primary" id="addAdvancedEntryBtn" type="button" data-i18n="btn.register">Registra</button>
       </div>
 
       <div class="card">
-        <h3>Registrazioni</h3>
+        <h3 data-i18n="primanota.entries">Registrazioni</h3>
         <div id="journalListWrap"></div>
       </div>
     </div>
@@ -472,51 +472,51 @@
     <!-- ANAGRAFICA -->
     <div class="panel" id="panel-anagrafica" style="display:none;">
       <div class="card">
-        <h3 id="partnerFormTitle">Nuovo cliente/fornitore</h3>
-        <div class="hint box">Salva qui i dati di clienti e fornitori una volta sola — poi li richiami veloce quando registri una fattura, senza riscriverli ogni volta.</div>
+        <h3 id="partnerFormTitle" data-i18n="anag.newPartner">Nuovo cliente/fornitore</h3>
+        <div class="hint box" data-i18n="anag.hint">Salva qui i dati di clienti e fornitori una volta sola — poi li richiami veloce quando registri una fattura, senza riscriverli ogni volta.</div>
         <div class="form-grid">
           <div class="full">
-            <label>Nome / Ragione sociale</label>
+            <label data-i18n="anag.name">Nome / Ragione sociale</label>
             <input type="text" id="partnerNameInput" placeholder="es. Bianchi Srl">
           </div>
           <div>
-            <label>Tipo</label>
+            <label data-i18n="anag.type">Tipo</label>
             <select id="partnerTypeSelect">
-              <option value="cliente">Cliente</option>
-              <option value="fornitore">Fornitore</option>
-              <option value="entrambi">Entrambi</option>
+              <option value="cliente" data-i18n="anag.client">Cliente</option>
+              <option value="fornitore" data-i18n="anag.supplier">Fornitore</option>
+              <option value="entrambi" data-i18n="anag.both">Entrambi</option>
             </select>
           </div>
           <div>
-            <label>Partita IVA (facoltativa)</label>
+            <label data-i18n="anag.vatOptional">Partita IVA (facoltativa)</label>
             <input type="text" id="partnerVatInput" placeholder="es. IT01234567890">
           </div>
           <div>
-            <label>Codice Fiscale (facoltativo)</label>
+            <label data-i18n="anag.taxCodeOptional">Codice Fiscale (facoltativo)</label>
             <input type="text" id="partnerTaxCodeInput" placeholder="es. RSSMRA80A01H501U">
           </div>
           <div>
-            <label>Email (facoltativa)</label>
+            <label data-i18n="anag.emailOptional">Email (facoltativa)</label>
             <input type="email" id="partnerEmailInput" placeholder="es. info@bianchisrl.it">
           </div>
           <div>
-            <label>Telefono (facoltativo)</label>
+            <label data-i18n="anag.phoneOptional">Telefono (facoltativo)</label>
             <input type="text" id="partnerPhoneInput" placeholder="es. 02 1234567">
           </div>
           <div class="full">
-            <label>Indirizzo (facoltativo)</label>
+            <label data-i18n="anag.addressOptional">Indirizzo (facoltativo)</label>
             <input type="text" id="partnerAddressInput" placeholder="es. Via Roma 1, 20100 Milano">
           </div>
           <div class="full">
-            <label>Note (facoltative)</label>
+            <label data-i18n="anag.notesOptional">Note (facoltative)</label>
             <input type="text" id="partnerNotesInput" placeholder="es. referente Mario Rossi">
           </div>
         </div>
-        <button class="primary" id="savePartnerBtn" type="button">Salva</button>
-        <button class="ghost" id="cancelPartnerEditBtn" type="button" style="display:none;">Annulla modifica</button>
+        <button class="primary" id="savePartnerBtn" type="button" data-i18n="btn.save">Salva</button>
+        <button class="ghost" id="cancelPartnerEditBtn" type="button" style="display:none;" data-i18n="btn.cancelEdit">Annulla modifica</button>
       </div>
       <div class="card">
-        <h3>Clienti e fornitori salvati</h3>
+        <h3 data-i18n="anag.savedPartners">Clienti e fornitori salvati</h3>
         <div id="partnersListWrap"></div>
       </div>
     </div>
@@ -2651,6 +2651,22 @@
       'settings.themeLabel':'Tema chiaro/scuro', 'settings.legalDocs':'Documenti legali',
       'legal.privacy':'Informativa Privacy', 'legal.terms':'Termini di Servizio',
       'settings.saved':'✓ Salvato.',
+      'conti.title':'Piano dei conti', 'conti.hint':"L'elenco dei conti su cui registri i movimenti — parte già con una base universale, aggiungine altri se ti servono.",
+      'conti.code':'Codice', 'conti.accountName':'Nome conto', 'conti.category':'Categoria',
+      'conti.catAsset':'Attivo', 'conti.catLiability':'Passivo', 'conti.catEquity':'Patrimonio Netto', 'conti.catCosts':'Costi', 'conti.catRevenue':'Ricavi',
+      'conti.addAccount':'Aggiungi conto', 'btn.cancelEdit':'Annulla modifica',
+      'conti.updatedModelTitle':'Modello base aggiornato', 'conti.updatedModelHint':'Il modello base del piano dei conti è cresciuto — aggiungi qui i conti nuovi che ancora non hai, senza toccare quelli che hai già (e senza duplicati).',
+      'conti.addMissing':'Aggiungi i conti mancanti dal modello base', 'conti.yourAccounts':'I tuoi conti',
+      'primanota.simpleMode':'Modalità semplice', 'primanota.advancedMode':'Modalità avanzata',
+      'primanota.newSimple':'Nuova registrazione (modalità semplice)', 'primanota.simpleHint':"Scegli cosa è successo — l'app sa già quali conti muovere.",
+      'primanota.whatHappened':'Cosa è successo', 'lbl.date':'Data', 'lbl.amount':'Importo', 'lbl.descOptional':'Descrizione (facoltativa)', 'btn.register':'Registra',
+      'primanota.newAdvanced':'Nuova registrazione (modalità avanzata)', 'primanota.advancedHint':'Dare e avere liberi — scegli tu i conti, quante righe ti servono.',
+      'lbl.desc':'Descrizione', 'primanota.addLine':'+ Aggiungi riga', 'primanota.entries':'Registrazioni',
+      'anag.newPartner':'Nuovo cliente/fornitore', 'anag.hint':'Salva qui i dati di clienti e fornitori una volta sola — poi li richiami veloce quando registri una fattura, senza riscriverli ogni volta.',
+      'anag.name':'Nome / Ragione sociale', 'anag.type':'Tipo', 'anag.client':'Cliente', 'anag.supplier':'Fornitore', 'anag.both':'Entrambi',
+      'anag.vatOptional':'Partita IVA (facoltativa)', 'anag.taxCodeOptional':'Codice Fiscale (facoltativo)', 'anag.emailOptional':'Email (facoltativa)',
+      'anag.phoneOptional':'Telefono (facoltativo)', 'anag.addressOptional':'Indirizzo (facoltativo)', 'anag.notesOptional':'Note (facoltative)',
+      'btn.save':'Salva', 'anag.savedPartners':'Clienti e fornitori salvati',
     },
     en: {
       'auth.subtitle':'Sign in with the same credentials as Le Mie Finanze, or sign up directly here.',
@@ -2679,6 +2695,22 @@
       'settings.themeLabel':'Light/dark theme', 'settings.legalDocs':'Legal documents',
       'legal.privacy':'Privacy Policy', 'legal.terms':'Terms of Service',
       'settings.saved':'✓ Saved.',
+      'conti.title':'Chart of accounts', 'conti.hint':"The list of accounts you post entries to — starts with a universal base, add more if you need them.",
+      'conti.code':'Code', 'conti.accountName':'Account name', 'conti.category':'Category',
+      'conti.catAsset':'Asset', 'conti.catLiability':'Liability', 'conti.catEquity':'Equity', 'conti.catCosts':'Costs', 'conti.catRevenue':'Revenue',
+      'conti.addAccount':'Add account', 'btn.cancelEdit':'Cancel edit',
+      'conti.updatedModelTitle':'Updated base template', 'conti.updatedModelHint':"The base chart-of-accounts template has grown — add the new accounts you don't have yet here, without touching the ones you already have (and without duplicates).",
+      'conti.addMissing':'Add missing accounts from base template', 'conti.yourAccounts':'Your accounts',
+      'primanota.simpleMode':'Simple mode', 'primanota.advancedMode':'Advanced mode',
+      'primanota.newSimple':'New entry (simple mode)', 'primanota.simpleHint':'Choose what happened — the app already knows which accounts to move.',
+      'primanota.whatHappened':'What happened', 'lbl.date':'Date', 'lbl.amount':'Amount', 'lbl.descOptional':'Description (optional)', 'btn.register':'Post entry',
+      'primanota.newAdvanced':'New entry (advanced mode)', 'primanota.advancedHint':'Free debit and credit — choose the accounts, as many lines as you need.',
+      'lbl.desc':'Description', 'primanota.addLine':'+ Add line', 'primanota.entries':'Entries',
+      'anag.newPartner':'New client/supplier', 'anag.hint':"Save client and supplier details once — then pull them up quickly when you record an invoice, without retyping them every time.",
+      'anag.name':'Name / Company name', 'anag.type':'Type', 'anag.client':'Client', 'anag.supplier':'Supplier', 'anag.both':'Both',
+      'anag.vatOptional':'VAT number (optional)', 'anag.taxCodeOptional':'Tax code (optional)', 'anag.emailOptional':'Email (optional)',
+      'anag.phoneOptional':'Phone (optional)', 'anag.addressOptional':'Address (optional)', 'anag.notesOptional':'Notes (optional)',
+      'btn.save':'Save', 'anag.savedPartners':'Saved clients and suppliers',
     },
     de: {
       'auth.subtitle':'Melde dich mit denselben Zugangsdaten wie bei Le Mie Finanze an, oder registriere dich direkt hier.',
@@ -2707,6 +2739,22 @@
       'settings.themeLabel':'Hell-/Dunkelmodus', 'settings.legalDocs':'Rechtliche Dokumente',
       'legal.privacy':'Datenschutzerklärung', 'legal.terms':'Nutzungsbedingungen',
       'settings.saved':'✓ Gespeichert.',
+      'conti.title':'Kontenplan', 'conti.hint':'Die Liste der Konten, auf die du Buchungen erfassst — startet bereits mit einer universellen Basis, füge weitere hinzu, falls nötig.',
+      'conti.code':'Code', 'conti.accountName':'Kontoname', 'conti.category':'Kategorie',
+      'conti.catAsset':'Aktiva', 'conti.catLiability':'Passiva', 'conti.catEquity':'Eigenkapital', 'conti.catCosts':'Kosten', 'conti.catRevenue':'Erträge',
+      'conti.addAccount':'Konto hinzufügen', 'btn.cancelEdit':'Bearbeitung abbrechen',
+      'conti.updatedModelTitle':'Aktualisierte Basisvorlage', 'conti.updatedModelHint':'Die Basisvorlage des Kontenplans ist gewachsen — füge hier neue Konten hinzu, die du noch nicht hast, ohne die bestehenden zu ändern (und ohne Duplikate).',
+      'conti.addMissing':'Fehlende Konten aus der Basisvorlage hinzufügen', 'conti.yourAccounts':'Deine Konten',
+      'primanota.simpleMode':'Einfacher Modus', 'primanota.advancedMode':'Erweiterter Modus',
+      'primanota.newSimple':'Neue Buchung (einfacher Modus)', 'primanota.simpleHint':'Wähle, was passiert ist — die App weiß bereits, welche Konten zu bewegen sind.',
+      'primanota.whatHappened':'Was ist passiert', 'lbl.date':'Datum', 'lbl.amount':'Betrag', 'lbl.descOptional':'Beschreibung (optional)', 'btn.register':'Buchen',
+      'primanota.newAdvanced':'Neue Buchung (erweiterter Modus)', 'primanota.advancedHint':'Freies Soll und Haben — wähle die Konten, so viele Zeilen wie du brauchst.',
+      'lbl.desc':'Beschreibung', 'primanota.addLine':'+ Zeile hinzufügen', 'primanota.entries':'Buchungen',
+      'anag.newPartner':'Neuer Kunde/Lieferant', 'anag.hint':'Speichere die Daten von Kunden und Lieferanten einmal — rufe sie dann schnell ab, wenn du eine Rechnung erfassst, ohne sie jedes Mal neu einzugeben.',
+      'anag.name':'Name / Firmenname', 'anag.type':'Typ', 'anag.client':'Kunde', 'anag.supplier':'Lieferant', 'anag.both':'Beides',
+      'anag.vatOptional':'USt-IdNr. (optional)', 'anag.taxCodeOptional':'Steuernummer (optional)', 'anag.emailOptional':'E-Mail (optional)',
+      'anag.phoneOptional':'Telefon (optional)', 'anag.addressOptional':'Adresse (optional)', 'anag.notesOptional':'Notizen (optional)',
+      'btn.save':'Speichern', 'anag.savedPartners':'Gespeicherte Kunden und Lieferanten',
     }
   };
   function currentLang(){ return (currentCompany && currentCompany.language) || (function(){ try{ return localStorage.getItem('bizLang') || 'it'; }catch(e){ return 'it'; } })(); }
