@@ -463,6 +463,22 @@
         <button class="primary" id="addAdvancedEntryBtn" type="button" data-i18n="btn.register">Registra</button>
       </div>
 
+      <!-- RICORRENTI -->
+      <div class="card">
+        <h3 data-i18n="rec.title">🔁 Registrazioni ricorrenti</h3>
+        <div class="hint box" data-i18n="rec.hint">Salva uno schema di registrazione (tipo l'affitto mensile) e generalo con un tocco ogni mese, senza doverlo riscrivere da capo.</div>
+        <label data-i18n="lbl.descOptional2">Descrizione</label>
+        <input type="text" id="recDescInput" placeholder="es. Affitto ufficio">
+        <div id="recLinesWrap"></div>
+        <button class="ghost" id="addRecLineBtn" type="button" style="margin-bottom:14px;" data-i18n="primanota.addLine">+ Aggiungi riga</button>
+        <div id="recBalanceCheck" style="margin-bottom:14px;font-weight:600;"></div>
+        <button class="primary" id="saveRecurringBtn" type="button" data-i18n="rec.save">Salva come ricorrente</button>
+      </div>
+      <div class="card">
+        <h3 data-i18n="rec.saved">Ricorrenti salvate</h3>
+        <div id="recurringListWrap"></div>
+      </div>
+
       <div class="card">
         <h3 data-i18n="primanota.entries">Registrazioni</h3>
         <div class="form-grid" style="margin-bottom:10px;">
@@ -847,6 +863,15 @@
       </div>
     </div>
     <div class="card">
+      <h3 data-i18n="settings.export">Esporta dati</h3>
+      <div class="hint box" data-i18n="settings.exportHint">Scarica i tuoi dati in formato CSV, apribile con Excel, Numbers o Google Fogli.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="ghost" id="exportJournalBtn" type="button" data-i18n="settings.exportJournal">Esporta Prima Nota (CSV)</button>
+        <button class="ghost" id="exportInvoicesBtn" type="button" data-i18n="settings.exportInvoices">Esporta Fatture (CSV)</button>
+        <button class="ghost" id="exportAccountsBtn" type="button" data-i18n="settings.exportAccounts">Esporta Piano dei conti (CSV)</button>
+      </div>
+    </div>
+    <div class="card">
       <h3 data-i18n="settings.legalDocs">Documenti legali</h3>
       <div style="display:flex;gap:14px;flex-wrap:wrap;">
         <a href="#" id="settingsOpenPrivacyLink" style="color:var(--accent);font-size:13px;" data-i18n="legal.privacy">Informativa Privacy</a>
@@ -995,7 +1020,8 @@
     assetDepreciations: [],
     employees: [],
     payslips: [],
-    partners: []
+    partners: [],
+    recurring: []
   };
   let editingAccountId = null;
   let editingPartnerId = null;
@@ -1077,6 +1103,13 @@
     const { data, error } = await supabaseClient.from('biz_partners').select('*').eq('company_id', currentCompany.id).order('name', {ascending:true});
     if(error){ console.error('loadPartners error', error); state.partners = []; return; }
     state.partners = data || [];
+  }
+
+  async function loadRecurring(){
+    if(!currentCompany) return;
+    const { data, error } = await supabaseClient.from('biz_recurring_entries').select('*').eq('company_id', currentCompany.id).order('created_at', {ascending:true});
+    if(error){ console.error('loadRecurring error', error); state.recurring = []; return; }
+    state.recurring = data || [];
   }
 
   function accountByCode(code){ return state.accounts.find(a=>a.code===code); }
@@ -1385,6 +1418,7 @@
   }
 
   let advancedLines = [ {accountId:'', debit:'', credit:''}, {accountId:'', debit:'', credit:''} ];
+  let recLines = [ {accountId:'', debit:'', credit:''}, {accountId:'', debit:'', credit:''} ];
 
   function readAdvancedLinesFromDom(){
     const wrap = document.getElementById('advancedLinesWrap');
@@ -1408,6 +1442,126 @@
     } else {
       el.innerHTML = '<span class="unbalanced">✗ Non bilanciato — differenza di € '+fmt(Math.abs(diff))+'</span>';
     }
+  }
+
+  // ---------- Registrazioni ricorrenti ----------
+  function renderRecLines(lines){
+    const wrap = document.getElementById('recLinesWrap');
+    const acctOptions = state.accounts.slice().sort((a,b)=> a.code < b.code ? -1 : 1)
+      .map(a=>'<option value="'+a.id+'">'+a.code+' '+a.name+'</option>').join('');
+    wrap.innerHTML = lines.map((line, idx) => `
+      <div class="form-grid" data-rec-line="${idx}" style="border-top:1px solid var(--line);padding-top:12px;margin-top:12px;">
+        <div class="full">
+          <label data-i18n="primanota.account">Conto</label>
+          <select class="rec-account">${acctOptions}</select>
+        </div>
+        <div>
+          <label data-i18n="primanota.debit">Dare</label>
+          <input type="number" step="0.01" min="0" class="rec-debit" placeholder="0.00">
+        </div>
+        <div>
+          <label data-i18n="primanota.credit">Avere</label>
+          <input type="number" step="0.01" min="0" class="rec-credit" placeholder="0.00">
+        </div>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('[data-rec-line]').forEach((el, idx)=>{
+      const line = lines[idx];
+      if(line.accountId) el.querySelector('.rec-account').value = line.accountId;
+      if(line.debit) el.querySelector('.rec-debit').value = line.debit;
+      if(line.credit) el.querySelector('.rec-credit').value = line.credit;
+      el.querySelector('.rec-debit').addEventListener('input', updateRecBalanceCheck);
+      el.querySelector('.rec-credit').addEventListener('input', updateRecBalanceCheck);
+    });
+    updateRecBalanceCheck();
+    applyStaticTranslations();
+  }
+
+  function readRecLinesFromDom(){
+    const wrap = document.getElementById('recLinesWrap');
+    return Array.from(wrap.querySelectorAll('[data-rec-line]')).map(el=>({
+      accountId: el.querySelector('.rec-account').value,
+      debit: el.querySelector('.rec-debit').value,
+      credit: el.querySelector('.rec-credit').value
+    }));
+  }
+
+  function updateRecBalanceCheck(){
+    const lines = readRecLinesFromDom();
+    const totalDebit = lines.reduce((s,l)=> s + (parseFloat(l.debit)||0), 0);
+    const totalCredit = lines.reduce((s,l)=> s + (parseFloat(l.credit)||0), 0);
+    const el = document.getElementById('recBalanceCheck');
+    const diff = Math.round((totalDebit - totalCredit) * 100) / 100;
+    if(diff === 0 && totalDebit > 0){
+      el.innerHTML = '<span class="balanced">✓ '+t('primanota.balanced')+' (€ '+fmt(totalDebit)+')</span>';
+    } else if(totalDebit === 0 && totalCredit === 0){
+      el.innerHTML = '<span class="hint">'+t('primanota.enterAmounts')+'</span>';
+    } else {
+      el.innerHTML = '<span class="unbalanced">✗ '+t('primanota.unbalanced')+' € '+fmt(Math.abs(diff))+'</span>';
+    }
+  }
+
+  function renderRecurringList(){
+    const wrap = document.getElementById('recurringListWrap');
+    if(!wrap) return;
+    if(!state.recurring || state.recurring.length === 0){ wrap.innerHTML = '<div class="empty-state">'+t('rec.noneYet')+'</div>'; return; }
+    const currentMonthKey = new Date().toISOString().slice(0,7);
+    wrap.innerHTML = state.recurring.map(r=>{
+      const total = r.lines.reduce((s,l)=> s + (parseFloat(l.debit)||0), 0);
+      const alreadyThisMonth = r.last_generated_month === currentMonthKey;
+      return `
+        <div class="list-row">
+          <div class="list-main">
+            <span class="list-cat">${r.description}</span>
+            <span class="list-note">€ ${fmt(total)}${alreadyThisMonth ? ' · '+t('rec.generatedThisMonth') : ''}</span>
+          </div>
+          <div class="list-right">
+            <button class="ghost" data-gen-rec="${r.id}" type="button" style="font-size:12px;padding:6px 12px;">${t('rec.generateNow')}</button>
+            <button class="icon-btn" data-del-rec="${r.id}" title="${t('btn.delete')}">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    wrap.querySelectorAll('[data-del-rec]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        await supabaseClient.from('biz_recurring_entries').delete().eq('id', btn.dataset.delRec);
+        state.recurring = state.recurring.filter(r=>r.id !== btn.dataset.delRec);
+        renderRecurringList();
+      });
+    });
+    wrap.querySelectorAll('[data-gen-rec]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const rec = state.recurring.find(r=>r.id === btn.dataset.genRec);
+        if(!rec) return;
+        const currentMonthKey2 = new Date().toISOString().slice(0,7);
+        if(rec.last_generated_month === currentMonthKey2){
+          if(!confirm(t('rec.confirmDuplicate'))) return;
+        }
+        const totalDebit = rec.lines.reduce((s,l)=> s + (parseFloat(l.debit)||0), 0);
+        const totalCredit = rec.lines.reduce((s,l)=> s + (parseFloat(l.credit)||0), 0);
+        if(Math.round((totalDebit-totalCredit)*100) !== 0 || totalDebit === 0){
+          alert(t('rec.cannotGenerate'));
+          return;
+        }
+        const entryId = uid();
+        const todayStr = new Date().toISOString().slice(0,10);
+        const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date: todayStr, description: rec.description, mode: 'advanced' };
+        const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
+        if(e1){ alert('Errore: ' + e1.message); return; }
+        const lineRows = rec.lines.filter(l=> (parseFloat(l.debit)||0) > 0 || (parseFloat(l.credit)||0) > 0).map(l=>({
+          id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId,
+          account_id: l.accountId, debit: parseFloat(l.debit)||0, credit: parseFloat(l.credit)||0
+        }));
+        const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
+        if(e2){ alert('Errore: ' + e2.message); return; }
+        state.journalEntries.unshift(entryRow);
+        state.journalLines.push(...lineRows);
+        const monthKey = new Date().toISOString().slice(0,7);
+        await supabaseClient.from('biz_recurring_entries').update({ last_generated_month: monthKey }).eq('id', rec.id);
+        rec.last_generated_month = monthKey;
+        renderAll();
+      });
+    });
   }
 
   // ---------- Fatture ----------
@@ -2142,6 +2296,7 @@
     renderEmployeesList();
     renderPayslipsList();
     renderPartnersList();
+    renderRecurringList();
   }
 
   // ---------- Autenticazione ----------
@@ -2284,11 +2439,14 @@
     await loadAssets();
     await loadEmployees();
     await loadPartners();
+    await loadRecurring();
     populateSimpleTemplateSelect();
     populateInvoiceAccountSelect();
     populateInvoicePartnerSelect();
     populateAssetAccountSelects();
     populateTransferSelects();
+    renderRecLines(recLines);
+    applyStaticTranslations();
     populatePayslipMonthYearSelects();
     populatePayslipEmployeeSelect();
     renderInvoiceLines();
@@ -2418,6 +2576,31 @@
     current.push({ accountId:'', debit:'', credit:'' });
     advancedLines = current;
     renderAdvancedLines(advancedLines);
+  });
+  document.getElementById('addRecLineBtn').addEventListener('click', ()=>{
+    const current = readRecLinesFromDom();
+    current.push({ accountId:'', debit:'', credit:'' });
+    recLines = current;
+    renderRecLines(recLines);
+  });
+  document.getElementById('saveRecurringBtn').addEventListener('click', async ()=>{
+    const description = document.getElementById('recDescInput').value.trim();
+    if(!description){ alert(t('rec.needDescription')); return; }
+    const lines = readRecLinesFromDom().filter(l=> (parseFloat(l.debit)||0) > 0 || (parseFloat(l.credit)||0) > 0);
+    const totalDebit = lines.reduce((s,l)=> s + (parseFloat(l.debit)||0), 0);
+    const totalCredit = lines.reduce((s,l)=> s + (parseFloat(l.credit)||0), 0);
+    if(lines.length < 2 || Math.round((totalDebit-totalCredit)*100) !== 0 || totalDebit === 0){
+      alert(t('rec.cannotSave'));
+      return;
+    }
+    const row = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, description, lines, last_generated_month: null };
+    const { error } = await supabaseClient.from('biz_recurring_entries').insert([row]);
+    if(error){ alert('Errore: ' + error.message); return; }
+    state.recurring.push(row);
+    document.getElementById('recDescInput').value = '';
+    recLines = [ {accountId:'', debit:'', credit:''}, {accountId:'', debit:'', credit:''} ];
+    renderRecLines(recLines);
+    renderRecurringList();
   });
   document.getElementById('journalSearchInput').addEventListener('input', renderJournalList);
   document.getElementById('journalFilterFrom').addEventListener('change', renderJournalList);
@@ -2706,6 +2889,55 @@
     renderAll();
   });
 
+  // ---------- Esportazione CSV ----------
+  function csvEscape(val){
+    const str = String(val === null || val === undefined ? '' : val);
+    if(/[",\n]/.test(str)) return '"' + str.replace(/"/g,'""') + '"';
+    return str;
+  }
+  function arrayToCSV(headers, rows){
+    const lines = [headers.map(csvEscape).join(',')];
+    rows.forEach(row=> lines.push(row.map(csvEscape).join(',')));
+    return lines.join('\r\n');
+  }
+  function downloadCSV(filename, csvContent){
+    const blob = new Blob(['\ufeff'+csvContent], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+  function exportJournalCSV(){
+    const headers = [t('lbl.date'), t('lbl.desc'), t('conti.accountName'), t('primanota.debit'), t('primanota.credit')];
+    const rows = [];
+    state.journalEntries.slice().sort((a,b)=> a.date < b.date ? -1 : 1).forEach(entry=>{
+      const lines = state.journalLines.filter(l=>l.entry_id===entry.id);
+      lines.forEach(l=>{
+        const acc = accountById(l.account_id);
+        rows.push([entry.date, entry.description||'', acc ? (acc.code+' '+acc.name) : '', Number(l.debit||0).toFixed(2), Number(l.credit||0).toFixed(2)]);
+      });
+    });
+    downloadCSV('prima_nota.csv', arrayToCSV(headers, rows));
+  }
+  function exportInvoicesCSV(){
+    const headers = [t('fatt.number'), t('lbl.date'), t('fatt.issued')+'/'+t('fatt.received'), t('anag.name'), t('anag.vatOptional'), t('fatt.dueDate'), 'Totale €'];
+    const rows = state.invoices.slice().sort((a,b)=> a.date < b.date ? -1 : 1).map(inv=>{
+      const lines = state.invoiceLines.filter(l=>l.invoice_id===inv.id);
+      const totals = computeInvoiceTotals(lines.map(l=>({quantity:Number(l.quantity), unitPrice:Number(l.unit_price), vatRate:Number(l.vat_rate)})));
+      return [inv.number, inv.date, inv.type==='emessa' ? t('fatt.issued') : t('fatt.received'), inv.counterparty_name||'', inv.counterparty_vat||'', inv.due_date||'', totals.totale.toFixed(2)];
+    });
+    downloadCSV('fatture.csv', arrayToCSV(headers, rows));
+  }
+  function exportAccountsCSV(){
+    const headers = [t('conti.code'), t('conti.accountName'), t('conti.category')];
+    const catLabel = { attivo:t('conti.catAsset'), passivo:t('conti.catLiability'), patrimonio_netto:t('conti.catEquity'), costi:t('conti.catCosts'), ricavi:t('conti.catRevenue') };
+    const rows = state.accounts.slice().sort((a,b)=> a.code < b.code ? -1 : 1).map(a=>[a.code, a.name, catLabel[a.category]||a.category]);
+    downloadCSV('piano_dei_conti.csv', arrayToCSV(headers, rows));
+  }
+
   // ---------- Lingua e traduzioni ----------
   const I18N = {
     it: {
@@ -2789,6 +3021,16 @@
       'primanota.debit':'Dare', 'primanota.credit':'Avere', 'primanota.noDescription':'(senza descrizione)',
       'scad.f24Title':'📋 Scadenze F24 (contributi e ritenute)', 'scad.f24Hint':'Calcolate dalle buste paga generate — INPS, INAIL e IRPEF si versano di norma entro il 16 del mese successivo. Verifica sempre le scadenze ufficiali con un consulente del lavoro.',
       'scad.f24Empty':'Nessuna busta paga registrata ancora — qui vedrai le scadenze F24 non appena ne generi una.', 'stip.deletedEmployee':'(dipendente eliminato)',
+      'rec.title':'🔁 Registrazioni ricorrenti', 'rec.hint':"Salva uno schema di registrazione (tipo l'affitto mensile) e generalo con un tocco ogni mese, senza doverlo riscrivere da capo.",
+      'lbl.descOptional2':'Descrizione', 'rec.save':'Salva come ricorrente', 'rec.saved':'Ricorrenti salvate', 'rec.noneYet':'Nessuna registrazione ricorrente salvata ancora.',
+      'rec.generatedThisMonth':'già generata questo mese', 'rec.generateNow':'Registra ora',
+      'rec.confirmDuplicate':'Hai già generato questa registrazione questo mese. Vuoi generarla di nuovo?',
+      'rec.cannotGenerate':'Le righe salvate non sono bilanciate o sono incomplete — non posso generare la registrazione.',
+      'rec.needDescription':'Scrivi una descrizione.', 'rec.cannotSave':'Servono almeno due righe con dare e avere bilanciati per salvare uno schema ricorrente.',
+      'primanota.balanced':'Dare e avere si bilanciano', 'primanota.enterAmounts':'Inserisci gli importi nelle righe.', 'primanota.unbalanced':'Non bilanciato — differenza di',
+      'primanota.account':'Conto',
+      'settings.export':'Esporta dati', 'settings.exportHint':'Scarica i tuoi dati in formato CSV, apribile con Excel, Numbers o Google Fogli.',
+      'settings.exportJournal':'Esporta Prima Nota (CSV)', 'settings.exportInvoices':'Esporta Fatture (CSV)', 'settings.exportAccounts':'Esporta Piano dei conti (CSV)',
     },
     en: {
       'auth.subtitle':'Sign in with the same credentials as Le Mie Finanze, or sign up directly here.',
@@ -2871,6 +3113,16 @@
       'primanota.debit':'Debit', 'primanota.credit':'Credit', 'primanota.noDescription':'(no description)',
       'scad.f24Title':'📋 F24 deadlines (contributions and withholdings)', 'scad.f24Hint':'Calculated from generated payslips — INPS, INAIL and income tax withholding are normally due by the 16th of the following month. Always check the official deadlines with a labour consultant.',
       'scad.f24Empty':"No payslips recorded yet — you'll see F24 deadlines here as soon as you generate one.", 'stip.deletedEmployee':'(deleted employee)',
+      'rec.title':'🔁 Recurring entries', 'rec.hint':"Save an entry template (like monthly rent) and generate it with one tap each month, without rewriting it from scratch.",
+      'lbl.descOptional2':'Description', 'rec.save':'Save as recurring', 'rec.saved':'Saved recurring entries', 'rec.noneYet':'No recurring entries saved yet.',
+      'rec.generatedThisMonth':'already generated this month', 'rec.generateNow':'Post now',
+      'rec.confirmDuplicate':'You already generated this entry this month. Generate it again?',
+      'rec.cannotGenerate':"The saved lines aren't balanced or are incomplete — can't generate the entry.",
+      'rec.needDescription':'Write a description.', 'rec.cannotSave':'You need at least two balanced debit/credit lines to save a recurring template.',
+      'primanota.balanced':'Debit and credit balance', 'primanota.enterAmounts':'Enter the amounts in the lines.', 'primanota.unbalanced':'Not balanced — a difference of',
+      'primanota.account':'Account',
+      'settings.export':'Export data', 'settings.exportHint':'Download your data as CSV, openable with Excel, Numbers or Google Sheets.',
+      'settings.exportJournal':'Export Ledger (CSV)', 'settings.exportInvoices':'Export Invoices (CSV)', 'settings.exportAccounts':'Export Chart of Accounts (CSV)',
     },
     de: {
       'auth.subtitle':'Melde dich mit denselben Zugangsdaten wie bei Le Mie Finanze an, oder registriere dich direkt hier.',
@@ -2953,6 +3205,16 @@
       'primanota.debit':'Soll', 'primanota.credit':'Haben', 'primanota.noDescription':'(keine Beschreibung)',
       'scad.f24Title':'📋 F24-Fristen (Beiträge und Abzüge)', 'scad.f24Hint':'Berechnet aus den erstellten Gehaltsabrechnungen — INPS, INAIL und Lohnsteuer sind normalerweise bis zum 16. des Folgemonats fällig. Prüfe die offiziellen Fristen immer mit einem Lohnberater.',
       'scad.f24Empty':'Noch keine Gehaltsabrechnungen erfasst — hier siehst du F24-Fristen, sobald du eine erstellst.', 'stip.deletedEmployee':'(gelöschter Mitarbeiter)',
+      'rec.title':'🔁 Wiederkehrende Buchungen', 'rec.hint':'Speichere eine Buchungsvorlage (z. B. Monatsmiete) und erstelle sie mit einem Klick jeden Monat, ohne sie neu zu schreiben.',
+      'lbl.descOptional2':'Beschreibung', 'rec.save':'Als wiederkehrend speichern', 'rec.saved':'Gespeicherte wiederkehrende Buchungen', 'rec.noneYet':'Noch keine wiederkehrenden Buchungen gespeichert.',
+      'rec.generatedThisMonth':'diesen Monat bereits erstellt', 'rec.generateNow':'Jetzt buchen',
+      'rec.confirmDuplicate':'Du hast diese Buchung diesen Monat bereits erstellt. Erneut erstellen?',
+      'rec.cannotGenerate':'Die gespeicherten Zeilen sind nicht ausgeglichen oder unvollständig — Buchung kann nicht erstellt werden.',
+      'rec.needDescription':'Schreibe eine Beschreibung.', 'rec.cannotSave':'Du brauchst mindestens zwei ausgeglichene Soll-/Haben-Zeilen, um eine wiederkehrende Vorlage zu speichern.',
+      'primanota.balanced':'Soll und Haben sind ausgeglichen', 'primanota.enterAmounts':'Gib die Beträge in den Zeilen ein.', 'primanota.unbalanced':'Nicht ausgeglichen — Differenz von',
+      'primanota.account':'Konto',
+      'settings.export':'Daten exportieren', 'settings.exportHint':'Lade deine Daten als CSV herunter, öffnbar mit Excel, Numbers oder Google Sheets.',
+      'settings.exportJournal':'Journal exportieren (CSV)', 'settings.exportInvoices':'Rechnungen exportieren (CSV)', 'settings.exportAccounts':'Kontenplan exportieren (CSV)',
     }
   };
   function currentLang(){ return (currentCompany && currentCompany.language) || (function(){ try{ return localStorage.getItem('bizLang') || 'it'; }catch(e){ return 'it'; } })(); }
@@ -3103,6 +3365,9 @@
     msg.style.color = 'var(--green)';
     setTimeout(()=>{ msg.style.display = 'none'; }, 2500);
   });
+  document.getElementById('exportJournalBtn').addEventListener('click', exportJournalCSV);
+  document.getElementById('exportInvoicesBtn').addEventListener('click', exportInvoicesCSV);
+  document.getElementById('exportAccountsBtn').addEventListener('click', exportAccountsCSV);
   document.getElementById('settingsOpenPrivacyLink').addEventListener('click', (e)=>{
     e.preventDefault();
     document.getElementById('privacyOverlay').style.display = 'block';
