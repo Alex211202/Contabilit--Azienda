@@ -128,7 +128,7 @@
 
 <div id="authScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
   <div class="card" style="width:100%;max-width:400px;position:relative;">
-    <div style="position:absolute;top:14px;right:14px;display:flex;gap:8px;">
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px;">
       <div class="currency-picker" id="authLangPicker">
         <button type="button" class="currency-picker-btn" id="authLangPickerBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.7 4 6 4 9s-1.5 6.3-4 9c-2.5-2.7-4-6-4-9s1.5-6.3 4-9z" stroke="currentColor" stroke-width="1.6"/></svg>
@@ -295,18 +295,6 @@
           <button type="button" data-lang="it"><span class="cur-sym">IT</span> Italiano</button>
           <button type="button" data-lang="en"><span class="cur-sym">EN</span> English</button>
           <button type="button" data-lang="de"><span class="cur-sym">DE</span> Deutsch</button>
-        </div>
-      </div>
-      <div class="currency-picker" id="currencyPicker">
-        <button type="button" class="currency-picker-btn" id="currencyPickerBtn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="15" r="6.5" stroke="currentColor" stroke-width="1.6"/></svg>
-          <span id="currencyPickerCode">EUR</span>
-        </button>
-        <div class="currency-menu" id="currencyMenu">
-          <button type="button" data-cur="EUR"><span class="cur-sym">€</span> EUR <span class="cur-label">Euro</span></button>
-          <button type="button" data-cur="CHF"><span class="cur-sym">CHF</span> CHF <span class="cur-label">Franco svizzero</span></button>
-          <button type="button" data-cur="GBP"><span class="cur-sym">£</span> GBP <span class="cur-label">Sterlina inglese</span></button>
-          <button type="button" data-cur="USD"><span class="cur-sym">$</span> USD <span class="cur-label">Dollaro americano</span></button>
         </div>
       </div>
       <button class="theme-appearance-btn" id="hideAmountsBtn" type="button" title="Nascondi/mostra i numeri">
@@ -1258,8 +1246,7 @@
     const ricavi = sumAccountsInRange('5000','5199', year) * -1;
     const costi = sumAccountsInRange('4000','4399', year);
     const utile = ricavi - costi;
-    const sym = symbol();
-    const fv = (n)=> sym + ' ' + fmtCur(displayAmount(n));
+    const fv = (n)=> '€ ' + fmt(n);
     wrap.innerHTML = `
       <div class="stat-card">
         <div class="stat-label">💰 ${t('dash.liquidity')}</div>
@@ -1281,7 +1268,6 @@
         <div class="stat-value ${utile>=0?'stat-green':'stat-red'}">${fv(utile)}</div>
         <div class="stat-sub">${t('dash.netProfitSub')}</div>
       </div>
-      ${currentCurrency()!=='EUR' ? '<div style="grid-column:1/-1;font-size:11px;color:var(--ink-faint);margin-top:-4px;">'+ (currentLang()==='it' ? 'Solo visualizzazione — la contabilità resta in euro. Cambio: 1€ = '+fmtCur(currentRate())+' '+currentCurrency() : currentLang()==='de' ? 'Nur Anzeige — die Buchhaltung bleibt in Euro. Kurs: 1€ = '+fmtCur(currentRate())+' '+currentCurrency() : 'Display only — the ledger stays in euros. Rate: 1€ = '+fmtCur(currentRate())+' '+currentCurrency()) +'</div>' : ''}
     `;
   }
 
@@ -2212,11 +2198,6 @@
     document.querySelectorAll('#langMenu button, #authLangMenu button').forEach(b=>{
       b.classList.toggle('active', b.dataset.lang === (currentCompany.language || 'it'));
     });
-    document.getElementById('currencyPickerCode').textContent = currentCompany.currency || 'EUR';
-    document.querySelectorAll('#currencyMenu button').forEach(b=>{
-      b.classList.toggle('active', b.dataset.cur === (currentCompany.currency || 'EUR'));
-    });
-    updateExchangeRatesFromAPI();
     document.getElementById('settingsCompanyNameInput').value = currentCompany.name || '';
     document.getElementById('settingsCompanyVatInput').value = currentCompany.vat_number || '';
     document.getElementById('settingsCompanyFormSelect').value = currentCompany.balance_sheet_form || 'abbreviated';
@@ -2783,56 +2764,6 @@
   document.addEventListener('click', ()=>{
     document.getElementById('langMenu').classList.remove('open');
     document.getElementById('authLangMenu').classList.remove('open');
-    document.getElementById('currencyMenu').classList.remove('open');
-  });
-
-  // ---------- Valuta ----------
-  const CURRENCY_SYMBOLS = { EUR:'€', CHF:'CHF', GBP:'£', USD:'$' };
-  function currentCurrency(){ return (currentCompany && currentCompany.currency) || 'EUR'; }
-  function symbol(){ return CURRENCY_SYMBOLS[currentCurrency()] || currentCurrency(); }
-  function currentRate(){
-    const cur = currentCurrency();
-    if(cur === 'EUR') return 1;
-    return (currentCompany && currentCompany.rates && currentCompany.rates[cur]) || 1;
-  }
-  function displayAmount(amountInEur){ return amountInEur * currentRate(); }
-  function fmtCur(n){
-    const v = (n===undefined||n===null||isNaN(n)) ? 0 : n;
-    return v.toLocaleString(localeTag(), {minimumFractionDigits:2, maximumFractionDigits:2});
-  }
-  async function updateExchangeRatesFromAPI(){
-    try{
-      const res = await fetch('https://api.frankfurter.dev/v1/latest?base=EUR&symbols=CHF,GBP,USD');
-      if(!res.ok) return;
-      const data = await res.json();
-      if(data.rates && data.rates.CHF && data.rates.GBP && data.rates.USD && currentCompany){
-        currentCompany.rates = { CHF: data.rates.CHF, GBP: data.rates.GBP, USD: data.rates.USD };
-        currentCompany.ratesUpdatedAt = data.date;
-        await supabaseClient.from('biz_companies').update({ rates: currentCompany.rates, rates_updated_at: data.date }).eq('id', currentCompany.id);
-        renderAll();
-      }
-    }catch(err){ console.error('aggiornamento tassi fallito', err); }
-  }
-  async function applyCurrency(cur){
-    if(currentCompany){
-      currentCompany.currency = cur;
-      await supabaseClient.from('biz_companies').update({ currency: cur }).eq('id', currentCompany.id);
-    }
-    document.getElementById('currencyPickerCode').textContent = cur;
-    document.querySelectorAll('#currencyMenu button').forEach(b=>{
-      b.classList.toggle('active', b.dataset.cur === cur);
-    });
-    renderAll();
-  }
-  document.querySelectorAll('#currencyMenu button').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      applyCurrency(btn.dataset.cur);
-      document.getElementById('currencyMenu').classList.remove('open');
-    });
-  });
-  document.getElementById('currencyPickerBtn').addEventListener('click', (e)=>{
-    e.stopPropagation();
-    document.getElementById('currencyMenu').classList.toggle('open');
   });
 
   // ---------- Tema chiaro/scuro e colore accento ----------
