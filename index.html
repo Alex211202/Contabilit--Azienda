@@ -60,6 +60,11 @@
   .theme-appearance-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);cursor:pointer;background:var(--surface);color:var(--ink-soft);position:relative;overflow:hidden;}
   .theme-appearance-btn:hover{border-color:var(--accent);}
   #accentColorPicker{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  html[data-hide-amounts="true"] .mono,
+  html[data-hide-amounts="true"] .list-amount,
+  html[data-hide-amounts="true"] .stat-value{
+    filter:blur(7px);user-select:none;transition:filter 0.15s;
+  }
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;backdrop-filter:blur(var(--card-blur));box-shadow:var(--card-shadow);}
   .hint{font-size:12.5px;color:var(--ink-faint);line-height:1.5;}
   .hint.box{background:var(--accent-soft);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;color:var(--ink-soft);}
@@ -125,9 +130,19 @@
       <label>Email</label>
       <input type="email" id="authEmail" placeholder="tu@esempio.com" autocomplete="username">
       <label>Password</label>
-      <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+      <div style="position:relative;">
+        <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" style="padding-right:42px;">
+        <button type="button" class="password-toggle-btn" data-target="authPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-faint);padding:4px;display:flex;">
+          <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+          <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A10.9 10.9 0 0112 5c7 0 11 7 11 7a17.6 17.6 0 01-3.2 4M6.5 6.6C3.7 8.3 1 12 1 12s2.3 4 6 5.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
       <button class="primary" id="authLoginBtn" type="button" style="width:100%;">Accedi</button>
-      <button class="ghost" id="authSignupBtn" type="button" style="width:100%;margin-top:8px;">Non hai un account? Registrati</button>
+      <button class="ghost" id="authSignupBtn" type="button" style="width:100%;margin-top:8px;" disabled>Non hai un account? Registrati</button>
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;width:100%;box-sizing:border-box;">
+        <input type="checkbox" id="acceptTermsCheckbox" style="flex:0 0 auto;width:16px;height:16px;margin:2px 0 0 0;">
+        <label for="acceptTermsCheckbox" style="display:block;flex:1 1 0%;min-width:0;margin:0;padding:0;font-weight:400;font-size:12.5px;line-height:1.4;color:var(--ink-soft);">Ho letto e accetto <a href="#" id="openPrivacyLink" style="color:var(--accent);">l'Informativa Privacy</a> e i <a href="#" id="openTermsLink" style="color:var(--accent);">Termini di Servizio</a>.</label>
+      </div>
       <div style="text-align:center;margin-top:14px;">
         <a href="#" id="authForgotLink" style="font-size:12.5px;color:var(--ink-soft);">Password dimenticata?</a>
       </div>
@@ -146,11 +161,81 @@
     <div id="resetFormWrap" style="display:none;">
       <div class="hint" style="margin-bottom:14px;">Scegli la tua nuova password.</div>
       <label>Nuova password</label>
-      <input type="password" id="resetNewPassword" placeholder="••••••••" autocomplete="new-password">
+      <div style="position:relative;">
+        <input type="password" id="resetNewPassword" placeholder="••••••••" autocomplete="new-password" style="padding-right:42px;">
+        <button type="button" class="password-toggle-btn" data-target="resetNewPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-faint);padding:4px;display:flex;">
+          <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+          <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A10.9 10.9 0 0112 5c7 0 11 7 11 7a17.6 17.6 0 01-3.2 4M6.5 6.6C3.7 8.3 1 12 1 12s2.3 4 6 5.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
       <button class="primary" id="resetConfirmBtn" type="button" style="width:100%;margin-top:6px;">Salva nuova password</button>
     </div>
 
     <div id="authLoading" style="display:none;text-align:center;margin-top:14px;font-size:13px;color:var(--ink-soft);">Un momento…</div>
+  </div>
+</div>
+
+<!-- INFORMATIVA PRIVACY -->
+<div id="privacyOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:1100;overflow-y:auto;">
+  <div style="position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;gap:12px;z-index:1;">
+    <button id="closePrivacyBtn" type="button" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--ink);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Chiudi</span>
+    </button>
+    <h2 style="margin:0;font-size:18px;">Informativa sulla Privacy</h2>
+  </div>
+  <div style="max-width:680px;margin:0 auto;padding:20px;line-height:1.7;font-size:14px;">
+    <p class="hint box">Ultimo aggiornamento: agosto 2026. Questo documento spiega in modo semplice e onesto come funzionano i tuoi dati in questa app. Non sostituisce una consulenza legale professionale.</p>
+    <h3>Chi siamo</h3>
+    <p>Questa è un'applicazione di contabilità aziendale, pensata per aiutare piccoli imprenditori a tenere sotto controllo prima nota, fatture, IVA, bilanci e stipendi della propria azienda.</p>
+    <h3>Che dati raccogliamo</h3>
+    <p><strong>Dati di accesso:</strong> la tua email e la password (gestita in modo sicuro da Supabase, il nostro fornitore di database — la password non è mai visibile in chiaro, nemmeno a noi).</p>
+    <p><strong>Dati aziendali:</strong> tutto quello che inserisci volontariamente nell'app — piano dei conti, registrazioni contabili, fatture, anagrafica di clienti e fornitori, dipendenti e buste paga, beni ammortizzabili. Nessun dato bancario reale (numeri di carta, credenziali bancarie) viene mai richiesto o raccolto.</p>
+    <p><strong>Preferenze:</strong> tema chiaro/scuro, colore dell'interfaccia, e altre impostazioni che scegli tu.</p>
+    <h3>Come usiamo i tuoi dati</h3>
+    <p>Solo per mostrarti la situazione contabile della tua azienda dentro l'app. Non vendiamo, condividiamo o usiamo i tuoi dati per pubblicità, profilazione, o qualsiasi scopo commerciale.</p>
+    <h3>Dove sono conservati</h3>
+    <p>I tuoi dati sono conservati su Supabase, lo stesso fornitore di database usato anche da "Le Mie Finanze". Ogni persona vede solo i propri dati, protetti da un sistema di sicurezza (Row Level Security) che impedisce tecnicamente a un utente di vedere i dati di un altro attraverso l'app.</p>
+    <h3>Chi può accedere ai tuoi dati</h3>
+    <p>Tu, sempre, tramite il tuo accesso protetto da password. Chi gestisce tecnicamente l'infrastruttura dell'app (l'amministratore del progetto Supabase) ha, per necessità tecniche, la possibilità di accedere al database grezzo — questo accesso non viene mai usato per consultare i tuoi dati personali senza motivo, ma è onesto segnalarlo: è una possibilità tecnica che esiste, come per qualsiasi amministratore di sistema.</p>
+    <h3>Attenzione ai calcoli fiscali e contributivi</h3>
+    <p>I calcoli di IVA, IRPEF, INPS, TFR e simili prodotti da questa app sono <strong>illustrativi</strong>, pensati per farti un'idea, non certificati da un commercialista. Prima di ogni decisione fiscale reale, verifica sempre con un professionista.</p>
+    <h3>Cookie e dati salvati sul dispositivo</h3>
+    <p>Usiamo solo lo stretto necessario per farti restare connesso (una sessione tecnica). Nessun cookie pubblicitario o di tracciamento.</p>
+    <h3>I tuoi diritti</h3>
+    <p>Puoi contattare la persona che gestisce l'app per richiedere l'esportazione o la cancellazione dei tuoi dati in qualsiasi momento.</p>
+    <h3>Come contattarci</h3>
+    <p>Per qualsiasi domanda su questo documento o sui tuoi dati, puoi contattare la persona che ti ha invitato a usare questa app.</p>
+  </div>
+</div>
+
+<!-- TERMINI DI SERVIZIO -->
+<div id="termsOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:1100;overflow-y:auto;">
+  <div style="position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;gap:12px;z-index:1;">
+    <button id="closeTermsBtn" type="button" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--ink);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Chiudi</span>
+    </button>
+    <h2 style="margin:0;font-size:18px;">Termini di Servizio</h2>
+  </div>
+  <div style="max-width:680px;margin:0 auto;padding:20px;line-height:1.7;font-size:14px;">
+    <p class="hint box">Ultimo aggiornamento: agosto 2026. Un documento semplice e onesto, non un testo legale complesso. Non sostituisce una consulenza legale professionale.</p>
+    <h3>Cos'è questo servizio</h3>
+    <p>Un'app per tenere la contabilità della propria azienda — prima nota, fatture, IVA, bilanci, stipendi. Non è un servizio bancario, non gestisce soldi reali, non fornisce consulenza fiscale, contabile o legale certificata.</p>
+    <h3>Il servizio è fornito "così com'è"</h3>
+    <p>Facciamo il possibile per mantenerlo funzionante e corretto, ma non possiamo garantire che sia sempre privo di errori, interruzioni, o perdita di dati.</p>
+    <h3>La tua responsabilità</h3>
+    <p>Sei responsabile dell'accuratezza dei dati che inserisci, della sicurezza della tua password, e della verifica dei calcoli fiscali/contributivi con un professionista prima di usarli per decisioni reali.</p>
+    <h3>Nessuna consulenza fiscale o legale</h3>
+    <p>Questa app ti aiuta a organizzare e visualizzare i numeri della tua azienda, ma non fornisce mai consulenza fiscale, contabile o legale certificata. Per decisioni importanti, rivolgiti a un commercialista o consulente qualificato.</p>
+    <h3>Limitazione di responsabilità</h3>
+    <p>Nella misura massima consentita dalla legge, non siamo responsabili per perdite o danni derivanti dall'uso (o dall'impossibilità di uso) di questo servizio, incluse perdite di dati.</p>
+    <h3>Modifiche al servizio</h3>
+    <p>Il servizio può cambiare, essere aggiornato, sospeso o interrotto in qualsiasi momento, con o senza preavviso.</p>
+    <h3>Il tuo account</h3>
+    <p>Puoi richiedere la cancellazione del tuo account in qualsiasi momento. Ci riserviamo il diritto di sospendere o rimuovere account usati in modo improprio o contrario a questi termini.</p>
+    <h3>Domande</h3>
+    <p>Per qualsiasi domanda su questi termini, puoi contattare la persona che ti ha invitato a usare questa app.</p>
   </div>
 </div>
 
@@ -161,6 +246,10 @@
     <h1 style="font-size:22px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
     <div style="display:flex;align-items:center;gap:10px;">
       <span class="hint" id="companyNameLabel"></span>
+      <button class="theme-appearance-btn" id="hideAmountsBtn" type="button" title="Nascondi/mostra i numeri">
+        <svg id="hideAmountsIconEye" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+        <svg id="hideAmountsIconEyeOff" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A10.9 10.9 0 0112 5c7 0 11 7 11 7a17.6 17.6 0 01-3.2 4M6.5 6.6C3.7 8.3 1 12 1 12s2.3 4 6 5.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
       <button class="theme-appearance-btn" id="accentColorSwatch" title="Colore accento">
         <input type="color" id="accentColorPicker" title="Colore accento">
       </button>
@@ -204,6 +293,7 @@
         <button class="tab" data-panel="ammortamenti">Ammortamenti</button>
         <button class="tab" data-panel="contibancari">Conti bancari</button>
         <button class="tab" data-panel="stipendi">Stipendi</button>
+        <button class="tab" data-panel="impostazioni">⚙️ Impostazioni</button>
       </div>
     </div>
 
@@ -624,6 +714,54 @@
       <div class="card">
         <h3>Buste paga registrate</h3>
         <div id="payslipsListWrap"></div>
+      </div>
+    </div>
+
+    <!-- IMPOSTAZIONI -->
+    <div class="panel" id="panel-impostazioni" style="display:none;">
+      <div class="card">
+        <h3>Dati azienda</h3>
+        <div class="hint box">Modifica i dati della tua azienda — usati nell'intestazione delle fatture stampate.</div>
+        <div class="form-grid">
+          <div class="full">
+            <label>Nome azienda</label>
+            <input type="text" id="settingsCompanyNameInput" placeholder="es. Rossi Srl">
+          </div>
+          <div>
+            <label>Partita IVA (facoltativo)</label>
+            <input type="text" id="settingsCompanyVatInput" placeholder="es. IT01234567890">
+          </div>
+          <div>
+            <label>Forma di bilancio</label>
+            <select id="settingsCompanyFormSelect">
+              <option value="abbreviated">Abbreviata</option>
+              <option value="ordinary">Ordinaria</option>
+            </select>
+          </div>
+        </div>
+        <button class="primary" id="saveCompanySettingsBtn" type="button">Salva modifiche</button>
+        <div id="saveCompanySettingsMsg" style="display:none;margin-top:10px;"></div>
+      </div>
+      <div class="card">
+        <h3>Aspetto</h3>
+        <div class="hint box">Puoi cambiare tema e colore anche dai due pulsanti in alto, vicino a "Esci" — sono gli stessi controlli, qui solo più comodi da trovare.</div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <button class="theme-appearance-btn" id="accentColorSwatchSettings" title="Colore accento" style="width:44px;height:44px;">
+            <input type="color" id="accentColorPickerSettings" title="Colore accento">
+          </button>
+          <button class="ghost" id="themeToggleBtnSettings" type="button" style="display:flex;align-items:center;gap:8px;">
+            <svg id="themeIconSunSettings" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.5M12 19v2.5M21.5 12H19M5 12H2.5M18.36 5.64l-1.77 1.77M7.41 16.59l-1.77 1.77M18.36 18.36l-1.77-1.77M7.41 7.41L5.64 5.64" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <svg id="themeIconMoonSettings" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
+            <span>Tema chiaro/scuro</span>
+          </button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Documenti legali</h3>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">
+          <a href="#" id="settingsOpenPrivacyLink" style="color:var(--accent);font-size:13px;">Informativa Privacy</a>
+          <a href="#" id="settingsOpenTermsLink" style="color:var(--accent);font-size:13px;">Termini di Servizio</a>
+        </div>
       </div>
     </div>
 
@@ -1865,6 +2003,33 @@
   }
 
   // ---------- Autenticazione ----------
+  document.querySelectorAll('.password-toggle-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const input = document.getElementById(btn.dataset.target);
+      if(!input) return;
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.querySelector('.eye-open').style.display = showing ? 'block' : 'none';
+      btn.querySelector('.eye-closed').style.display = showing ? 'none' : 'block';
+    });
+  });
+  document.getElementById('acceptTermsCheckbox').addEventListener('change', (e)=>{
+    document.getElementById('authSignupBtn').disabled = !e.target.checked;
+  });
+  document.getElementById('openPrivacyLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    document.getElementById('privacyOverlay').style.display = 'block';
+  });
+  document.getElementById('closePrivacyBtn').addEventListener('click', ()=>{
+    document.getElementById('privacyOverlay').style.display = 'none';
+  });
+  document.getElementById('openTermsLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    document.getElementById('termsOverlay').style.display = 'block';
+  });
+  document.getElementById('closeTermsBtn').addEventListener('click', ()=>{
+    document.getElementById('termsOverlay').style.display = 'none';
+  });
   document.getElementById('authLoginBtn').addEventListener('click', async ()=>{
     hideAuthError();
     const email = document.getElementById('authEmail').value.trim();
@@ -1951,6 +2116,9 @@
     document.getElementById('mainAppWrap').style.display = 'block';
     applyTheme(currentCompany.theme || 'dark');
     applyAccentColor(currentCompany.accent_color || (currentCompany.theme==='light' ? '#8C6A2F' : '#E0B255'));
+    document.getElementById('settingsCompanyNameInput').value = currentCompany.name || '';
+    document.getElementById('settingsCompanyVatInput').value = currentCompany.vat_number || '';
+    document.getElementById('settingsCompanyFormSelect').value = currentCompany.balance_sheet_form || 'abbreviated';
     await loadAccounts();
     await loadJournal();
     await loadInvoices();
@@ -2370,7 +2538,7 @@
   function applyTheme(theme){
     document.documentElement.setAttribute('data-theme', theme);
     const isDark = theme === 'dark';
-    [['themeIconSun','themeIconMoon'], ['authThemeIconSun','authThemeIconMoon']].forEach(([sunId, moonId])=>{
+    [['themeIconSun','themeIconMoon'], ['authThemeIconSun','authThemeIconMoon'], ['themeIconSunSettings','themeIconMoonSettings']].forEach(([sunId, moonId])=>{
       const sunEl = document.getElementById(sunId);
       const moonEl = document.getElementById(moonId);
       if(sunEl) sunEl.style.display = isDark ? 'none' : 'block';
@@ -2399,11 +2567,11 @@
   function applyAccentColor(color){
     document.documentElement.style.setProperty('--accent', color);
     document.documentElement.style.setProperty('--accent-contrast', contrastForColor(color));
-    ['accentColorSwatch','accentColorSwatchAuth'].forEach(id=>{
+    ['accentColorSwatch','accentColorSwatchAuth','accentColorSwatchSettings'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.background = color;
     });
-    ['accentColorPicker','accentColorPickerAuth'].forEach(id=>{
+    ['accentColorPicker','accentColorPickerAuth','accentColorPickerSettings'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.value = color;
     });
@@ -2419,10 +2587,52 @@
   }
   document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
   document.getElementById('authThemeToggleBtn').addEventListener('click', toggleTheme);
+  function applyHideAmounts(hidden){
+    document.documentElement.setAttribute('data-hide-amounts', hidden ? 'true' : 'false');
+    document.getElementById('hideAmountsIconEye').style.display = hidden ? 'none' : 'block';
+    document.getElementById('hideAmountsIconEyeOff').style.display = hidden ? 'block' : 'none';
+    try{ localStorage.setItem('bizHideAmounts', hidden ? '1' : '0'); }catch(err){}
+  }
+  document.getElementById('hideAmountsBtn').addEventListener('click', ()=>{
+    const current = document.documentElement.getAttribute('data-hide-amounts') === 'true';
+    applyHideAmounts(!current);
+  });
+  (function(){
+    let savedHide = false;
+    try{ savedHide = localStorage.getItem('bizHideAmounts') === '1'; }catch(err){}
+    applyHideAmounts(savedHide);
+  })();
   document.getElementById('accentColorPicker').addEventListener('input', (e)=> applyAccentColor(e.target.value));
   document.getElementById('accentColorPicker').addEventListener('change', (e)=> saveAccentColor(e.target.value));
   document.getElementById('accentColorPickerAuth').addEventListener('input', (e)=> applyAccentColor(e.target.value));
   document.getElementById('accentColorPickerAuth').addEventListener('change', (e)=> applyAccentColor(e.target.value));
+  document.getElementById('themeToggleBtnSettings').addEventListener('click', toggleTheme);
+  document.getElementById('accentColorPickerSettings').addEventListener('input', (e)=> applyAccentColor(e.target.value));
+  document.getElementById('accentColorPickerSettings').addEventListener('change', (e)=> saveAccentColor(e.target.value));
+  document.getElementById('saveCompanySettingsBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('settingsCompanyNameInput').value.trim();
+    const vat = document.getElementById('settingsCompanyVatInput').value.trim();
+    const form = document.getElementById('settingsCompanyFormSelect').value;
+    const msg = document.getElementById('saveCompanySettingsMsg');
+    if(!name){ alert('Scrivi il nome della tua azienda.'); return; }
+    const updates = { name, vat_number: vat || null, balance_sheet_form: form };
+    const { error } = await supabaseClient.from('biz_companies').update(updates).eq('id', currentCompany.id);
+    if(error){ alert('Errore: ' + error.message); return; }
+    currentCompany = { ...currentCompany, ...updates };
+    document.getElementById('companyNameLabel').textContent = currentCompany.name;
+    msg.textContent = '✓ Salvato.';
+    msg.style.display = 'block';
+    msg.style.color = 'var(--green)';
+    setTimeout(()=>{ msg.style.display = 'none'; }, 2500);
+  });
+  document.getElementById('settingsOpenPrivacyLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    document.getElementById('privacyOverlay').style.display = 'block';
+  });
+  document.getElementById('settingsOpenTermsLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    document.getElementById('termsOverlay').style.display = 'block';
+  });
   (function(){
     let savedTheme = 'dark';
     try{ savedTheme = localStorage.getItem('bizTheme') || 'dark'; }catch(err){}
