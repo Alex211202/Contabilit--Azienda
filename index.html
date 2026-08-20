@@ -118,6 +118,7 @@
         <button class="tab active" data-panel="dashboard">Dashboard</button>
         <button class="tab" data-panel="conti">Piano dei conti</button>
         <button class="tab" data-panel="primanota">Prima nota</button>
+        <button class="tab" data-panel="anagrafica">Anagrafica</button>
         <button class="tab" data-panel="fatture">Fatture</button>
         <button class="tab" data-panel="bilanci">Bilanci</button>
         <button class="tab" data-panel="iva">IVA</button>
@@ -234,6 +235,58 @@
       </div>
     </div>
 
+    <!-- ANAGRAFICA -->
+    <div class="panel" id="panel-anagrafica" style="display:none;">
+      <div class="card">
+        <h3 id="partnerFormTitle">Nuovo cliente/fornitore</h3>
+        <div class="hint box">Salva qui i dati di clienti e fornitori una volta sola — poi li richiami veloce quando registri una fattura, senza riscriverli ogni volta.</div>
+        <div class="form-grid">
+          <div class="full">
+            <label>Nome / Ragione sociale</label>
+            <input type="text" id="partnerNameInput" placeholder="es. Bianchi Srl">
+          </div>
+          <div>
+            <label>Tipo</label>
+            <select id="partnerTypeSelect">
+              <option value="cliente">Cliente</option>
+              <option value="fornitore">Fornitore</option>
+              <option value="entrambi">Entrambi</option>
+            </select>
+          </div>
+          <div>
+            <label>Partita IVA (facoltativa)</label>
+            <input type="text" id="partnerVatInput" placeholder="es. IT01234567890">
+          </div>
+          <div>
+            <label>Codice Fiscale (facoltativo)</label>
+            <input type="text" id="partnerTaxCodeInput" placeholder="es. RSSMRA80A01H501U">
+          </div>
+          <div>
+            <label>Email (facoltativa)</label>
+            <input type="email" id="partnerEmailInput" placeholder="es. info@bianchisrl.it">
+          </div>
+          <div>
+            <label>Telefono (facoltativo)</label>
+            <input type="text" id="partnerPhoneInput" placeholder="es. 02 1234567">
+          </div>
+          <div class="full">
+            <label>Indirizzo (facoltativo)</label>
+            <input type="text" id="partnerAddressInput" placeholder="es. Via Roma 1, 20100 Milano">
+          </div>
+          <div class="full">
+            <label>Note (facoltative)</label>
+            <input type="text" id="partnerNotesInput" placeholder="es. referente Mario Rossi">
+          </div>
+        </div>
+        <button class="primary" id="savePartnerBtn" type="button">Salva</button>
+        <button class="ghost" id="cancelPartnerEditBtn" type="button" style="display:none;">Annulla modifica</button>
+      </div>
+      <div class="card">
+        <h3>Clienti e fornitori salvati</h3>
+        <div id="partnersListWrap"></div>
+      </div>
+    </div>
+
     <!-- FATTURE -->
     <div class="panel" id="panel-fatture" style="display:none;">
       <div class="card" style="padding:6px;margin-bottom:16px;">
@@ -253,6 +306,12 @@
           <div>
             <label>Data</label>
             <input type="date" id="invDateInput">
+          </div>
+          <div class="full">
+            <label id="invPartnerSelectLabel">Scegli da anagrafica (facoltativo)</label>
+            <select id="invPartnerSelect">
+              <option value="">— Inserisci manualmente qui sotto —</option>
+            </select>
           </div>
           <div>
             <label id="invCounterpartyLabel">Cliente</label>
@@ -596,9 +655,11 @@
     assets: [],
     assetDepreciations: [],
     employees: [],
-    payslips: []
+    payslips: [],
+    partners: []
   };
   let editingAccountId = null;
+  let editingPartnerId = null;
   let invoiceLinesDraft = [ {description:'', quantity:1, unitPrice:'', vatRate:22} ];
   let currentInvoiceType = 'emessa';
 
@@ -662,6 +723,13 @@
     const { data: payslips, error: e2 } = await supabaseClient.from('biz_payslips').select('*').eq('company_id', currentCompany.id).order('month', {ascending:false});
     if(e2){ console.error('loadPayslips error', e2); state.payslips = []; return; }
     state.payslips = payslips || [];
+  }
+
+  async function loadPartners(){
+    if(!currentCompany) return;
+    const { data, error } = await supabaseClient.from('biz_partners').select('*').eq('company_id', currentCompany.id).order('name', {ascending:true});
+    if(error){ console.error('loadPartners error', error); state.partners = []; return; }
+    state.partners = data || [];
   }
 
   function accountByCode(code){ return state.accounts.find(a=>a.code===code); }
@@ -1265,6 +1333,78 @@
     });
   }
 
+  const partnerTypeLabel = { cliente:'Cliente', fornitore:'Fornitore', entrambi:'Cliente e fornitore' };
+
+  function renderPartnersList(){
+    const wrap = document.getElementById('partnersListWrap');
+    if(!wrap) return;
+    if(state.partners.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun cliente o fornitore salvato ancora.</div>'; return; }
+    wrap.innerHTML = state.partners.map(p => `
+      <div class="list-row">
+        <div class="list-main">
+          <span class="list-cat">${p.name}</span>
+          <span class="list-note">${partnerTypeLabel[p.type]||p.type}${p.vat_number ? ' · P.IVA '+p.vat_number : ''}${p.email ? ' · '+p.email : ''}</span>
+        </div>
+        <div class="list-right">
+          <button class="icon-btn" data-edit-partner="${p.id}" title="Modifica">✎</button>
+          <button class="icon-btn" data-del-partner="${p.id}" title="Elimina">✕</button>
+        </div>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('[data-del-partner]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(editingPartnerId === btn.dataset.delPartner) cancelPartnerEdit();
+        await supabaseClient.from('biz_partners').delete().eq('id', btn.dataset.delPartner);
+        state.partners = state.partners.filter(p=>p.id !== btn.dataset.delPartner);
+        populateInvoicePartnerSelect();
+        renderAll();
+      });
+    });
+    wrap.querySelectorAll('[data-edit-partner]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const p = state.partners.find(x=>x.id === btn.dataset.editPartner);
+        if(!p) return;
+        document.getElementById('partnerNameInput').value = p.name || '';
+        document.getElementById('partnerTypeSelect').value = p.type || 'cliente';
+        document.getElementById('partnerVatInput').value = p.vat_number || '';
+        document.getElementById('partnerTaxCodeInput').value = p.tax_code || '';
+        document.getElementById('partnerEmailInput').value = p.email || '';
+        document.getElementById('partnerPhoneInput').value = p.phone || '';
+        document.getElementById('partnerAddressInput').value = p.address || '';
+        document.getElementById('partnerNotesInput').value = p.notes || '';
+        editingPartnerId = p.id;
+        document.getElementById('partnerFormTitle').textContent = 'Modifica cliente/fornitore';
+        document.getElementById('savePartnerBtn').textContent = 'Salva modifiche';
+        document.getElementById('cancelPartnerEditBtn').style.display = 'inline-block';
+        try{ document.getElementById('partnerNameInput').scrollIntoView({behavior:'smooth', block:'center'}); }catch(err){}
+      });
+    });
+  }
+
+  function cancelPartnerEdit(){
+    editingPartnerId = null;
+    document.getElementById('partnerFormTitle').textContent = 'Nuovo cliente/fornitore';
+    document.getElementById('savePartnerBtn').textContent = 'Salva';
+    document.getElementById('cancelPartnerEditBtn').style.display = 'none';
+    document.getElementById('partnerNameInput').value = '';
+    document.getElementById('partnerTypeSelect').value = 'cliente';
+    document.getElementById('partnerVatInput').value = '';
+    document.getElementById('partnerTaxCodeInput').value = '';
+    document.getElementById('partnerEmailInput').value = '';
+    document.getElementById('partnerPhoneInput').value = '';
+    document.getElementById('partnerAddressInput').value = '';
+    document.getElementById('partnerNotesInput').value = '';
+  }
+
+  function populateInvoicePartnerSelect(){
+    const sel = document.getElementById('invPartnerSelect');
+    if(!sel) return;
+    const wantType = currentInvoiceType === 'emessa' ? 'cliente' : 'fornitore';
+    const relevant = state.partners.filter(p => p.type === wantType || p.type === 'entrambi');
+    sel.innerHTML = '<option value="">— Inserisci manualmente qui sotto —</option>' +
+      relevant.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  }
+
   function populatePayslipEmployeeSelect(){
     const sel = document.getElementById('payslipEmployeeSelect');
     if(!sel) return;
@@ -1388,6 +1528,7 @@
     renderBankBalances();
     renderEmployeesList();
     renderPayslipsList();
+    renderPartnersList();
   }
 
   // ---------- Autenticazione ----------
@@ -1422,8 +1563,10 @@
     await loadInvoices();
     await loadAssets();
     await loadEmployees();
+    await loadPartners();
     populateSimpleTemplateSelect();
     populateInvoiceAccountSelect();
+    populateInvoicePartnerSelect();
     populateAssetAccountSelects();
     populateTransferSelects();
     populatePayslipMonthYearSelects();
@@ -1588,6 +1731,7 @@
       document.getElementById('invAccountLabel').textContent = isEmessa ? 'Conto ricavo' : 'Conto costo';
       document.getElementById('invNumberInput').value = nextInvoiceNumber(currentInvoiceType);
       populateInvoiceAccountSelect();
+      populateInvoicePartnerSelect();
       renderInvoicesList();
     });
   });
@@ -1647,6 +1791,7 @@
     state.invoiceLines.push(...invoiceLineRows);
 
     // Reset del modulo
+    document.getElementById('invPartnerSelect').value = '';
     document.getElementById('invCounterpartyInput').value = '';
     document.getElementById('invVatInput').value = '';
     document.getElementById('invDueDateInput').value = '';
@@ -1722,6 +1867,48 @@
   });
 
   // ---------- Stipendi: eventi ----------
+  document.getElementById('savePartnerBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('partnerNameInput').value.trim();
+    const type = document.getElementById('partnerTypeSelect').value;
+    const vatNumber = document.getElementById('partnerVatInput').value.trim();
+    const taxCode = document.getElementById('partnerTaxCodeInput').value.trim();
+    const email = document.getElementById('partnerEmailInput').value.trim();
+    const phone = document.getElementById('partnerPhoneInput').value.trim();
+    const address = document.getElementById('partnerAddressInput').value.trim();
+    const notes = document.getElementById('partnerNotesInput').value.trim();
+    if(!name){ alert('Scrivi almeno il nome.'); return; }
+    if(editingPartnerId){
+      const updates = { name, type, vat_number: vatNumber||null, tax_code: taxCode||null, email: email||null, phone: phone||null, address: address||null, notes: notes||null };
+      const { error } = await supabaseClient.from('biz_partners').update(updates).eq('id', editingPartnerId);
+      if(error){ alert('Errore: ' + error.message); return; }
+      const idx = state.partners.findIndex(p=>p.id===editingPartnerId);
+      if(idx>-1) state.partners[idx] = { ...state.partners[idx], ...updates };
+      cancelPartnerEdit();
+    } else {
+      const row = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, name, type, vat_number: vatNumber||null, tax_code: taxCode||null, email: email||null, phone: phone||null, address: address||null, notes: notes||null };
+      const { error } = await supabaseClient.from('biz_partners').insert([row]);
+      if(error){ alert('Errore: ' + error.message); return; }
+      state.partners.push(row);
+      document.getElementById('partnerNameInput').value = '';
+      document.getElementById('partnerVatInput').value = '';
+      document.getElementById('partnerTaxCodeInput').value = '';
+      document.getElementById('partnerEmailInput').value = '';
+      document.getElementById('partnerPhoneInput').value = '';
+      document.getElementById('partnerAddressInput').value = '';
+      document.getElementById('partnerNotesInput').value = '';
+    }
+    state.partners.sort((a,b)=> a.name.localeCompare(b.name));
+    populateInvoicePartnerSelect();
+    renderAll();
+  });
+  document.getElementById('cancelPartnerEditBtn').addEventListener('click', cancelPartnerEdit);
+  document.getElementById('invPartnerSelect').addEventListener('change', (e)=>{
+    const p = state.partners.find(x=>x.id === e.target.value);
+    if(!p) return;
+    document.getElementById('invCounterpartyInput').value = p.name;
+    document.getElementById('invVatInput').value = p.vat_number || '';
+  });
+
   document.getElementById('addEmployeeBtn').addEventListener('click', async ()=>{
     const name = document.getElementById('empNameInput').value.trim();
     const salary = parseFloat(document.getElementById('empSalaryInput').value);
