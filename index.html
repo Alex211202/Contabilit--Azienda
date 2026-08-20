@@ -7,42 +7,44 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#8C6A2F">
+<meta name="theme-color" content="#0D0B08">
 <style>
   :root{
-    --ink:#1B2A2E; --ink-soft:#4A5C60; --ink-faint:#8A9A9D;
-    --bg:#F7F5EF; --surface:#FFFFFF; --input-bg:#FBFAF6;
-    --line:#DDD8C8; --accent:#8C6A2F; --accent-soft:#F0E6D2;
-    --green:#2F6B4F; --over:#B3432B; --over-bg:#FBE9E5;
+    --ink:#F2ECDD; --ink-soft:#B9AD8F; --ink-faint:#726A54;
+    --bg:#0D0B08; --surface:rgba(28,24,17,0.72); --input-bg:rgba(20,17,12,0.85);
+    --line:#39301F; --accent:#E0B255; --accent-soft:rgba(224,178,85,0.14);
+    --green:#4ADE9C; --over:#FF6F61; --over-bg:rgba(255,111,97,0.14);
     --radius:16px; --radius-sm:10px;
     --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     --serif:Georgia,'Times New Roman',serif;
     --mono:'SF Mono',Menlo,Consolas,monospace;
   }
-  [data-theme="dark"]{
-    --ink:#F0EDE4; --ink-soft:#B8B2A0; --ink-faint:#7A7565;
-    --bg:#181611; --surface:#221F19; --input-bg:#2A271F;
-    --line:#3A3527; --accent:#D4A94F; --accent-soft:#3A3020; --over-bg:#3A1717;
-  }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+  body{
+    margin:0;color:var(--ink);font-family:var(--sans);min-height:100vh;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 600px at 12% -8%, rgba(224,178,85,0.10), transparent 60%),
+      radial-gradient(ellipse 800px 700px at 100% 15%, rgba(74,222,156,0.05), transparent 55%);
+    background-attachment:fixed;
+  }
   .app{max-width:920px;margin:0 auto;padding:20px;padding-bottom:60px;}
   h1,h2,h3{font-family:var(--serif);font-weight:700;margin:0 0 6px 0;}
   h3{font-size:18px;}
   label{display:block;font-size:12.5px;color:var(--ink-soft);font-weight:600;margin-bottom:5px;}
   input,select,textarea{
     width:100%;padding:10px 12px;border:1.5px solid var(--line);background:var(--input-bg);border-radius:var(--radius-sm);
-    font-family:var(--sans);font-size:14px;color:var(--ink);margin-bottom:14px;
+    font-family:var(--sans);font-size:14px;color:var(--ink);margin-bottom:14px;transition:box-shadow 0.15s,border-color 0.15s;
   }
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
-  button{font-family:var(--sans);cursor:pointer;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:600;}
-  button.primary{background:var(--accent);color:#fff;padding:11px 18px;}
-  button.primary:hover{opacity:0.92;}
-  button.ghost{background:var(--surface);border:1.5px solid var(--line);color:var(--ink);padding:10px 16px;}
-  button.ghost:hover{border-color:var(--accent);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  button{font-family:var(--sans);cursor:pointer;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:600;transition:box-shadow 0.15s,opacity 0.15s,border-color 0.15s;}
+  button.primary{background:linear-gradient(135deg,var(--accent),#B4863A);color:#1A1408;padding:11px 18px;box-shadow:0 0 18px rgba(224,178,85,0.25);}
+  button.primary:hover{opacity:0.92;box-shadow:0 0 26px rgba(224,178,85,0.4);}
+  button.ghost{background:var(--surface);border:1.5px solid var(--line);color:var(--ink);padding:10px 16px;backdrop-filter:blur(10px);}
+  button.ghost:hover{border-color:var(--accent);box-shadow:0 0 14px rgba(224,178,85,0.15);}
   button.icon-btn{background:none;border:none;color:var(--ink-faint);padding:4px 8px;font-size:15px;}
   button.icon-btn:hover{color:var(--accent);}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;backdrop-filter:blur(14px);box-shadow:0 8px 32px rgba(0,0,0,0.35);}
   .hint{font-size:12.5px;color:var(--ink-faint);line-height:1.5;}
   .hint.box{background:var(--accent-soft);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;color:var(--ink-soft);}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
@@ -50,7 +52,7 @@
   @media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
   .tabs{display:flex;gap:4px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:6px;}
   .tab{background:none;border:none;padding:9px 14px;border-radius:8px;color:var(--ink-soft);font-size:13.5px;font-weight:600;}
-  .tab.active{background:var(--accent);color:#fff;}
+  .tab.active{background:var(--accent);color:#1A1408;box-shadow:0 0 14px rgba(224,178,85,0.3);}
   .mono{font-family:var(--mono);}
   .list-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:10px;}
   .list-row:last-child{border-bottom:none;}
@@ -61,7 +63,7 @@
   .list-amount{font-family:var(--mono);font-weight:600;font-size:14px;}
   .segmented{display:inline-flex;border:1.5px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;}
   .segmented button{background:var(--surface);border:none;padding:9px 16px;font-size:13px;color:var(--ink-soft);}
-  .segmented button.active{background:var(--accent);color:#fff;}
+  .segmented button.active{background:var(--accent);color:#1A1408;}
   .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent);}
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th{text-align:left;color:var(--ink-faint);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:0.03em;padding:6px 8px;border-bottom:1.5px solid var(--line);}
@@ -71,14 +73,14 @@
   .unbalanced{color:var(--over);font-weight:700;}
   .empty-state{text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:13.5px;}
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
-  .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;}
-  .stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent);opacity:0.6;}
-  .stat-card.stat-green::before{background:var(--green);}
-  .stat-card.stat-red::before{background:var(--over);}
+  .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;backdrop-filter:blur(14px);}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent);opacity:0.9;box-shadow:0 0 12px var(--accent);}
+  .stat-card.stat-green::before{background:var(--green);box-shadow:0 0 12px var(--green);}
+  .stat-card.stat-red::before{background:var(--over);box-shadow:0 0 12px var(--over);}
   .stat-label{font-size:11px;color:var(--ink-faint);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;gap:6px;margin-bottom:8px;}
-  .stat-value{font-family:var(--mono);font-size:23px;font-weight:700;color:var(--ink);line-height:1.1;}
-  .stat-value.stat-green{color:var(--green);}
-  .stat-value.stat-red{color:var(--over);}
+  .stat-value{font-family:var(--mono);font-size:23px;font-weight:700;color:var(--ink);line-height:1.1;letter-spacing:0.01em;}
+  .stat-value.stat-green{color:var(--green);text-shadow:0 0 16px rgba(74,222,156,0.35);}
+  .stat-value.stat-red{color:var(--over);text-shadow:0 0 16px rgba(255,111,97,0.35);}
   .stat-sub{font-size:11.5px;color:var(--ink-faint);margin-top:4px;}
   .chart-wrap{position:relative;height:240px;margin-top:6px;}
   .dash-toggle-row{display:flex;justify-content:flex-end;margin-bottom:10px;}
@@ -1060,8 +1062,8 @@
       data: {
         labels: monthLabels,
         datasets: [
-          { label:'Ricavi', data: monthlyRicavi, backgroundColor: '#2F6B4F', borderRadius: 5, maxBarThickness: 22 },
-          { label:'Costi', data: monthlyCosti, backgroundColor: '#B3432B', borderRadius: 5, maxBarThickness: 22 }
+          { label:'Ricavi', data: monthlyRicavi, backgroundColor: '#4ADE9C', borderRadius: 5, maxBarThickness: 22 },
+          { label:'Costi', data: monthlyCosti, backgroundColor: '#FF6F61', borderRadius: 5, maxBarThickness: 22 }
         ]
       },
       options: {
@@ -1246,7 +1248,7 @@
       const paidLabel = inv.type==='emessa' ? 'Incassata' : 'Pagata';
       const unpaidLabel = inv.type==='emessa' ? 'Da incassare' : 'Da pagare';
       const statusBadge = inv.paid
-        ? '<span class="badge" style="background:rgba(47,107,79,0.12);color:var(--green);">'+paidLabel+'</span>'
+        ? '<span class="badge" style="background:rgba(74,222,156,0.14);color:var(--green);">'+paidLabel+'</span>'
         : '<span class="badge">'+unpaidLabel+'</span>';
       return `
         <div class="list-row">
