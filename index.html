@@ -70,6 +70,20 @@
   .balanced{color:var(--green);font-weight:700;}
   .unbalanced{color:var(--over);font-weight:700;}
   .empty-state{text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:13.5px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+  .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent);opacity:0.6;}
+  .stat-card.stat-green::before{background:var(--green);}
+  .stat-card.stat-red::before{background:var(--over);}
+  .stat-label{font-size:11px;color:var(--ink-faint);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+  .stat-value{font-family:var(--mono);font-size:23px;font-weight:700;color:var(--ink);line-height:1.1;}
+  .stat-value.stat-green{color:var(--green);}
+  .stat-value.stat-red{color:var(--over);}
+  .stat-sub{font-size:11.5px;color:var(--ink-faint);margin-top:4px;}
+  .chart-wrap{position:relative;height:240px;margin-top:6px;}
+  .dash-toggle-row{display:flex;justify-content:flex-end;margin-bottom:10px;}
+  .dash-toggle-row button{background:none;border:none;color:var(--ink-faint);font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;}
+  .dash-toggle-row button:hover{color:var(--accent);background:var(--accent-soft);}
 </style>
 </head>
 <body>
@@ -163,6 +177,15 @@
     <div class="panel" id="panel-dashboard">
       <div class="card">
         <h3>Situazione generale</h3>
+        <div class="hint box" id="dashboardYearHint">Anno in corso — i numeri sotto sommano tutte le registrazioni dell'anno.</div>
+        <div id="dashboardStatsWrap" class="stat-grid"></div>
+      </div>
+      <div class="card">
+        <h3>Ricavi e costi mese per mese</h3>
+        <div class="chart-wrap"><canvas id="dashboardChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Dettaglio conti</h3>
         <div id="dashboardWrap"></div>
       </div>
     </div>
@@ -577,6 +600,7 @@
 
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
@@ -974,6 +998,81 @@
         </div>
       `;
     }
+  }
+
+  let dashboardChartInst = null;
+
+  function renderDashboardStats(){
+    const wrap = document.getElementById('dashboardStatsWrap');
+    if(!wrap) return;
+    const year = new Date().getFullYear();
+    const liquidita = state.accounts.filter(a => a.code >= '1000' && a.code <= '1099').reduce((s,a)=> s + accountBalance(a.id), 0);
+    const ricavi = sumAccountsInRange('5000','5199', year) * -1;
+    const costi = sumAccountsInRange('4000','4399', year);
+    const utile = ricavi - costi;
+    wrap.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">💰 Liquidità</div>
+        <div class="stat-value">€ ${fmt(liquidita)}</div>
+        <div class="stat-sub">Conti bancari e cassa, oggi</div>
+      </div>
+      <div class="stat-card stat-green">
+        <div class="stat-label">📈 Ricavi ${year}</div>
+        <div class="stat-value stat-green">€ ${fmt(ricavi)}</div>
+        <div class="stat-sub">Da inizio anno</div>
+      </div>
+      <div class="stat-card stat-red">
+        <div class="stat-label">📉 Costi ${year}</div>
+        <div class="stat-value stat-red">€ ${fmt(costi)}</div>
+        <div class="stat-sub">Da inizio anno</div>
+      </div>
+      <div class="stat-card ${utile>=0?'stat-green':'stat-red'}">
+        <div class="stat-label">⚖️ Utile netto ${year}</div>
+        <div class="stat-value ${utile>=0?'stat-green':'stat-red'}">€ ${fmt(utile)}</div>
+        <div class="stat-sub">Ricavi − costi (gestione operativa)</div>
+      </div>
+    `;
+  }
+
+  function renderDashboardChart(){
+    const canvas = document.getElementById('dashboardChart');
+    if(!canvas) return;
+    const year = new Date().getFullYear();
+    const ricaviAccIds = new Set(state.accounts.filter(a=>a.code>='5000'&&a.code<='5199').map(a=>a.id));
+    const costiAccIds = new Set(state.accounts.filter(a=>a.code>='4000'&&a.code<='4399').map(a=>a.id));
+    const entryDateById = {};
+    state.journalEntries.forEach(e=>{ entryDateById[e.id] = e.date; });
+    const monthlyRicavi = new Array(12).fill(0);
+    const monthlyCosti = new Array(12).fill(0);
+    state.journalLines.forEach(l=>{
+      const date = entryDateById[l.entry_id];
+      if(!date) return;
+      const d = new Date(date);
+      if(d.getFullYear() !== year) return;
+      const m = d.getMonth();
+      if(ricaviAccIds.has(l.account_id)) monthlyRicavi[m] += Number(l.credit||0) - Number(l.debit||0);
+      if(costiAccIds.has(l.account_id)) monthlyCosti[m] += Number(l.debit||0) - Number(l.credit||0);
+    });
+    const monthLabels = Array.from({length:12}, (_,i)=> new Date(2026,i,1).toLocaleDateString('it-IT',{month:'short'}));
+    if(dashboardChartInst) dashboardChartInst.destroy();
+    dashboardChartInst = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: monthLabels,
+        datasets: [
+          { label:'Ricavi', data: monthlyRicavi, backgroundColor: '#2F6B4F', borderRadius: 5, maxBarThickness: 22 },
+          { label:'Costi', data: monthlyCosti, backgroundColor: '#B3432B', borderRadius: 5, maxBarThickness: 22 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--ink-soft'), font:{size:11}, boxWidth:12, usePointStyle:true } } },
+        scales: {
+          x: { grid: { display:false }, ticks:{ color: getComputedStyle(document.body).getPropertyValue('--ink-faint'), font:{size:10} } },
+          y: { grid: { color: getComputedStyle(document.body).getPropertyValue('--line') }, ticks:{ color: getComputedStyle(document.body).getPropertyValue('--ink-faint'), font:{size:10}, callback:(v)=> '€'+v } }
+        }
+      }
+    });
   }
 
   function renderDashboard(){
@@ -1713,6 +1812,8 @@
 
   function renderAll(){
     renderAccountsList();
+    renderDashboardStats();
+    renderDashboardChart();
     renderDashboard();
     renderJournalList();
     updateSimplePreview();
