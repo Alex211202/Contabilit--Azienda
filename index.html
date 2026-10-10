@@ -107,6 +107,9 @@
   tr:last-child td{border-bottom:none;}
   .balanced{color:var(--green);font-weight:700;}
   .unbalanced{color:var(--over);font-weight:700;}
+  .wel-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.45;}
+  .wel-step:first-child{border-top:0;}
+  .wel-num{flex:0 0 28px;height:28px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);font-family:var(--serif);font-weight:700;display:flex;align-items:center;justify-content:center;}
   .empty-state{text-align:center;padding:30px 10px;color:var(--ink-faint);font-size:13.5px;}
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
   .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;backdrop-filter:blur(var(--card-blur));}
@@ -318,20 +321,32 @@
     </div>
   </div>
 
+  <!-- BENVENUTO (solo al primo accesso, finché non esiste un'azienda) -->
+  <div id="bizWelcomeCard" class="card" style="display:none;text-align:center;">
+    <img src="icon-192.png" alt="" style="width:64px;height:64px;border-radius:16px;display:block;margin:4px auto 12px;">
+    <h3 style="font-family:var(--serif);font-size:22px;margin:0 0 6px;" data-i18n="wel.title">Benvenuto in Contabilità Azienda</h3>
+    <p style="margin:0 0 18px;color:var(--ink-soft);" data-i18n="wel.sub">I conti della tua attività in un posto solo, spiegati in parole semplici.</p>
+    <div style="text-align:left;max-width:460px;margin:0 auto;">
+      <div class="wel-step"><span class="wel-num">1</span><div><strong data-i18n="wel.s1t">Crea l'azienda</strong><br><span data-i18n="wel.s1">Basta il nome: il piano dei conti di base lo prepara l'app.</span></div></div>
+      <div class="wel-step"><span class="wel-num">2</span><div><strong data-i18n="wel.s2t">Registra quello che succede</strong><br><span data-i18n="wel.s2">Fatture emesse e ricevute, incassi, pagamenti, stipendi: le registrazioni contabili si scrivono da sole.</span></div></div>
+      <div class="wel-step"><span class="wel-num">3</span><div><strong data-i18n="wel.s3t">Guarda come va</strong><br><span data-i18n="wel.s3">Bilancio, IVA da versare, scadenze e tasse stimate si aggiornano a ogni registrazione.</span></div></div>
+    </div>
+    <div class="hint" style="margin:14px 0 0;" data-i18n="wel.note">Le cifre fiscali sono stime per orientarti: per gli adempimenti ufficiali resta il tuo commercialista.</div>
+  </div>
   <!-- SETUP AZIENDA (mostrato solo se non esiste ancora un'azienda) -->
   <div id="companySetupCard" class="card" style="display:none;">
-    <h3>Crea la tua azienda</h3>
-    <div class="hint box">Il punto di partenza — nome e forma di bilancio (puoi cambiarla dopo).</div>
-    <label>Nome azienda</label>
+    <h3 data-i18n="setup.title">Crea la tua azienda</h3>
+    <div class="hint box" data-i18n="setup.hint">Il punto di partenza — nome e forma di bilancio (puoi cambiarla dopo).</div>
+    <label data-i18n="setup.name">Nome azienda</label>
     <input type="text" id="companyNameInput" placeholder="es. Rossi Srl">
-    <label>Partita IVA (facoltativo)</label>
+    <label data-i18n="setup.vat">Partita IVA (facoltativo)</label>
     <input type="text" id="companyVatInput" placeholder="es. IT01234567890">
-    <label>Forma di bilancio</label>
+    <label data-i18n="setup.form">Forma di bilancio</label>
     <select id="companyFormSelect">
-      <option value="abbreviated">Abbreviata</option>
-      <option value="ordinary">Ordinaria</option>
+      <option value="abbreviated" data-i18n="setup.abbr">Abbreviata</option>
+      <option value="ordinary" data-i18n="setup.ord">Ordinaria</option>
     </select>
-    <button class="primary" id="createCompanyBtn" type="button">Crea azienda</button>
+    <button class="primary" id="createCompanyBtn" type="button" data-i18n="setup.create">Crea azienda</button>
     <button class="ghost" id="cancelNewCompanyBtn" type="button" style="display:none;" data-i18n="btn.cancel">Annulla</button>
   </div>
 
@@ -598,6 +613,12 @@
       <div class="card">
         <h3 id="invoiceFormTitle" data-i18n="fatt.newIssued">Nuova fattura emessa</h3>
         <div class="hint box" id="invoiceFormHint" data-i18n="fatt.newIssuedHint">Registra una fattura emessa a un cliente — genera da sola la scrittura contabile con IVA.</div>
+        <div id="invImportWrap" style="display:none;margin-bottom:14px;">
+          <button class="ghost" id="invImportBtn" type="button" data-i18n="imp.btn">📥 Leggi una fattura elettronica (file XML)</button>
+          <input type="file" id="invImportFile" accept=".xml,text/xml,application/xml" style="display:none;">
+          <div class="hint" style="margin:6px 0 0;" data-i18n="imp.hint">Scegli il file XML ricevuto dal fornitore: l'app riempie il modulo qui sotto, tu controlli e premi Registra.</div>
+          <div class="hint box" id="invImportResult" style="display:none;margin:10px 0 0;"></div>
+        </div>
         <div class="form-grid">
           <div>
             <label data-i18n="fatt.number">Numero</label>
@@ -1344,7 +1365,7 @@
   function renderAccountsList(){
     const wrap = document.getElementById('accountsListWrap');
     if(!wrap) return;
-    if(state.accounts.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun conto ancora.</div>'; return; }
+    if(state.accounts.length === 0){ wrap.innerHTML = '<div class="empty-state">' + t('fx.noAccounts') + '</div>'; return; }
     const order = ['attivo','passivo','patrimonio_netto','costi','ricavi'];
     let html = '';
     order.forEach(cat=>{
@@ -1380,14 +1401,14 @@
         document.getElementById('acctNameInput').value = a.name;
         document.getElementById('acctCategorySelect').value = a.category;
         editingAccountId = a.id;
-        document.getElementById('addAccountBtn').textContent = 'Salva modifiche';
+        document.getElementById('addAccountBtn').textContent = t('btn.saveChanges');
         document.getElementById('cancelAccountEditBtn').style.display = 'inline-block';
       });
     });
   }
   function cancelAccountEdit(){
     editingAccountId = null;
-    document.getElementById('addAccountBtn').textContent = 'Aggiungi conto';
+    document.getElementById('addAccountBtn').textContent = t('fx.addAccount');
     document.getElementById('cancelAccountEditBtn').style.display = 'none';
     document.getElementById('acctCodeInput').value = '';
     document.getElementById('acctNameInput').value = '';
@@ -1649,9 +1670,9 @@
   function renderDashboard(){
     const wrap = document.getElementById('dashboardWrap');
     if(!wrap) return;
-    if(state.accounts.length === 0){ wrap.innerHTML = '<div class="empty-state">Aggiungi dei conti per iniziare.</div>'; return; }
+    if(state.accounts.length === 0){ wrap.innerHTML = '<div class="empty-state">' + t('fx.addAccountsFirst') + '</div>'; return; }
     const order = ['attivo','passivo','patrimonio_netto','costi','ricavi'];
-    let html = '<table><tr><th>Conto</th><th style="text-align:right;">Saldo</th></tr>';
+    let html = '<table><tr><th>' + t('primanota.account') + '</th><th style="text-align:right;">' + t('fx.balance') + '</th></tr>';
     order.forEach(cat=>{
       const accs = state.accounts.filter(a=>a.category===cat).sort((a,b)=> a.code < b.code ? -1 : 1);
       accs.forEach(a=>{
@@ -1671,15 +1692,15 @@
     wrap.innerHTML = lines.map((line, idx) => `
       <div class="form-grid" data-adv-line="${idx}" style="border-top:1px solid var(--line);padding-top:12px;margin-top:12px;">
         <div class="full">
-          <label>Conto</label>
+          <label>${t('primanota.account')}</label>
           <select class="adv-account">${acctOptions}</select>
         </div>
         <div>
-          <label>Dare</label>
+          <label>${t('primanota.debit')}</label>
           <input type="number" step="0.01" min="0" class="adv-debit" placeholder="0.00">
         </div>
         <div>
-          <label>Avere</label>
+          <label>${t('primanota.credit')}</label>
           <input type="number" step="0.01" min="0" class="adv-credit" placeholder="0.00">
         </div>
       </div>
@@ -1717,7 +1738,7 @@
     if(diff === 0 && totalDebit > 0){
       el.innerHTML = '<span class="balanced">✓ Dare e avere si bilanciano (€ '+fmt(totalDebit)+')</span>';
     } else if(totalDebit === 0 && totalCredit === 0){
-      el.innerHTML = '<span class="hint">Inserisci gli importi nelle righe.</span>';
+      el.innerHTML = '<span class="hint">' + t('fx.enterAmounts') + '</span>';
     } else {
       el.innerHTML = '<span class="unbalanced">✗ Non bilanciato — differenza di € '+fmt(Math.abs(diff))+'</span>';
     }
@@ -1882,8 +1903,10 @@
           <select class="inv-line-vat">
             <option value="22" ${line.vatRate==22?'selected':''}>22%</option>
             <option value="10" ${line.vatRate==10?'selected':''}>10%</option>
+            <option value="5" ${line.vatRate==5?'selected':''}>5%</option>
             <option value="4" ${line.vatRate==4?'selected':''}>4%</option>
             <option value="0" ${line.vatRate==0?'selected':''}>${t('fatt.lVatZero')}</option>
+            ${[22,10,5,4,0].includes(Number(line.vatRate)) ? '' : `<option value="${Number(line.vatRate)}" selected>${fmt(Number(line.vatRate))}%</option>`}
           </select>
         </div>
       </div>
@@ -3019,8 +3042,8 @@
     const wrap = document.getElementById('bankBalancesWrap');
     if(!wrap) return;
     const bankAccounts = state.accounts.filter(a => a.code >= '1000' && a.code <= '1099').sort((a,b)=> a.code < b.code ? -1 : 1);
-    if(bankAccounts.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun conto liquido nel piano dei conti.</div>'; return; }
-    wrap.innerHTML = '<table><tr><th>Conto</th><th style="text-align:right;">Saldo</th></tr>' +
+    if(bankAccounts.length === 0){ wrap.innerHTML = '<div class="empty-state">' + t('fx.noLiquid') + '</div>'; return; }
+    wrap.innerHTML = '<table><tr><th>' + t('primanota.account') + '</th><th style="text-align:right;">' + t('fx.balance') + '</th></tr>' +
       bankAccounts.map(a=>'<tr><td>'+esc(a.code+' '+a.name)+'</td><td style="text-align:right;" class="mono">€ '+fmt(accountBalance(a.id))+'</td></tr>').join('') +
       '</table>';
   }
@@ -3115,7 +3138,7 @@
   function renderEmployeesList(){
     const wrap = document.getElementById('employeesListWrap');
     if(!wrap) return;
-    if(state.employees.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun dipendente ancora.</div>'; return; }
+    if(state.employees.length === 0){ wrap.innerHTML = '<div class="empty-state">' + t('fx.noEmployees') + '</div>'; return; }
     wrap.innerHTML = state.employees.map(emp => {
       const empPayslips = state.payslips.filter(p=>p.employee_id===emp.id);
       const tfrAccrued = empPayslips.reduce((s,p)=> s + Number(p.tfr||0), 0);
@@ -3152,7 +3175,7 @@
   function renderPartnersList(){
     const wrap = document.getElementById('partnersListWrap');
     if(!wrap) return;
-    if(state.partners.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessun cliente o fornitore salvato ancora.</div>'; return; }
+    if(state.partners.length === 0){ wrap.innerHTML = '<div class="empty-state">' + t('fx.noPartners') + '</div>'; return; }
     wrap.innerHTML = state.partners.map(p => `
       <div class="list-row">
         <div class="list-main">
@@ -3192,8 +3215,8 @@
         document.getElementById('partnerNotesInput').value = p.notes || '';
         fillPartnerExtra(p);
         editingPartnerId = p.id;
-        document.getElementById('partnerFormTitle').textContent = 'Modifica cliente/fornitore';
-        document.getElementById('savePartnerBtn').textContent = 'Salva modifiche';
+        document.getElementById('partnerFormTitle').textContent = t('fx.editPartner');
+        document.getElementById('savePartnerBtn').textContent = t('btn.saveChanges');
         document.getElementById('cancelPartnerEditBtn').style.display = 'inline-block';
         try{ document.getElementById('partnerNameInput').scrollIntoView({behavior:'smooth', block:'center'}); }catch(err){}
       });
@@ -3202,8 +3225,8 @@
 
   function cancelPartnerEdit(){
     editingPartnerId = null;
-    document.getElementById('partnerFormTitle').textContent = 'Nuovo cliente/fornitore';
-    document.getElementById('savePartnerBtn').textContent = 'Salva';
+    document.getElementById('partnerFormTitle').textContent = t('fx.newPartner');
+    document.getElementById('savePartnerBtn').textContent = t('btn.save');
     document.getElementById('cancelPartnerEditBtn').style.display = 'none';
     document.getElementById('partnerNameInput').value = '';
     document.getElementById('partnerTypeSelect').value = 'cliente';
@@ -3276,7 +3299,7 @@
   function renderPayslipsList(){
     const wrap = document.getElementById('payslipsListWrap');
     if(!wrap) return;
-    if(state.payslips.length === 0){ wrap.innerHTML = '<div class="empty-state">Nessuna busta paga ancora.</div>'; return; }
+    if(state.payslips.length === 0){ wrap.innerHTML = '<div class="empty-state">' + t('fx.noPayslips') + '</div>'; return; }
     wrap.innerHTML = state.payslips.map(p=>{
       const emp = state.employees.find(e=>e.id===p.employee_id);
       const monthLabel = new Date(p.month+'-01').toLocaleDateString('it-IT',{month:'long',year:'numeric'});
@@ -3892,7 +3915,7 @@
     hideAuthError();
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
-    if(!email || !password){ showAuthError('Inserisci email e password.'); return; }
+    if(!email || !password){ showAuthError(t('fx.needEmailPw')); return; }
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if(error){ showAuthError(error.message); return; }
     await enterApp(data.session);
@@ -3901,7 +3924,7 @@
     hideAuthError();
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
-    if(!email || !password){ showAuthError('Inserisci email e password.'); return; }
+    if(!email || !password){ showAuthError(t('fx.needEmailPw')); return; }
     if(password.length < 6){ showAuthError('La password deve avere almeno 6 caratteri.'); return; }
     setAuthLoading(true);
     const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } }); // il link di conferma deve riportare a questa app, non a Le Mie Finanze
@@ -3910,7 +3933,7 @@
     if(data.session){
       await enterApp(data.session);
     } else {
-      showAuthError('Controlla la tua email per confermare la registrazione.', true);
+      showAuthError(t('fx.checkEmail'), true);
     }
   });
   document.getElementById('authForgotLink').addEventListener('click', (e)=>{
@@ -3929,7 +3952,7 @@
   document.getElementById('forgotSendBtn').addEventListener('click', async ()=>{
     hideAuthError();
     const email = document.getElementById('forgotEmail').value.trim();
-    if(!email){ showAuthError('Inserisci la tua email.'); return; }
+    if(!email){ showAuthError(t('fx.needEmail')); return; }
     setAuthLoading(true);
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
     setAuthLoading(false);
@@ -3966,13 +3989,13 @@
     document.getElementById('appRoot').style.display = 'block';
     await loadCompany();
     if(!currentCompany){
-      document.getElementById('companySetupCard').style.display = 'block';
+      document.getElementById('companySetupCard').style.display = 'block'; document.getElementById('bizWelcomeCard').style.display = 'block'; // benvenuto: solo finché non c'è un'azienda
       document.getElementById('mainAppWrap').style.display = 'none';
       return;
     }
     document.getElementById('companyNameLabel').textContent = currentCompany.name;
     document.getElementById('companySetupCard').style.display = 'none';
-    document.getElementById('mainAppWrap').style.display = 'block';
+    document.getElementById('mainAppWrap').style.display = 'block'; document.getElementById('bizWelcomeCard').style.display = 'none';
     applyTheme(currentCompany.theme || 'dark');
     applyAccentColor(currentCompany.accent_color || (currentCompany.theme==='light' ? '#8C6A2F' : '#E0B255'));
     document.documentElement.lang = currentCompany.language || 'it';
@@ -4083,7 +4106,7 @@
     const missing = DEFAULT_ACCOUNTS.filter(a => !existingCodes.has(a.code));
     const msgEl = document.getElementById('addMissingDefaultsMsg');
     if(missing.length === 0){
-      msgEl.textContent = 'Hai già tutti i conti del modello base — nessuno da aggiungere.';
+      msgEl.textContent = t('fx.allAccounts');
       msgEl.style.display = 'block';
       return;
     }
@@ -4091,7 +4114,7 @@
     const { error } = await supabaseClient.from('biz_accounts').insert(rows);
     if(error){ alert(t('al.error') + ' ' + error.message); return; }
     state.accounts.push(...rows);
-    msgEl.textContent = 'Aggiunti ' + missing.length + ' nuovi conti dal modello base.';
+    msgEl.textContent = t('fx.addedAccounts', {n: missing.length});
     msgEl.style.display = 'block';
     populateSimpleTemplateSelect();
     renderAll();
@@ -4243,8 +4266,100 @@
       populateInvoiceAccountSelect();
       populateInvoicePartnerSelect();
       document.getElementById('invDocTypeSelect').value = 'invoice';
+      document.getElementById('invImportWrap').style.display = isEmessa ? 'none' : '';
+      document.getElementById('invImportResult').style.display = 'none';
       renderInvoicesList();
     });
+  });
+  // ---------- Fatture ricevute: lettura del file XML della fattura elettronica ----------
+  // Legge il file che arriva dal fornitore (tracciato FatturaPA) e riempie il modulo: non registra nulla da solo,
+  // così i dati si possono controllare prima di premere "Registra". I file firmati .p7m non si possono leggere.
+  function xmlChild(node, path){
+    let cur = node;
+    for(const name of path.split('/')){
+      if(!cur) return null;
+      cur = Array.from(cur.children).find(c => c.localName === name) || null;
+    }
+    return cur;
+  }
+  function xmlChildren(node, name){ return node ? Array.from(node.children).filter(c => c.localName === name) : []; }
+  function xmlText(node, path){ const n = xmlChild(node, path); return n ? String(n.textContent || '').trim() : ''; }
+  function parseSupplierInvoiceXml(text){
+    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    const root = doc.documentElement;
+    if(!root || doc.getElementsByTagName('parsererror').length || root.localName !== 'FatturaElettronica') return null;
+    const header = xmlChild(root, 'FatturaElettronicaHeader'), bodies = xmlChildren(root, 'FatturaElettronicaBody');
+    if(!header || !bodies.length) return null;
+    const body = bodies[0];
+    const sup = xmlChild(header, 'CedentePrestatore/DatiAnagrafici');
+    const name = xmlText(sup, 'Anagrafica/Denominazione') || (xmlText(sup, 'Anagrafica/Nome') + ' ' + xmlText(sup, 'Anagrafica/Cognome')).trim();
+    const vat = (xmlText(sup, 'IdFiscaleIVA/IdPaese') + xmlText(sup, 'IdFiscaleIVA/IdCodice')) || xmlText(sup, 'CodiceFiscale');
+    const gen = xmlChild(body, 'DatiGenerali/DatiGeneraliDocumento');
+    const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const lines = xmlChildren(xmlChild(body, 'DatiBeniServizi'), 'DettaglioLinee').map(l => {
+      const qty = num(xmlText(l, 'Quantita')) || 1;
+      const total = xmlText(l, 'PrezzoTotale');
+      // il totale di riga tiene già conto di sconti e maggiorazioni: il prezzo unitario si ricava da lì
+      const unit = total !== '' ? num(total) / qty : num(xmlText(l, 'PrezzoUnitario'));
+      return { description: xmlText(l, 'Descrizione'), quantity: qty, unitPrice: Math.round(unit * 1e6) / 1e6, vatRate: num(xmlText(l, 'AliquotaIVA')) };
+    });
+    // contributo della cassa previdenziale dei professionisti: una riga in più
+    xmlChildren(gen, 'DatiCassaPrevidenziale').forEach(c => {
+      const amt = num(xmlText(c, 'ImportoContributoCassa'));
+      if(amt) lines.push({ description: t('imp.cassaLine'), quantity: 1, unitPrice: amt, vatRate: num(xmlText(c, 'AliquotaIVA')) });
+    });
+    const rit = xmlChildren(gen, 'DatiRitenuta')[0] || null;
+    const due = xmlChildren(xmlChild(body, 'DatiPagamento'), 'DettaglioPagamento').map(d => xmlText(d, 'DataScadenzaPagamento')).filter(Boolean).sort().pop() || '';
+    return { name, vat, number: xmlText(gen, 'Numero'), date: xmlText(gen, 'Data'), docType: xmlText(gen, 'TipoDocumento'),
+      total: xmlText(gen, 'ImportoTotaleDocumento') === '' ? null : num(xmlText(gen, 'ImportoTotaleDocumento')),
+      currency: xmlText(gen, 'Divisa') || 'EUR', withholdingRate: rit ? num(xmlText(rit, 'AliquotaRitenuta')) : 0, withholdingAmount: rit ? num(xmlText(rit, 'ImportoRitenuta')) : 0,
+      stampInTotal: num(xmlText(gen, 'DatiBollo/ImportoBollo')), dueDate: due, lines, bodies: bodies.length };
+  }
+  function importSupplierInvoice(text){
+    const inv = parseSupplierInvoiceXml(text);
+    if(!inv || !inv.lines.length){ alert(t('imp.badFile')); return; }
+    if(editingInvoiceId) document.getElementById('cancelInvoiceEditBtn').click();
+    if(currentInvoiceType !== 'ricevuta'){ const b = document.querySelector('#invoiceTypeToggle button[data-type="ricevuta"]'); if(b) b.click(); }
+    const set = (id, v) => { document.getElementById(id).value = v; };
+    const isNote = inv.docType === 'TD04';
+    set('invDocTypeSelect', isNote ? 'credit_note' : 'invoice');
+    document.getElementById('invDocTypeSelect').dispatchEvent(new Event('change'));
+    set('invNumberInput', inv.number); set('invDateInput', inv.date); set('invDueDateInput', inv.dueDate);
+    set('invPartnerSelect', ''); set('invCounterpartyInput', inv.name); set('invVatInput', inv.vat);
+    document.getElementById('invWithholdingCheck').checked = inv.withholdingRate > 0;
+    if(inv.withholdingRate > 0) set('invWithholdingRate', inv.withholdingRate);
+    invStampTouched = true; document.getElementById('invStampCheck').checked = false; // il bollo addebitato è già una riga del file
+    invoiceLinesDraft = inv.lines;
+    renderInvoiceLines();
+    // controlli: stessa fattura già registrata, totale del file diverso da quello ricostruito, cose non lette
+    const notes = [];
+    const norm = v => String(v || '').replace(/\s/g, '').toLowerCase();
+    if(state.invoices.some(i => i.type === 'ricevuta' && norm(i.number) === norm(inv.number) && (norm(i.counterparty_vat) === norm(inv.vat) || norm(i.counterparty_name) === norm(inv.name)))) notes.push(t('imp.duplicate'));
+    const totals = computeInvoiceTotals(inv.lines);
+    const rebuilt = Number(totals.imponibile || 0) + Number(totals.iva || 0);
+    if(inv.total !== null && Math.abs(Math.abs(rebuilt) - Math.abs(inv.total)) > 0.05) notes.push(t('imp.totalDiff', {file: fmt(inv.total), app: fmt(rebuilt)}));
+    // l'app applica la ritenuta a tutto l'imponibile; nel file può riguardare solo alcune righe (per esempio non il bollo)
+    const ritApp = round2(Number(totals.imponibile || 0) * inv.withholdingRate / 100);
+    if(inv.withholdingRate > 0 && Math.abs(Math.abs(ritApp) - Math.abs(inv.withholdingAmount)) > 0.05) notes.push(t('imp.ritDiff', {file: fmt(inv.withholdingAmount), app: fmt(ritApp)}));
+    if(inv.currency !== 'EUR') notes.push(t('imp.currency', {cur: inv.currency}));
+    if(inv.bodies > 1) notes.push(t('imp.multi', {n: inv.bodies}));
+    if(!['TD01','TD04','TD06','TD24','TD25',''].includes(inv.docType)) notes.push(t('imp.docType', {type: inv.docType}));
+    const box = document.getElementById('invImportResult');
+    box.style.display = 'block';
+    box.innerHTML = '<strong>' + esc(t('imp.read', {number: inv.number, name: inv.name})) + '</strong> ' + esc(t('imp.check'))
+      + notes.map(n => '<div style="color:var(--over);margin-top:6px;">⚠️ ' + esc(n) + '</div>').join('');
+    document.getElementById('invoiceFormTitle').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  document.getElementById('invImportBtn').addEventListener('click', ()=> document.getElementById('invImportFile').click());
+  document.getElementById('invImportFile').addEventListener('change', (e)=>{
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    if(/\.p7m$/i.test(file.name)){ alert(t('imp.p7m')); return; }
+    const reader = new FileReader();
+    reader.onload = () => { try{ importSupplierInvoice(String(reader.result || '')); }catch(err){ console.error(err); alert(t('imp.badFile')); } };
+    reader.onerror = () => alert(t('imp.badFile'));
+    reader.readAsText(file);
   });
   document.getElementById('bilancioYearSelect').addEventListener('change', renderBilanci);
   document.getElementById('analisiYearSelect').addEventListener('change', renderAnalisi);
@@ -4405,12 +4520,12 @@
     if(!from || !to){ alert(t('al.dates')); return; }
     const result = calcIva(from, to);
     const wrap = document.getElementById('ivaResultWrap');
-    const label = result.saldo >= 0 ? 'IVA da versare' : 'IVA a credito';
+    const label = result.saldo >= 0 ? t('fx.vatToPay') : t('fx.vatCredit');
     const cls = result.saldo >= 0 ? 'unbalanced' : 'balanced';
     wrap.innerHTML = `
       <table>
-        <tr><td>IVA a debito (su vendite)</td><td style="text-align:right;" class="mono">€ ${fmt(result.ivaDebito)}</td></tr>
-        <tr><td>IVA a credito (su acquisti)</td><td style="text-align:right;" class="mono">€ ${fmt(result.ivaCredito)}</td></tr>
+        <tr><td>${t('fx.vatDebit')}</td><td style="text-align:right;" class="mono">€ ${fmt(result.ivaDebito)}</td></tr>
+        <tr><td>${t('fx.vatCreditBuy')}</td><td style="text-align:right;" class="mono">€ ${fmt(result.ivaCredito)}</td></tr>
         <tr style="border-top:2px solid var(--line);"><td><strong>${label}</strong></td><td style="text-align:right;" class="mono ${cls}"><strong>€ ${fmt(Math.abs(result.saldo))}</strong></td></tr>
       </table>
     `;
@@ -4635,6 +4750,11 @@
   // ---------- Lingua e traduzioni ----------
   const I18N = {
     it: {
+      'fx.noAccounts':'Nessun conto ancora.', 'fx.addAccount':'Aggiungi conto', 'fx.addAccountsFirst':'Aggiungi dei conti per iniziare.', 'fx.balance':'Saldo', 'fx.enterAmounts':'Inserisci gli importi nelle righe.', 'fx.noLiquid':'Nessun conto liquido nel piano dei conti.', 'fx.noEmployees':'Nessun dipendente ancora.', 'fx.noPartners':'Nessun cliente o fornitore salvato ancora.', 'fx.noPayslips':'Nessuna busta paga ancora.', 'fx.editPartner':'Modifica cliente/fornitore', 'fx.newPartner':'Nuovo cliente/fornitore', 'fx.allAccounts':'Hai già tutti i conti del modello base — nessuno da aggiungere.', 'fx.addedAccounts':'Aggiunti {n} nuovi conti dal modello base.', 'fx.vatToPay':'IVA da versare', 'fx.vatCredit':'IVA a credito', 'fx.vatDebit':'IVA a debito (su vendite)', 'fx.vatCreditBuy':'IVA a credito (su acquisti)', 'fx.needEmailPw':'Inserisci email e password.', 'fx.checkEmail':'Controlla la tua email per confermare la registrazione.', 'fx.needEmail':'Inserisci la tua email.',
+      'wel.title':'Benvenuto in Contabilità Azienda', 'wel.sub':'I conti della tua attività in un posto solo, spiegati in parole semplici.', 'wel.s1t':"Crea l'azienda", 'wel.s1':"Basta il nome: il piano dei conti di base lo prepara l'app.", 'wel.s2t':'Registra quello che succede', 'wel.s2':'Fatture emesse e ricevute, incassi, pagamenti, stipendi: le registrazioni contabili si scrivono da sole.', 'wel.s3t':'Guarda come va', 'wel.s3':'Bilancio, IVA da versare, scadenze e tasse stimate si aggiornano a ogni registrazione.', 'wel.note':'Le cifre fiscali sono stime per orientarti: per gli adempimenti ufficiali resta il tuo commercialista.',
+      'setup.title':'Crea la tua azienda', 'setup.hint':'Il punto di partenza — nome e forma di bilancio (puoi cambiarla dopo).', 'setup.name':'Nome azienda', 'setup.vat':'Partita IVA (facoltativo)', 'setup.form':'Forma di bilancio', 'setup.abbr':'Abbreviata', 'setup.ord':'Ordinaria', 'setup.create':'Crea azienda',
+      'imp.ritDiff':"La ritenuta scritta nel file è {file} €, l'app ne calcola {app} € perché la applica a tutte le righe: correggi la percentuale della ritenuta finché il netto da pagare torna uguale a quello della fattura.",
+      'imp.btn':'📥 Leggi una fattura elettronica (file XML)', 'imp.hint':"Scegli il file XML ricevuto dal fornitore: l'app riempie il modulo qui sotto, tu controlli e premi Registra.", 'imp.badFile':'Non riesco a leggere questo file: deve essere il file XML di una fattura elettronica.', 'imp.p7m':'Questo file è firmato (.p7m) e non si può leggere così. Scarica dal portale «Fatture e corrispettivi» la versione XML senza firma e riprova.', 'imp.read':'Letta la fattura n. {number} di {name}.', 'imp.check':'Controlla i dati, scegli il conto di costo e premi Registra.', 'imp.duplicate':'Una fattura con questo numero e questo fornitore è già registrata.', 'imp.totalDiff':'Il totale scritto nel file è {file} €, quello ricostruito dalle righe è {app} €: controlla le righe.', 'imp.currency':'La fattura è in {cur}: gli importi vanno convertiti in euro a mano.', 'imp.multi':'Il file contiene {n} fatture: ho letto solo la prima.', 'imp.docType':'Tipo di documento {type}: controlla che vada registrato come una normale fattura.', 'imp.cassaLine':'Contributo cassa previdenziale',
       'xml.zip':'CAP', 'xml.city':'Comune', 'xml.province':'Provincia (sigla)', 'xml.sdi':'Codice destinatario (fattura elettronica)', 'xml.pec':'PEC (se non ha il codice destinatario)', 'xml.cf':'Codice fiscale', 'xml.regime':'Regime fiscale', 'xml.address':'Indirizzo (via e numero)', 'xml.iban':'IBAN (compare sulla fattura)',
       'xml.rf01':'Ordinario', 'xml.rf19':'Forfettario', 'xml.rf02':'Contribuenti minimi', 'xml.rf04':'Agricoltura e attività connesse', 'xml.rf18':'Altro',
       'xml.natureLabel':'Perché le righe sono senza IVA (serve per la fattura elettronica)', 'xml.natureRef':'Riferimento di legge da scrivere in fattura (facoltativo)', 'xml.btnTitle':'Scarica il file della fattura elettronica',
@@ -4831,6 +4951,11 @@
       'settings.exportJournal':'Esporta Prima Nota (CSV)', 'settings.exportInvoices':'Esporta Fatture (CSV)', 'settings.exportAccounts':'Esporta Piano dei conti (CSV)',
     },
     en: {
+      'fx.noAccounts':'No accounts yet.', 'fx.addAccount':'Add account', 'fx.addAccountsFirst':'Add some accounts to get started.', 'fx.balance':'Balance', 'fx.enterAmounts':'Enter the amounts in the lines.', 'fx.noLiquid':'No cash or bank account in the chart of accounts.', 'fx.noEmployees':'No employees yet.', 'fx.noPartners':'No clients or suppliers saved yet.', 'fx.noPayslips':'No payslips yet.', 'fx.editPartner':'Edit client/supplier', 'fx.newPartner':'New client/supplier', 'fx.allAccounts':'You already have all the accounts of the basic template — none to add.', 'fx.addedAccounts':'{n} new accounts added from the basic template.', 'fx.vatToPay':'VAT to pay', 'fx.vatCredit':'VAT credit', 'fx.vatDebit':'Output VAT (on sales)', 'fx.vatCreditBuy':'Input VAT (on purchases)', 'fx.needEmailPw':'Enter email and password.', 'fx.checkEmail':'Check your email to confirm your registration.', 'fx.needEmail':'Enter your email.',
+      'wel.title':'Welcome to Contabilità Azienda', 'wel.sub':'Your business accounts in one place, explained in plain words.', 'wel.s1t':'Create the company', 'wel.s1':'The name is enough: the app prepares the basic chart of accounts.', 'wel.s2t':'Record what happens', 'wel.s2':'Invoices issued and received, receipts, payments, salaries: the accounting entries write themselves.', 'wel.s3t':'See how it is going', 'wel.s3':'Balance sheet, VAT to pay, deadlines and estimated taxes update with every entry.', 'wel.note':'Tax figures are estimates to guide you: for official filings your accountant remains the reference.',
+      'setup.title':'Create your company', 'setup.hint':'The starting point — name and type of financial statements (you can change it later).', 'setup.name':'Company name', 'setup.vat':'VAT number (optional)', 'setup.form':'Type of financial statements', 'setup.abbr':'Abbreviated', 'setup.ord':'Ordinary', 'setup.create':'Create company',
+      'imp.ritDiff':'The withholding written in the file is € {file}, the app calculates € {app} because it applies it to every line: adjust the withholding percentage until the net amount to pay matches the invoice.',
+      'imp.btn':'📥 Read an e-invoice (XML file)', 'imp.hint':'Choose the XML file received from the supplier: the app fills in the form below, you check it and press Record.', 'imp.badFile':'I cannot read this file: it must be the XML file of an Italian e-invoice.', 'imp.p7m':'This file is signed (.p7m) and cannot be read this way. Download the unsigned XML version from the «Fatture e corrispettivi» portal and try again.', 'imp.read':'Invoice no. {number} from {name} has been read.', 'imp.check':'Check the data, choose the cost account and press Record.', 'imp.duplicate':'An invoice with this number and this supplier is already recorded.', 'imp.totalDiff':'The total written in the file is € {file}, the one rebuilt from the lines is € {app}: check the lines.', 'imp.currency':'The invoice is in {cur}: amounts must be converted to euro by hand.', 'imp.multi':'The file contains {n} invoices: only the first one was read.', 'imp.docType':'Document type {type}: check that it should be recorded as a normal invoice.', 'imp.cassaLine':'Professional pension fund contribution',
       'xml.zip':'Postcode', 'xml.city':'Town', 'xml.province':'Province (two letters)', 'xml.sdi':'Recipient code (e-invoice)', 'xml.pec':'Certified email (if no recipient code)', 'xml.cf':'Tax code', 'xml.regime':'Tax regime', 'xml.address':'Address (street and number)', 'xml.iban':'IBAN (shown on the invoice)',
       'xml.rf01':'Ordinary', 'xml.rf19':'Flat-rate (forfettario)', 'xml.rf02':'Minimum taxpayers', 'xml.rf04':'Agriculture and related activities', 'xml.rf18':'Other',
       'xml.natureLabel':'Why the lines have no VAT (needed for the e-invoice)', 'xml.natureRef':'Legal reference to print on the invoice (optional)', 'xml.btnTitle':'Download the e-invoice file',
@@ -5027,6 +5152,11 @@
       'settings.exportJournal':'Export Ledger (CSV)', 'settings.exportInvoices':'Export Invoices (CSV)', 'settings.exportAccounts':'Export Chart of Accounts (CSV)',
     },
     de: {
+      'fx.noAccounts':'Noch keine Konten.', 'fx.addAccount':'Konto hinzufügen', 'fx.addAccountsFirst':'Füge Konten hinzu, um zu beginnen.', 'fx.balance':'Saldo', 'fx.enterAmounts':'Trage die Beträge in die Zeilen ein.', 'fx.noLiquid':'Kein Kassen- oder Bankkonto im Kontenplan.', 'fx.noEmployees':'Noch keine Mitarbeiter.', 'fx.noPartners':'Noch keine Kunden oder Lieferanten gespeichert.', 'fx.noPayslips':'Noch keine Lohnabrechnungen.', 'fx.editPartner':'Kunde/Lieferant bearbeiten', 'fx.newPartner':'Neuer Kunde/Lieferant', 'fx.allAccounts':'Du hast bereits alle Konten der Basisvorlage — keine hinzuzufügen.', 'fx.addedAccounts':'{n} neue Konten aus der Basisvorlage hinzugefügt.', 'fx.vatToPay':'Zu zahlende MwSt.', 'fx.vatCredit':'MwSt.-Guthaben', 'fx.vatDebit':'Umsatzsteuer (auf Verkäufe)', 'fx.vatCreditBuy':'Vorsteuer (auf Einkäufe)', 'fx.needEmailPw':'E-Mail und Passwort eingeben.', 'fx.checkEmail':'Prüfe deine E-Mails, um die Registrierung zu bestätigen.', 'fx.needEmail':'Gib deine E-Mail ein.',
+      'wel.title':'Willkommen bei Contabilità Azienda', 'wel.sub':'Die Zahlen deines Betriebs an einem Ort, in einfachen Worten erklärt.', 'wel.s1t':'Firma anlegen', 'wel.s1':'Der Name genügt: Den Basis-Kontenplan bereitet die App vor.', 'wel.s2t':'Erfasse, was passiert', 'wel.s2':'Ausgangs- und Eingangsrechnungen, Zahlungseingänge, Zahlungen, Löhne: Die Buchungen schreiben sich von selbst.', 'wel.s3t':'Sieh, wie es läuft', 'wel.s3':'Bilanz, fällige MwSt., Termine und geschätzte Steuern aktualisieren sich mit jeder Buchung.', 'wel.note':'Die Steuerzahlen sind Schätzungen zur Orientierung: Für offizielle Pflichten bleibt dein Steuerberater zuständig.',
+      'setup.title':'Lege deine Firma an', 'setup.hint':'Der Ausgangspunkt — Name und Form des Jahresabschlusses (später änderbar).', 'setup.name':'Firmenname', 'setup.vat':'USt-IdNr. (optional)', 'setup.form':'Form des Jahresabschlusses', 'setup.abbr':'Verkürzt', 'setup.ord':'Ordentlich', 'setup.create':'Firma anlegen',
+      'imp.ritDiff':'Der Steuerabzug in der Datei beträgt {file} €, die App berechnet {app} €, weil sie ihn auf alle Zeilen anwendet: Passe den Prozentsatz an, bis der Zahlbetrag mit der Rechnung übereinstimmt.',
+      'imp.btn':'📥 E-Rechnung einlesen (XML-Datei)', 'imp.hint':'Wähle die XML-Datei des Lieferanten: Die App füllt das Formular unten aus, du prüfst und drückst auf Erfassen.', 'imp.badFile':'Diese Datei kann ich nicht lesen: Es muss die XML-Datei einer italienischen E-Rechnung sein.', 'imp.p7m':'Diese Datei ist signiert (.p7m) und kann so nicht gelesen werden. Lade im Portal «Fatture e corrispettivi» die unsignierte XML-Version herunter und versuche es erneut.', 'imp.read':'Rechnung Nr. {number} von {name} eingelesen.', 'imp.check':'Prüfe die Daten, wähle das Kostenkonto und drücke auf Erfassen.', 'imp.duplicate':'Eine Rechnung mit dieser Nummer und diesem Lieferanten ist bereits erfasst.', 'imp.totalDiff':'Die Summe in der Datei beträgt {file} €, die aus den Zeilen berechnete {app} €: Prüfe die Zeilen.', 'imp.currency':'Die Rechnung ist in {cur}: Die Beträge müssen von Hand in Euro umgerechnet werden.', 'imp.multi':'Die Datei enthält {n} Rechnungen: Nur die erste wurde gelesen.', 'imp.docType':'Dokumenttyp {type}: Prüfe, ob er wie eine normale Rechnung zu erfassen ist.', 'imp.cassaLine':'Beitrag zur Berufsvorsorgekasse',
       'xml.zip':'PLZ', 'xml.city':'Ort', 'xml.province':'Provinz (zwei Buchstaben)', 'xml.sdi':'Empfängercode (E-Rechnung)', 'xml.pec':'Zertifizierte E-Mail (falls kein Empfängercode)', 'xml.cf':'Steuernummer', 'xml.regime':'Steuerregime', 'xml.address':'Adresse (Straße und Nummer)', 'xml.iban':'IBAN (erscheint auf der Rechnung)',
       'xml.rf01':'Ordentlich', 'xml.rf19':'Pauschalregime (forfettario)', 'xml.rf02':'Kleinststeuerpflichtige', 'xml.rf04':'Landwirtschaft und verbundene Tätigkeiten', 'xml.rf18':'Sonstiges',
       'xml.natureLabel':'Warum die Zeilen ohne MwSt sind (für die E-Rechnung nötig)', 'xml.natureRef':'Gesetzesverweis für die Rechnung (optional)', 'xml.btnTitle':'E-Rechnungsdatei herunterladen',
@@ -5421,7 +5551,7 @@
   document.getElementById('cancelNewCompanyBtn').addEventListener('click', ()=>{
     document.getElementById('companySetupCard').style.display = 'none';
     document.getElementById('cancelNewCompanyBtn').style.display = 'none';
-    document.getElementById('mainAppWrap').style.display = 'block';
+    document.getElementById('mainAppWrap').style.display = 'block'; document.getElementById('bizWelcomeCard').style.display = 'none';
   });
   document.getElementById('settingsOpenPrivacyLink').addEventListener('click', (e)=>{
     e.preventDefault();
