@@ -1059,8 +1059,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
-  const SUPABASE_URL = 'https://lnchlsluabaxqlbcrxhb.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuY2hsc2x1YWJheHFsYmNyeGhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMzU4MzAsImV4cCI6MjA5OTcxMTgzMH0.aOSlAxS883n-8hDUnJyXkfJNF9aQ22mmYIqOPXfJCeY';
+  // Progetto Supabase solo della Contabilità Azienda (dal 2026-10-11): account e dati separati da Le Mie Finanze
+  const SUPABASE_URL = 'https://okiginukwleursbtqnxg.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9raWdpbnVrd2xldXJzYnRxbnhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MzU2NTUsImV4cCI6MjEwNzIxMTY1NX0.myoNQym6pk9kKuHoJNfDU4kPKVS_rrfnBVCujkxNdik';
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const CATEGORY_LABELS = { attivo:'Attivo', passivo:'Passivo', patrimonio_netto:'Patrimonio Netto', costi:'Costi', ricavi:'Ricavi' };
@@ -3903,7 +3904,7 @@
     if(!email || !password){ showAuthError('Inserisci email e password.'); return; }
     if(password.length < 6){ showAuthError('La password deve avere almeno 6 caratteri.'); return; }
     setAuthLoading(true);
-    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } }); // il link di conferma deve riportare a questa app, non a Le Mie Finanze
     setAuthLoading(false);
     if(error){ showAuthError(error.message); return; }
     if(data.session){
