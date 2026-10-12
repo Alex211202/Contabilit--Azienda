@@ -189,11 +189,42 @@
   .pal-btn{display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 14px 7px 8px;font-size:13px;font-weight:600;}
   .pal-btn i{width:24px;height:24px;border-radius:50%;display:block;}
   .pal-btn.on{border-color:var(--accent);color:var(--accent);}
+
+  /* --- schermata di accesso: un registro contabile che si muove piano (solo spostamenti e trasparenze, niente sfocature) --- */
+  #authScreen{position:relative;overflow:hidden;background:linear-gradient(160deg, var(--bg), color-mix(in srgb, var(--accent) 9%, var(--bg)));}
+  #authScreen > .card{position:relative;z-index:1;box-shadow:0 24px 70px rgba(0,0,0,.28);border-radius:26px;}
+  .au-scene{position:absolute;inset:0;pointer-events:none;overflow:hidden;--au-line:color-mix(in srgb, var(--ink) 9%, transparent);}
+  .au-ruled{position:absolute;inset:-60px 0 0 0;background:
+      repeating-linear-gradient(to bottom, transparent 0 43px, var(--au-line) 43px 44px),
+      linear-gradient(to right, transparent calc(72% - 1px), var(--au-line) calc(72% - 1px) 72%, transparent 72%),
+      linear-gradient(to right, transparent calc(86% - 1px), var(--au-line) calc(86% - 1px) 86%, transparent 86%);
+    animation:auScroll 14s linear infinite;}
+  @keyframes auScroll{to{transform:translateY(44px);}}
+  .au-cols{position:absolute;left:0;right:0;bottom:0;height:42vh;display:flex;align-items:flex-end;gap:2.2vw;padding:0 4vw;opacity:.5;}
+  .au-cols i{flex:1;border-radius:10px 10px 0 0;background:linear-gradient(to top, transparent, color-mix(in srgb, var(--accent) 55%, transparent));transform-origin:bottom;animation:auBreathe var(--d,7s) ease-in-out infinite alternate;animation-delay:var(--w,0s);height:var(--h,50%);}
+  @keyframes auBreathe{from{transform:scaleY(.55);}to{transform:scaleY(1);}}
+  .au-trend{position:absolute;left:0;right:0;bottom:16vh;width:100%;height:36vh;}
+  .au-trend path{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:.75;stroke-dasharray:1600;stroke-dashoffset:1600;animation:auDraw 9s ease-in-out infinite;}
+  @keyframes auDraw{0%{stroke-dashoffset:1600;}55%,80%{stroke-dashoffset:0;opacity:.75;}100%{stroke-dashoffset:0;opacity:0;}}
+  .au-slip{position:absolute;bottom:-60px;left:var(--x);display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;animation:auRise var(--t,16s) linear infinite;animation-delay:var(--w,0s);opacity:0;}
+  .au-slip b{width:20px;height:20px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;}
+  .au-slip.in{color:var(--green);} .au-slip.in b{background:color-mix(in srgb, var(--green) 20%, transparent);}
+  .au-slip.out{color:var(--over);} .au-slip.out b{background:color-mix(in srgb, var(--over) 20%, transparent);}
+  .au-slip small{font-weight:600;color:var(--ink-faint);font-size:11.5px;}
+  @keyframes auRise{0%{transform:translateY(0);opacity:0;}8%{opacity:.9;}70%{opacity:.9;}100%{transform:translateY(-110vh);opacity:0;}}
+  @media (prefers-reduced-motion: reduce){.au-ruled,.au-cols i,.au-trend path,.au-slip{animation:none;} .au-trend path{stroke-dashoffset:0;} .au-slip{display:none;}}
+  @media (max-width:640px){.au-slip:nth-child(n+5){display:none;}}
 </style>
 </head>
 <body>
 
 <div id="authScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div class="au-scene" id="auScene" aria-hidden="true">
+    <div class="au-ruled"></div>
+    <div class="au-cols" id="auCols"></div>
+    <svg class="au-trend" viewBox="0 0 1000 300" preserveAspectRatio="none"><path d="M0 250 L120 215 L230 232 L350 170 L470 190 L590 120 L700 140 L820 70 L920 88 L1000 30"/></svg>
+    <div id="auSlips"></div>
+  </div>
   <div class="card" style="width:100%;max-width:400px;position:relative;">
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px;">
       <div class="currency-picker" id="authLangPicker">
@@ -216,7 +247,7 @@
       </button>
     </div>
     <h1 style="font-size:26px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
-    <p class="hint" style="margin-bottom:20px;" data-i18n="auth.subtitle">Accedi con le stesse credenziali di Le Mie Finanze, oppure registrati direttamente qui.</p>
+    <p class="hint" style="margin-bottom:20px;" data-i18n="auth.subtitle">I conti della tua attività, in ordine. Accedi oppure crea un account.</p>
     <div id="authError" style="display:none;margin-top:0;margin-bottom:14px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--over-bg);color:var(--over);font-size:13px;"></div>
 
     <div id="loginFormWrap">
@@ -4309,6 +4340,22 @@
     say(t('acc.saved'), false);
   });
 
+  // Sfondo della schermata di accesso: colonne e registrazioni finte, create una volta. Quando si entra nell'app
+  // la scena viene tolta dalla pagina, così non resta niente che si muove di nascosto.
+  (function buildAuthScene(){
+    const cols = document.getElementById('auCols'), slips = document.getElementById('auSlips'), auth = document.getElementById('authScreen');
+    if(!cols || !slips || !auth) return;
+    const heights = [34,52,41,66,48,74,58,86,63,92,71,80];
+    cols.innerHTML = heights.map((h,i) => '<i style="--h:' + h + '%;--d:' + (6 + (i % 4)) + 's;--w:-' + (i * 0.7) + 's"></i>').join('');
+    const items = [['in','+','1.220,00'],['out','−','340,50'],['in','+','2.900,00'],['out','−','1.552,62'],['in','+','640,00'],['out','−','220,00'],['in','+','3.480,00'],['out','−','89,90']];
+    const xs = [6, 18, 30, 62, 74, 86, 12, 80];
+    slips.innerHTML = items.map((x,i) => '<div class="au-slip ' + x[0] + '" style="--x:' + xs[i] + '%;--t:' + (15 + (i % 3) * 3) + 's;--w:-' + (i * 2.3) + 's"><b>' + x[1] + '</b>€ ' + x[2] + '</div>').join('');
+    const scene = document.getElementById('auScene');
+    const sync = () => { scene.style.display = auth.style.display === 'none' ? 'none' : ''; };
+    new MutationObserver(sync).observe(auth, { attributes: true, attributeFilter: ['style'] });
+    sync();
+  })();
+
   function renderAll(){
     renderAccountsList();
     renderDashboardStats();
@@ -5330,7 +5377,7 @@
       'al.payrollAccounts':'Mancano alcuni conti standard nel Piano dei conti (Salari, Oneri sociali, TFR, Debiti verso dipendenti/INPS/INAIL, Ritenute): usa "Aggiungi i conti mancanti dal modello base" nel Piano dei conti.',
       'bk.title':'Copia di sicurezza', 'bk.hint':"Ogni domenica notte viene salvata da sola una copia di tutti i dati dell'azienda (si tengono le ultime 8). Puoi farne una adesso o scaricare un file da tenere sul tuo dispositivo.", 'bk.now':'Fai una copia adesso', 'bk.download':'Scarica tutti i dati (file)',
       'bk.last':'Ultima copia: {date}.', 'bk.none':'Nessuna copia ancora.', 'bk.working':'Sto facendo la copia…', 'bk.done':'Copia fatta.',
-      'auth.subtitle':'Accedi con le stesse credenziali di Le Mie Finanze, oppure registrati direttamente qui.',
+      'auth.subtitle':'I conti della tua attività, in ordine. Accedi oppure crea un account.',
       'lbl.email':'Email', 'lbl.password':'Password',
       'btn.login':'Accedi', 'btn.signup':'Non hai un account? Registrati',
       'auth.orDivider':'oppure', 'auth.googleSignIn':'Accedi con Google', 'auth.forgotLink':'Password dimenticata?',
@@ -5537,7 +5584,7 @@
       'al.payrollAccounts':'Some standard accounts are missing from the chart of accounts (wages, social charges, severance, payables to employees/INPS/INAIL, withholdings): use "Add the missing accounts from the base template" in the chart of accounts.',
       'bk.title':'Backup', 'bk.hint':'Every Sunday night a copy of all the company data is saved automatically (the last 8 are kept). You can make one now or download a file to keep on your device.', 'bk.now':'Make a copy now', 'bk.download':'Download all data (file)',
       'bk.last':'Last copy: {date}.', 'bk.none':'No copy yet.', 'bk.working':'Making the copy…', 'bk.done':'Copy made.',
-      'auth.subtitle':'Sign in with the same credentials as Le Mie Finanze, or sign up directly here.',
+      'auth.subtitle':'Your business accounts, in order. Log in or create an account.',
       'lbl.email':'Email', 'lbl.password':'Password',
       'btn.login':'Sign in', 'btn.signup':"Don't have an account? Sign up",
       'auth.orDivider':'or', 'auth.googleSignIn':'Sign in with Google', 'auth.forgotLink':'Forgot password?',
@@ -5744,7 +5791,7 @@
       'al.payrollAccounts':'Im Kontenplan fehlen einige Standardkonten (Löhne, Sozialabgaben, Abfertigung, Verbindlichkeiten gegenüber Mitarbeitern/INPS/INAIL, Einbehalte): Nutze im Kontenplan "Fehlende Konten aus der Basisvorlage hinzufügen".',
       'bk.title':'Sicherungskopie', 'bk.hint':'Jeden Sonntagabend wird automatisch eine Kopie aller Unternehmensdaten gespeichert (die letzten 8 bleiben erhalten). Du kannst jetzt eine erstellen oder eine Datei für dein Gerät herunterladen.', 'bk.now':'Jetzt eine Kopie erstellen', 'bk.download':'Alle Daten herunterladen (Datei)',
       'bk.last':'Letzte Kopie: {date}.', 'bk.none':'Noch keine Kopie.', 'bk.working':'Kopie wird erstellt…', 'bk.done':'Kopie erstellt.',
-      'auth.subtitle':'Melde dich mit denselben Zugangsdaten wie bei Le Mie Finanze an, oder registriere dich direkt hier.',
+      'auth.subtitle':'Die Zahlen deines Betriebs, in Ordnung. Melde dich an oder erstelle ein Konto.',
       'lbl.email':'E-Mail', 'lbl.password':'Passwort',
       'btn.login':'Anmelden', 'btn.signup':'Noch kein Konto? Registrieren',
       'auth.orDivider':'oder', 'auth.googleSignIn':'Mit Google anmelden', 'auth.forgotLink':'Passwort vergessen?',
