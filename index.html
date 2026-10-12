@@ -214,6 +214,12 @@
   @keyframes auRise{0%{transform:translateY(0);opacity:0;}8%{opacity:.9;}70%{opacity:.9;}100%{transform:translateY(-110vh);opacity:0;}}
   @media (prefers-reduced-motion: reduce){.au-ruled,.au-cols i,.au-trend path,.au-slip{animation:none;} .au-trend path{stroke-dashoffset:0;} .au-slip{display:none;}}
   @media (max-width:640px){.au-slip:nth-child(n+5){display:none;}}
+
+  /* --- sfondo animato anche dentro l'app (a scelta, Impostazioni → Aspetto): la stessa scena dell'accesso, più tenue --- */
+  .app-scene{position:fixed;z-index:0;opacity:.45;display:none;}
+  body.anim-bg .app-scene{display:block;}
+  body.anim-bg .app{position:relative;z-index:1;}
+  @media (min-width:1000px){body.has-nav.anim-bg .app-scene{left:252px;}}
 </style>
 </head>
 <body>
@@ -251,6 +257,8 @@
     <div id="authError" style="display:none;margin-top:0;margin-bottom:14px;padding:10px 12px;border-radius:var(--radius-sm);background:var(--over-bg);color:var(--over);font-size:13px;"></div>
 
     <div id="loginFormWrap">
+      <h3 id="authModeTitle" style="margin:0 0 4px;font-size:18px;">Accedi</h3>
+      <div class="hint" id="authModeHint" style="display:none;margin:0 0 12px;"></div>
       <label data-i18n="lbl.email">Email</label>
       <input type="email" id="authEmail" placeholder="tu@esempio.com" autocomplete="username">
       <label data-i18n="lbl.password">Password</label>
@@ -261,12 +269,16 @@
           <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.1A10.9 10.9 0 0112 5c7 0 11 7 11 7a17.6 17.6 0 01-3.2 4M6.5 6.6C3.7 8.3 1 12 1 12s2.3 4 6 5.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
       </div>
+      <div id="authPassword2Wrap" style="display:none;">
+        <label data-i18n="su.pw2">Ripeti la password</label>
+        <input type="password" id="authPassword2" placeholder="••••••••" autocomplete="new-password">
+      </div>
       <button class="primary" id="authLoginBtn" type="button" style="width:100%;" data-i18n="btn.login">Accedi</button>
-      <button class="ghost" id="authSignupBtn" type="button" style="width:100%;margin-top:8px;" disabled data-i18n="btn.signup">Non hai un account? Registrati</button>
-      <div style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;width:100%;box-sizing:border-box;">
+      <div id="authTermsWrap" style="display:none;align-items:flex-start;gap:8px;margin-top:10px;width:100%;box-sizing:border-box;">
         <input type="checkbox" id="acceptTermsCheckbox" style="flex:0 0 auto;width:16px;height:16px;margin:2px 0 0 0;">
         <label for="acceptTermsCheckbox" id="acceptTermsLabel" style="display:block;flex:1 1 0%;min-width:0;margin:0;padding:0;font-weight:400;font-size:12.5px;line-height:1.4;color:var(--ink-soft);">Ho letto e accetto <a href="#" id="openPrivacyLink" style="color:var(--accent);">l'Informativa Privacy</a> e i <a href="#" id="openTermsLink" style="color:var(--accent);">Termini di Servizio</a>.</label>
       </div>
+      <button class="primary" id="authSignupBtn" type="button" style="width:100%;margin-top:12px;display:none;" disabled data-i18n="su.create">Crea account</button>
       <div style="display:flex;align-items:center;gap:10px;margin:16px 0;">
         <div style="flex:1;height:1px;background:var(--line);"></div>
         <span style="font-size:12px;color:var(--ink-faint);" data-i18n="auth.orDivider">oppure</span>
@@ -279,9 +291,10 @@
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        <span data-i18n="auth.googleSignIn">Accedi con Google</span>
+        <span id="googleBtnLabel">Accedi con Google</span>
       </button>
       <div style="text-align:center;margin-top:14px;">
+        <a href="#" id="authSwitchLink" style="font-size:13.5px;font-weight:600;color:var(--accent);display:block;padding-top:12px;border-top:1px solid var(--line);margin-bottom:12px;">Non hai un account? Registrati</a>
         <a href="#" id="authForgotLink" style="font-size:12.5px;color:var(--ink-soft);" data-i18n="auth.forgotLink">Password dimenticata?</a>
       </div>
     </div>
@@ -329,6 +342,7 @@
     <h3>Che dati raccogliamo</h3>
     <p><strong>Dati di accesso:</strong> la tua email e la password (gestita in modo sicuro da Supabase, il nostro fornitore di database — la password non è mai visibile in chiaro, nemmeno a noi). Se entri con Google, riceviamo da Google solo il tuo indirizzo email e il nome del tuo profilo: nient'altro del tuo account Google.</p>
     <p><strong>Dati aziendali:</strong> tutto quello che inserisci volontariamente nell'app — piano dei conti, registrazioni contabili, fatture, anagrafica di clienti e fornitori, dipendenti e buste paga, beni ammortizzabili. Nessun dato bancario reale (numeri di carta, credenziali bancarie) viene mai richiesto o raccolto.</p>
+    <p><strong>Notifiche:</strong> solo se le attivi tu dalle Impostazioni, salviamo l’indirizzo tecnico che il tuo browser ci fornisce per recapitarle su quel dispositivo e l’elenco delle scadenze da ricordarti (per esempio «IVA di ottobre» con il suo importo). Puoi disattivarle quando vuoi: l’indirizzo viene cancellato.</p>
     <p><strong>Preferenze:</strong> tema chiaro/scuro, colore dell'interfaccia, e altre impostazioni che scegli tu.</p>
     <h3>Come usiamo i tuoi dati</h3>
     <p>Solo per mostrarti la situazione contabile della tua azienda dentro l'app. Non vendiamo, condividiamo o usiamo i tuoi dati per pubblicità, profilazione, o qualsiasi scopo commerciale.</p>
@@ -378,6 +392,7 @@
 </div>
 
 <div id="appRoot" style="display:none;">
+<div class="au-scene app-scene" id="appScene" aria-hidden="true"></div>
 <div class="app">
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
@@ -1171,6 +1186,13 @@
       <div id="saveCompanySettingsMsg" style="display:none;margin-top:10px;"></div>
     </div>
     <div class="card">
+      <h3 data-i18n="push.title">Notifiche</h3>
+      <div class="hint box" data-i18n="push.hint">Ricevi un avviso su questo dispositivo 3 giorni prima e il giorno stesso di: versamenti IVA, F24 di stipendi e ritenute, bollo sulle fatture, fatture da incassare e da pagare. Arrivano la mattina.</div>
+      <div id="pushStatus" class="hint" style="margin:0 0 12px;"></div>
+      <button class="primary" id="pushToggleBtn" type="button" data-i18n="push.enable">Attiva le notifiche su questo dispositivo</button>
+      <div class="hint" style="margin-top:10px;" data-i18n="push.iphone">Su iPhone e iPad funzionano solo se prima aggiungi l'app alla schermata Home (Condividi → Aggiungi a Home) e la apri da lì.</div>
+    </div>
+    <div class="card">
       <h3 data-i18n="acc.title">Il tuo accesso</h3>
       <div class="hint box"><span data-i18n="acc.loggedAs">Sei entrato come</span> <strong id="accEmailLabel"></strong></div>
       <label data-i18n="acc.newPw">Nuova password (almeno 6 caratteri)</label>
@@ -1191,6 +1213,8 @@
         <button type="button" class="pal-btn" data-pal="grafite"><i style="background:#8C9EFF;"></i><span data-i18n="pal.grafite">Grafite</span></button>
         <button type="button" class="pal-btn" data-pal="oro"><i style="background:#E0B255;"></i><span data-i18n="pal.oro">Oro</span></button>
       </div>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-weight:400;margin:0 0 6px;"><input type="checkbox" id="animBgCheck" style="width:auto;margin-top:3px;"> <span data-i18n="anim.label">Sfondo animato anche dentro l'app</span></label>
+      <div class="hint" style="margin:0 0 14px;" data-i18n="anim.hint">È lo sfondo che si muove nella schermata di accesso. Se l'app ti sembra più lenta, spegnilo.</div>
       <div style="display:flex;gap:12px;align-items:center;">
         <button class="theme-appearance-btn" id="accentColorSwatchSettings" title="Colore accento" style="width:44px;height:44px;">
           <input type="color" id="accentColorPickerSettings" title="Colore accento">
@@ -4351,10 +4375,130 @@
     const xs = [6, 18, 30, 62, 74, 86, 12, 80];
     slips.innerHTML = items.map((x,i) => '<div class="au-slip ' + x[0] + '" style="--x:' + xs[i] + '%;--t:' + (15 + (i % 3) * 3) + 's;--w:-' + (i * 2.3) + 's"><b>' + x[1] + '</b>€ ' + x[2] + '</div>').join('');
     const scene = document.getElementById('auScene');
+    const appScene = document.getElementById('appScene');
+    if(appScene) appScene.innerHTML = scene.innerHTML.replace(/ id="[^"]*"/g, ''); // stessa scena, usata come sfondo dentro l'app
     const sync = () => { scene.style.display = auth.style.display === 'none' ? 'none' : ''; };
     new MutationObserver(sync).observe(auth, { attributes: true, attributeFilter: ['style'] });
     sync();
   })();
+
+  // ---------- Accesso e registrazione: due schermate distinte nella stessa scheda (come in Le Mie Finanze) ----------
+  // 'login' = entra chi ha già un account; 'signup' = crea l'account (titolo, password ripetuta, spunta dei termini,
+  // pulsante "Crea account"). Si passa dall'una all'altra con il collegamento in fondo.
+  let authMode = 'login';
+  function setAuthMode(mode){
+    authMode = mode === 'signup' ? 'signup' : 'login';
+    const up = authMode === 'signup';
+    const show = (id, on, how) => { const el = document.getElementById(id); if(el) el.style.display = on ? (how || 'block') : 'none'; };
+    const title = document.getElementById('authModeTitle');
+    if(!title) return;
+    title.textContent = t(up ? 'su.signupTitle' : 'su.loginTitle');
+    document.getElementById('authModeHint').textContent = t('su.hint');
+    show('authModeHint', up);
+    show('authPassword2Wrap', up);
+    show('authTermsWrap', up, 'flex');
+    show('authSignupBtn', up);
+    show('authLoginBtn', !up);
+    show('authForgotLink', !up, 'inline');
+    document.getElementById('authSwitchLink').textContent = t(up ? 'su.toLogin' : 'su.toSignup');
+    document.getElementById('googleBtnLabel').textContent = t(up ? 'su.google' : 'su.googleIn');
+    document.getElementById('authPassword').setAttribute('autocomplete', up ? 'new-password' : 'current-password');
+  }
+  document.getElementById('authSwitchLink').addEventListener('click', (e)=>{
+    e.preventDefault();
+    hideAuthError();
+    document.getElementById('authPassword2').value = '';
+    setAuthMode(authMode === 'signup' ? 'login' : 'signup');
+  });
+
+  // Sfondo animato dentro l'app: a scelta (biz_companies.anim_bg), spento di base perché sui computer meno recenti pesa
+  function applyAnimBg(on){
+    document.body.classList.toggle('anim-bg', !!on);
+    const c = document.getElementById('animBgCheck'); if(c) c.checked = !!on;
+  }
+  document.getElementById('animBgCheck').addEventListener('change', async (e)=>{
+    applyAnimBg(e.target.checked);
+    if(currentCompany){
+      currentCompany.anim_bg = e.target.checked;
+      await supabaseClient.from('biz_companies').update({ anim_bg: e.target.checked }).eq('id', currentCompany.id);
+    }
+  });
+
+  // ---------- Notifiche (avvisi di scadenza) ----------
+  // Il dispositivo si iscrive alle notifiche push (tabella push_subscriptions). L'app prepara l'elenco dei promemoria
+  // dei prossimi 45 giorni nella tabella biz_reminders; ogni mattina la funzione sul server "biz-reminders" manda
+  // l'avviso 3 giorni prima e il giorno stesso. I calcoli delle scadenze restano tutti qui, il server legge soltanto.
+  const PUSH_PUBLIC_KEY = 'BGBER-HvkG5XGR36-cn0pNG6ylU8UIv_8mHQxoDp4L6RBTbK5YvPnPef5UkNYRVv8Pj3wwwBVv9e99gzBOqTGzY';
+  const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  function pushKeyBytes(){
+    const pad = '='.repeat((4 - PUSH_PUBLIC_KEY.length % 4) % 4), raw = atob((PUSH_PUBLIC_KEY + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(raw, ch => ch.charCodeAt(0));
+  }
+  async function pushCurrentSub(){
+    try{ const reg = await navigator.serviceWorker.getRegistration('/'); return reg ? await reg.pushManager.getSubscription() : null; }catch(err){ return null; }
+  }
+  async function renderPushStatus(){
+    const st = document.getElementById('pushStatus'), btn = document.getElementById('pushToggleBtn');
+    if(!st || !btn) return;
+    if(!pushSupported()){ st.textContent = t('push.unsupported'); btn.style.display = 'none'; return; }
+    const sub = await pushCurrentSub();
+    const on = !!sub && Notification.permission === 'granted';
+    st.textContent = Notification.permission === 'denied' ? t('push.blocked') : t(on ? 'push.on' : 'push.off');
+    btn.textContent = t(on ? 'push.disable' : 'push.enable');
+    btn.dataset.on = on ? '1' : '';
+    try{ localStorage.setItem('bizPush', on ? '1' : ''); }catch(err){}
+  }
+  document.getElementById('pushToggleBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('pushToggleBtn');
+    try{
+      if(btn.dataset.on){
+        const sub = await pushCurrentSub();
+        if(sub){ await supabaseClient.from('push_subscriptions').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); }
+      } else {
+        const perm = await Notification.requestPermission();
+        if(perm !== 'granted'){ await renderPushStatus(); return; }
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pushKeyBytes() });
+        const j = sub.toJSON();
+        const { error } = await supabaseClient.from('push_subscriptions').upsert({ user_id: currentUserId, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }, { onConflict: 'endpoint' });
+        if(error){ alert(t('al.error') + ' ' + error.message); await sub.unsubscribe(); }
+        else { try{ localStorage.setItem('bizPush', '1'); }catch(err){} lastRemindersSig = ''; syncReminders(); }
+      }
+    }catch(err){ console.error('push', err); alert(t('push.failed')); }
+    await renderPushStatus();
+  });
+  // Elenco dei promemoria dei prossimi 45 giorni: versamenti fiscali non ancora segnati, fatture aperte con una scadenza
+  function buildReminders(){
+    const out = [], today = dayKey(new Date()), lim = new Date(); lim.setDate(lim.getDate() + 45);
+    const limit = dayKey(lim), lang = currentLang(), cid = String(currentCompany.id);
+    const ok = d => d >= today && d <= limit;
+    let taxes = [];
+    try{ taxes = taxDeadlines().filter(x => !x.paid); }catch(err){ taxes = []; }
+    taxes.forEach(x => { const d = dayKey(x.due); if(ok(d)) out.push({ key: cid + ':tax:' + x.key, due: d, label: x.label + ' — € ' + fmt(x.amount) }); });
+    state.invoices.filter(i => i.doc_type !== 'credit_note' && i.due_date).forEach(inv => {
+      const d = String(inv.due_date).slice(0, 10), open = invoiceOpen(inv).cash;
+      if(open > 0.005 && ok(d)) out.push({ key: cid + ':inv:' + inv.id, due: d, label: t(inv.type === 'emessa' ? 'push.rCollect' : 'push.rPay', {number: inv.number || '', name: inv.counterparty_name || '', amt: fmt(open)}) });
+    });
+    return out.map(r => ({ user_id: currentUserId, key: r.key.slice(0, 200), company_id: cid, due: r.due, label: r.label.slice(0, 180), lang }));
+  }
+  let lastRemindersSig = '', remindersTimer = null;
+  async function syncReminders(){
+    let on = false; try{ on = localStorage.getItem('bizPush') === '1'; }catch(err){}
+    if(!on || !currentCompany || !currentUserId) return;
+    const rows = buildReminders(), sig = JSON.stringify(rows.map(r => [r.key, r.due, r.label, r.lang]));
+    if(sig === lastRemindersSig) return;
+    try{
+      const cid = String(currentCompany.id);
+      const { data: old } = await supabaseClient.from('biz_reminders').select('key').eq('user_id', currentUserId).eq('company_id', cid);
+      const keep = new Set(rows.map(r => r.key)), gone = (old || []).map(r => r.key).filter(k => !keep.has(k));
+      if(gone.length) await supabaseClient.from('biz_reminders').delete().eq('user_id', currentUserId).in('key', gone);
+      if(rows.length){ const { error } = await supabaseClient.from('biz_reminders').upsert(rows, { onConflict: 'user_id,key' }); if(error) throw error; }
+      lastRemindersSig = sig;
+    }catch(err){ console.error('syncReminders', err); }
+  }
+  // dopo ogni ridisegno, con un po' di attesa: più modifiche di fila diventano un solo aggiornamento
+  function scheduleRemindersSync(){ clearTimeout(remindersTimer); remindersTimer = setTimeout(syncReminders, 2500); }
 
   function renderAll(){
     renderAccountsList();
@@ -4363,6 +4507,8 @@
     renderDashboard();
     renderDashAlerts();
     renderDashHero();
+    scheduleRemindersSync();
+    renderPushStatus();
     renderStock();
     renderJournalList();
     updateSimplePreview();
@@ -4436,7 +4582,9 @@
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
     if(!email || !password){ showAuthError(t('fx.needEmailPw')); return; }
-    if(password.length < 6){ showAuthError('La password deve avere almeno 6 caratteri.'); return; }
+    if(password.length < 6){ showAuthError(t('acc.short')); return; }
+    if(password !== document.getElementById('authPassword2').value){ showAuthError(t('acc.mismatch')); return; }
+    if(!document.getElementById('acceptTermsCheckbox').checked){ showAuthError(t('su.terms')); return; }
     setAuthLoading(true);
     const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } }); // il link di conferma deve riportare a questa app, non a Le Mie Finanze
     setAuthLoading(false);
@@ -4444,7 +4592,11 @@
     if(data.session){
       await enterApp(data.session);
     } else {
-      showAuthError(t('fx.checkEmail'), true);
+      // con un'email già registrata Supabase non dà errore: risponde con un utente senza "identities"
+      const exists = data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0;
+      setAuthMode('login');
+      document.getElementById('authPassword').value = '';
+      showAuthError(exists ? t('su.exists') : t('su.done', {email}), !exists);
     }
   });
   document.getElementById('authForgotLink').addEventListener('click', (e)=>{
@@ -4511,6 +4663,7 @@
     applyTheme(currentCompany.theme || 'dark');
     applyPalette(currentPalette());
     applyAccentColor(effectiveAccent(currentCompany.accent_color));
+    applyAnimBg(currentCompany.anim_bg === true);
     document.documentElement.lang = currentCompany.language || 'it';
     applyStaticTranslations();
     if(typeof currentCompany !== 'undefined' && currentCompany && document.getElementById('simpleTemplateSelect')){ const selTpl = document.getElementById('simpleTemplateSelect'), keepTpl = selTpl.value; populateSimpleTemplateSelect(); if(keepTpl) selTpl.value = keepTpl; }
@@ -5262,11 +5415,14 @@
   // ---------- Lingua e traduzioni ----------
   const I18N = {
     it: {
+      'push.title':'Notifiche', 'push.hint':'Ricevi un avviso su questo dispositivo 3 giorni prima e il giorno stesso di: versamenti IVA, F24 di stipendi e ritenute, bollo sulle fatture, fatture da incassare e da pagare. Arrivano la mattina.', 'push.enable':'Attiva le notifiche su questo dispositivo', 'push.disable':'Disattiva le notifiche su questo dispositivo', 'push.on':'Su questo dispositivo le notifiche sono attive.', 'push.off':'Su questo dispositivo le notifiche sono spente.', 'push.blocked':'Le notifiche sono bloccate nelle impostazioni del browser per questo sito: vanno riattivate da lì.', 'push.unsupported':'Questo browser non supporta le notifiche.', 'push.failed':'Non sono riuscito ad attivare le notifiche su questo dispositivo.', 'push.iphone':"Su iPhone e iPad funzionano solo se prima aggiungi l'app alla schermata Home (Condividi → Aggiungi a Home) e la apri da lì.", 'push.rCollect':'Da incassare: fattura {number} di {name} — € {amt}', 'push.rPay':'Da pagare: fattura {number} di {name} — € {amt}',
       'acc.title':'Il tuo accesso', 'acc.loggedAs':'Sei entrato come', 'acc.newPw':'Nuova password (almeno 6 caratteri)', 'acc.newPw2':'Ripeti la nuova password', 'acc.pwHint':"Se entri con Google puoi comunque scegliere una password: potrai usare l'una o l'altra strada.", 'acc.savePw':'Cambia password', 'acc.short':'La password deve avere almeno 6 caratteri.', 'acc.mismatch':'Le due password non sono uguali.', 'acc.saved':'Password cambiata.',
       'nav.gDaily':'Ogni giorno', 'nav.gPeople':'Persone', 'nav.gGoods':'Beni e magazzino', 'nav.gTax':'Fisco e risultati', 'hero.eyebrow':'{month}, in breve', 'hero.cashed':'Questo mese hai incassato {amt}.', 'hero.open':'Ti restano da incassare {open}.', 'hero.openLate':'Ti restano da incassare {open}, di cui {late} già scaduti.', 'hero.nothingOpen':'Non hai fatture da incassare.', 'pal.title':"Colori dell'app", 'pal.notte':'Blu notte', 'pal.smeraldo':'Verde smeraldo', 'pal.grafite':'Grafite', 'pal.oro':'Oro',
       'mag.itemQty':'Quanti ne hai adesso (facoltativo)', 'mag.initial':'Giacenza iniziale',
       'mag.invCheck':'Carica le righe in magazzino (ogni riga diventa un carico dell’articolo con lo stesso nome; se non esiste viene creato)', 'mag.fromInvoice':'Fattura {number} — {name}',
       'stip.printBtn':'🖨 Busta paga (PDF)',
+      'su.loginTitle':'Accedi', 'su.signupTitle':'Crea il tuo account', 'su.hint':"Scegli un'email e una password di almeno 6 caratteri. Se ti arriva un'email di conferma, apri il link che contiene e poi accedi.", 'su.pw2':'Ripeti la password', 'su.create':'Crea account', 'su.toLogin':'Hai già un account? Accedi', 'su.toSignup':'Non hai un account? Registrati', 'su.google':'Registrati con Google', 'su.googleIn':'Accedi con Google', 'su.terms':'Per creare un account devi accettare privacy e termini.', 'su.exists':'Con questa email esiste già un account: accedi qui sotto.', 'su.done':'Account creato. Ti abbiamo mandato un’email a {email}: apri il link che contiene per confermare, poi accedi qui.',
+      'anim.label':"Sfondo animato anche dentro l'app", 'anim.hint':"È lo sfondo che si muove nella schermata di accesso. Se l'app ti sembra più lenta, spegnilo.",
       'tab.magazzino':'Magazzino', 'mag.title':'Magazzino', 'mag.hint':"Segna gli articoli che tieni in magazzino, quello che entra e quello che esce. L'app calcola quanto ne hai e quanto vale al costo medio. A fine anno il totale è la cifra da usare per le rimanenze finali (Prima nota → modello «Rimanenze finali»).", 'mag.asOf':'Situazione al giorno', 'mag.newItem':'Nuovo articolo', 'mag.itemName':'Nome', 'mag.itemCode':'Codice (facoltativo)', 'mag.itemUnit':'Unità di misura (pz, kg, m…)', 'mag.addItem':'Aggiungi articolo', 'mag.newMove':'Nuovo movimento', 'mag.item':'Articolo', 'mag.moveType':'Tipo', 'mag.type_in':'Carico (entra)', 'mag.type_out':'Scarico (esce)', 'mag.type_adj':"Rettifica d'inventario", 'mag.qty':'Quantità', 'mag.unitCost':'Costo per unità, senza IVA (€)', 'mag.note':'Nota (facoltativa)', 'mag.adjHint':'Rettifica: scrivi di quanto correggere la quantità dopo aver contato (per esempio −2 se ne mancano due).', 'mag.addMove':'Registra movimento', 'mag.moves':'Movimenti', 'mag.avgCost':'Costo medio', 'mag.value':'Valore', 'mag.total':'Valore totale del magazzino', 'mag.empty':'Nessun articolo ancora: aggiungine uno qui sotto.', 'mag.noMoves':'Nessun movimento ancora.', 'mag.negative':'Un articolo è andato sotto zero: manca un carico oppure una data è sbagliata.', 'mag.delItem':'Eliminare questo articolo?', 'mag.delItemMoves':'Eliminare questo articolo e tutti i suoi movimenti?', 'mag.delMove':'Eliminare questo movimento?', 'mag.overOut':'In quella data ne risultano solo {have}: registrare lo stesso lo scarico?', 'dashA.title':'Da fare a breve', 'dashA.go':'Apri lo Scadenzario', 'dashA.toCollect':'Fatture da incassare scadute: {n}', 'dashA.toPayLate':'Fatture da pagare scadute: {n}', 'dashA.toPaySoon':'Fatture da pagare nei prossimi 7 giorni: {n}', 'dashA.oldest':'la più vecchia è scaduta da {days} giorni', 'dashA.within7':'entro una settimana',
       'fx.noAccounts':'Nessun conto ancora.', 'fx.addAccount':'Aggiungi conto', 'fx.addAccountsFirst':'Aggiungi dei conti per iniziare.', 'fx.balance':'Saldo', 'fx.enterAmounts':'Inserisci gli importi nelle righe.', 'fx.noLiquid':'Nessun conto liquido nel piano dei conti.', 'fx.noEmployees':'Nessun dipendente ancora.', 'fx.noPartners':'Nessun cliente o fornitore salvato ancora.', 'fx.noPayslips':'Nessuna busta paga ancora.', 'fx.editPartner':'Modifica cliente/fornitore', 'fx.newPartner':'Nuovo cliente/fornitore', 'fx.allAccounts':'Hai già tutti i conti del modello base — nessuno da aggiungere.', 'fx.addedAccounts':'Aggiunti {n} nuovi conti dal modello base.', 'fx.vatToPay':'IVA da versare', 'fx.vatCredit':'IVA a credito', 'fx.vatDebit':'IVA a debito (su vendite)', 'fx.vatCreditBuy':'IVA a credito (su acquisti)', 'fx.needEmailPw':'Inserisci email e password.', 'fx.checkEmail':'Controlla la tua email per confermare la registrazione.', 'fx.needEmail':'Inserisci la tua email.',
       'wel.title':'Benvenuto in Contabilità Azienda', 'wel.sub':'I conti della tua attività in un posto solo, spiegati in parole semplici.', 'wel.s1t':"Crea l'azienda", 'wel.s1':"Basta il nome: il piano dei conti di base lo prepara l'app.", 'wel.s2t':'Registra quello che succede', 'wel.s2':'Fatture emesse e ricevute, incassi, pagamenti, stipendi: le registrazioni contabili si scrivono da sole.', 'wel.s3t':'Guarda come va', 'wel.s3':'Bilancio, IVA da versare, scadenze e tasse stimate si aggiornano a ogni registrazione.', 'wel.note':'Le cifre fiscali sono stime per orientarti: per gli adempimenti ufficiali resta il tuo commercialista.',
@@ -5469,11 +5625,14 @@
       'settings.exportJournal':'Esporta Prima Nota (CSV)', 'settings.exportInvoices':'Esporta Fatture (CSV)', 'settings.exportAccounts':'Esporta Piano dei conti (CSV)',
     },
     en: {
+      'push.title':'Notifications', 'push.hint':'Get an alert on this device 3 days before and on the day of: VAT payments, F24 for salaries and withholdings, stamp duty on invoices, invoices to collect and to pay. They arrive in the morning.', 'push.enable':'Turn on notifications on this device', 'push.disable':'Turn off notifications on this device', 'push.on':'Notifications are on for this device.', 'push.off':'Notifications are off for this device.', 'push.blocked':'Notifications are blocked in the browser settings for this site: they must be re-enabled there.', 'push.unsupported':'This browser does not support notifications.', 'push.failed':'I could not turn on notifications on this device.', 'push.iphone':'On iPhone and iPad they only work if you first add the app to the Home screen (Share → Add to Home Screen) and open it from there.', 'push.rCollect':'To collect: invoice {number} from {name} — € {amt}', 'push.rPay':'To pay: invoice {number} from {name} — € {amt}',
       'acc.title':'Your login', 'acc.loggedAs':'You are logged in as', 'acc.newPw':'New password (at least 6 characters)', 'acc.newPw2':'Repeat the new password', 'acc.pwHint':'If you log in with Google you can still choose a password: you will be able to use either way.', 'acc.savePw':'Change password', 'acc.short':'The password must be at least 6 characters long.', 'acc.mismatch':'The two passwords do not match.', 'acc.saved':'Password changed.',
       'nav.gDaily':'Every day', 'nav.gPeople':'People', 'nav.gGoods':'Assets and stock', 'nav.gTax':'Tax and results', 'hero.eyebrow':'{month}, in short', 'hero.cashed':'This month you collected {amt}.', 'hero.open':'You still have {open} to collect.', 'hero.openLate':'You still have {open} to collect, of which {late} already overdue.', 'hero.nothingOpen':'You have no invoices to collect.', 'pal.title':'App colours', 'pal.notte':'Night blue', 'pal.smeraldo':'Emerald green', 'pal.grafite':'Graphite', 'pal.oro':'Gold',
       'mag.itemQty':'How many you have now (optional)', 'mag.initial':'Opening stock',
       'mag.invCheck':'Add the lines to stock (each line becomes a goods-in entry for the item with the same name; if it does not exist it is created)', 'mag.fromInvoice':'Invoice {number} — {name}',
       'stip.printBtn':'🖨 Payslip (PDF)',
+      'su.loginTitle':'Log in', 'su.signupTitle':'Create your account', 'su.hint':'Choose an email and a password of at least 6 characters. If you receive a confirmation email, open the link inside it and then log in.', 'su.pw2':'Repeat the password', 'su.create':'Create account', 'su.toLogin':'Already have an account? Log in', 'su.toSignup':"Don't have an account? Sign up", 'su.google':'Sign up with Google', 'su.googleIn':'Sign in with Google', 'su.terms':'To create an account you must accept the privacy policy and terms.', 'su.exists':'An account with this email already exists: log in below.', 'su.done':'Account created. We sent an email to {email}: open the link inside it to confirm, then log in here.',
+      'anim.label':'Animated background inside the app too', 'anim.hint':'It is the moving background of the login screen. If the app feels slower, switch it off.',
       'tab.magazzino':'Stock', 'mag.title':'Stock', 'mag.hint':'Record the items you keep in stock, what comes in and what goes out. The app works out how much you have and what it is worth at average cost. At year end the total is the figure to use for closing inventory (Journal → «Closing inventory» template).', 'mag.asOf':'Situation as of', 'mag.newItem':'New item', 'mag.itemName':'Name', 'mag.itemCode':'Code (optional)', 'mag.itemUnit':'Unit of measure (pcs, kg, m…)', 'mag.addItem':'Add item', 'mag.newMove':'New movement', 'mag.item':'Item', 'mag.moveType':'Type', 'mag.type_in':'Goods in', 'mag.type_out':'Goods out', 'mag.type_adj':'Inventory adjustment', 'mag.qty':'Quantity', 'mag.unitCost':'Cost per unit, excluding VAT (€)', 'mag.note':'Note (optional)', 'mag.adjHint':'Adjustment: enter by how much to correct the quantity after counting (for example −2 if two are missing).', 'mag.addMove':'Record movement', 'mag.moves':'Movements', 'mag.avgCost':'Average cost', 'mag.value':'Value', 'mag.total':'Total stock value', 'mag.empty':'No items yet: add one below.', 'mag.noMoves':'No movements yet.', 'mag.negative':'An item went below zero: a goods-in entry is missing or a date is wrong.', 'mag.delItem':'Delete this item?', 'mag.delItemMoves':'Delete this item and all its movements?', 'mag.delMove':'Delete this movement?', 'mag.overOut':'On that date only {have} are available: record the goods-out anyway?', 'dashA.title':'Coming up', 'dashA.go':'Open the Schedule', 'dashA.toCollect':'Overdue invoices to collect: {n}', 'dashA.toPayLate':'Overdue invoices to pay: {n}', 'dashA.toPaySoon':'Invoices to pay in the next 7 days: {n}', 'dashA.oldest':'the oldest is {days} days overdue', 'dashA.within7':'within a week',
       'fx.noAccounts':'No accounts yet.', 'fx.addAccount':'Add account', 'fx.addAccountsFirst':'Add some accounts to get started.', 'fx.balance':'Balance', 'fx.enterAmounts':'Enter the amounts in the lines.', 'fx.noLiquid':'No cash or bank account in the chart of accounts.', 'fx.noEmployees':'No employees yet.', 'fx.noPartners':'No clients or suppliers saved yet.', 'fx.noPayslips':'No payslips yet.', 'fx.editPartner':'Edit client/supplier', 'fx.newPartner':'New client/supplier', 'fx.allAccounts':'You already have all the accounts of the basic template — none to add.', 'fx.addedAccounts':'{n} new accounts added from the basic template.', 'fx.vatToPay':'VAT to pay', 'fx.vatCredit':'VAT credit', 'fx.vatDebit':'Output VAT (on sales)', 'fx.vatCreditBuy':'Input VAT (on purchases)', 'fx.needEmailPw':'Enter email and password.', 'fx.checkEmail':'Check your email to confirm your registration.', 'fx.needEmail':'Enter your email.',
       'wel.title':'Welcome to Contabilità Azienda', 'wel.sub':'Your business accounts in one place, explained in plain words.', 'wel.s1t':'Create the company', 'wel.s1':'The name is enough: the app prepares the basic chart of accounts.', 'wel.s2t':'Record what happens', 'wel.s2':'Invoices issued and received, receipts, payments, salaries: the accounting entries write themselves.', 'wel.s3t':'See how it is going', 'wel.s3':'Balance sheet, VAT to pay, deadlines and estimated taxes update with every entry.', 'wel.note':'Tax figures are estimates to guide you: for official filings your accountant remains the reference.',
@@ -5676,11 +5835,14 @@
       'settings.exportJournal':'Export Ledger (CSV)', 'settings.exportInvoices':'Export Invoices (CSV)', 'settings.exportAccounts':'Export Chart of Accounts (CSV)',
     },
     de: {
+      'push.title':'Benachrichtigungen', 'push.hint':'Erhalte auf diesem Gerät 3 Tage vorher und am Tag selbst einen Hinweis zu: MwSt.-Zahlungen, F24 für Löhne und Steuerabzüge, Stempelsteuer auf Rechnungen, offenen Ausgangs- und Eingangsrechnungen. Sie kommen morgens.', 'push.enable':'Benachrichtigungen auf diesem Gerät einschalten', 'push.disable':'Benachrichtigungen auf diesem Gerät ausschalten', 'push.on':'Auf diesem Gerät sind die Benachrichtigungen aktiv.', 'push.off':'Auf diesem Gerät sind die Benachrichtigungen aus.', 'push.blocked':'Die Benachrichtigungen sind in den Browser-Einstellungen für diese Seite blockiert: Sie müssen dort wieder erlaubt werden.', 'push.unsupported':'Dieser Browser unterstützt keine Benachrichtigungen.', 'push.failed':'Ich konnte die Benachrichtigungen auf diesem Gerät nicht einschalten.', 'push.iphone':'Auf iPhone und iPad funktionieren sie nur, wenn du die App zuerst zum Home-Bildschirm hinzufügst (Teilen → Zum Home-Bildschirm) und von dort öffnest.', 'push.rCollect':'Offen: Rechnung {number} von {name} — € {amt}', 'push.rPay':'Zu zahlen: Rechnung {number} von {name} — € {amt}',
       'acc.title':'Dein Zugang', 'acc.loggedAs':'Du bist angemeldet als', 'acc.newPw':'Neues Passwort (mindestens 6 Zeichen)', 'acc.newPw2':'Neues Passwort wiederholen', 'acc.pwHint':'Auch wenn du dich mit Google anmeldest, kannst du ein Passwort wählen: Dann funktionieren beide Wege.', 'acc.savePw':'Passwort ändern', 'acc.short':'Das Passwort muss mindestens 6 Zeichen haben.', 'acc.mismatch':'Die beiden Passwörter stimmen nicht überein.', 'acc.saved':'Passwort geändert.',
       'nav.gDaily':'Jeden Tag', 'nav.gPeople':'Personen', 'nav.gGoods':'Anlagen und Lager', 'nav.gTax':'Steuern und Ergebnisse', 'hero.eyebrow':'{month}, kurz gefasst', 'hero.cashed':'Diesen Monat hast du {amt} eingenommen.', 'hero.open':'Offen sind noch {open}.', 'hero.openLate':'Offen sind noch {open}, davon {late} bereits überfällig.', 'hero.nothingOpen':'Du hast keine offenen Rechnungen.', 'pal.title':'Farben der App', 'pal.notte':'Nachtblau', 'pal.smeraldo':'Smaragdgrün', 'pal.grafite':'Graphit', 'pal.oro':'Gold',
       'mag.itemQty':'Aktueller Bestand (optional)', 'mag.initial':'Anfangsbestand',
       'mag.invCheck':'Zeilen ins Lager buchen (jede Zeile wird ein Zugang des Artikels mit demselben Namen; falls nicht vorhanden, wird er angelegt)', 'mag.fromInvoice':'Rechnung {number} — {name}',
       'stip.printBtn':'🖨 Lohnabrechnung (PDF)',
+      'su.loginTitle':'Anmelden', 'su.signupTitle':'Erstelle dein Konto', 'su.hint':'Wähle eine E-Mail und ein Passwort mit mindestens 6 Zeichen. Wenn du eine Bestätigungs-E-Mail bekommst, öffne den Link darin und melde dich dann an.', 'su.pw2':'Passwort wiederholen', 'su.create':'Konto erstellen', 'su.toLogin':'Schon ein Konto? Anmelden', 'su.toSignup':'Noch kein Konto? Registrieren', 'su.google':'Mit Google registrieren', 'su.googleIn':'Mit Google anmelden', 'su.terms':'Um ein Konto zu erstellen, musst du Datenschutz und Bedingungen akzeptieren.', 'su.exists':'Mit dieser E-Mail gibt es schon ein Konto: Melde dich unten an.', 'su.done':'Konto erstellt. Wir haben eine E-Mail an {email} geschickt: Öffne den Link darin zur Bestätigung und melde dich dann hier an.',
+      'anim.label':'Animierter Hintergrund auch in der App', 'anim.hint':'Das ist der bewegte Hintergrund des Anmeldebildschirms. Wenn die App langsamer wirkt, schalte ihn aus.',
       'tab.magazzino':'Lager', 'mag.title':'Lager', 'mag.hint':'Erfasse die Artikel im Lager, was hereinkommt und was hinausgeht. Die App berechnet den Bestand und seinen Wert zum Durchschnittspreis. Am Jahresende ist die Summe der Betrag für den Endbestand (Journal → Vorlage «Endbestand»).', 'mag.asOf':'Stand am', 'mag.newItem':'Neuer Artikel', 'mag.itemName':'Name', 'mag.itemCode':'Code (optional)', 'mag.itemUnit':'Maßeinheit (Stk, kg, m…)', 'mag.addItem':'Artikel hinzufügen', 'mag.newMove':'Neue Bewegung', 'mag.item':'Artikel', 'mag.moveType':'Art', 'mag.type_in':'Zugang', 'mag.type_out':'Abgang', 'mag.type_adj':'Inventurkorrektur', 'mag.qty':'Menge', 'mag.unitCost':'Kosten pro Einheit, ohne MwSt. (€)', 'mag.note':'Notiz (optional)', 'mag.adjHint':'Korrektur: Trage ein, um wie viel die Menge nach dem Zählen zu berichtigen ist (zum Beispiel −2, wenn zwei fehlen).', 'mag.addMove':'Bewegung erfassen', 'mag.moves':'Bewegungen', 'mag.avgCost':'Durchschnittspreis', 'mag.value':'Wert', 'mag.total':'Gesamtwert des Lagers', 'mag.empty':'Noch keine Artikel: Füge unten einen hinzu.', 'mag.noMoves':'Noch keine Bewegungen.', 'mag.negative':'Ein Artikel ist unter null gefallen: Ein Zugang fehlt oder ein Datum ist falsch.', 'mag.delItem':'Diesen Artikel löschen?', 'mag.delItemMoves':'Diesen Artikel und alle seine Bewegungen löschen?', 'mag.delMove':'Diese Bewegung löschen?', 'mag.overOut':'An diesem Datum sind nur {have} vorhanden: Abgang trotzdem erfassen?', 'dashA.title':'Demnächst fällig', 'dashA.go':'Fälligkeiten öffnen', 'dashA.toCollect':'Überfällige offene Ausgangsrechnungen: {n}', 'dashA.toPayLate':'Überfällige zu zahlende Rechnungen: {n}', 'dashA.toPaySoon':'In den nächsten 7 Tagen zu zahlende Rechnungen: {n}', 'dashA.oldest':'die älteste ist seit {days} Tagen überfällig', 'dashA.within7':'innerhalb einer Woche',
       'fx.noAccounts':'Noch keine Konten.', 'fx.addAccount':'Konto hinzufügen', 'fx.addAccountsFirst':'Füge Konten hinzu, um zu beginnen.', 'fx.balance':'Saldo', 'fx.enterAmounts':'Trage die Beträge in die Zeilen ein.', 'fx.noLiquid':'Kein Kassen- oder Bankkonto im Kontenplan.', 'fx.noEmployees':'Noch keine Mitarbeiter.', 'fx.noPartners':'Noch keine Kunden oder Lieferanten gespeichert.', 'fx.noPayslips':'Noch keine Lohnabrechnungen.', 'fx.editPartner':'Kunde/Lieferant bearbeiten', 'fx.newPartner':'Neuer Kunde/Lieferant', 'fx.allAccounts':'Du hast bereits alle Konten der Basisvorlage — keine hinzuzufügen.', 'fx.addedAccounts':'{n} neue Konten aus der Basisvorlage hinzugefügt.', 'fx.vatToPay':'Zu zahlende MwSt.', 'fx.vatCredit':'MwSt.-Guthaben', 'fx.vatDebit':'Umsatzsteuer (auf Verkäufe)', 'fx.vatCreditBuy':'Vorsteuer (auf Einkäufe)', 'fx.needEmailPw':'E-Mail und Passwort eingeben.', 'fx.checkEmail':'Prüfe deine E-Mails, um die Registrierung zu bestätigen.', 'fx.needEmail':'Gib deine E-Mail ein.',
       'wel.title':'Willkommen bei Contabilità Azienda', 'wel.sub':'Die Zahlen deines Betriebs an einem Ort, in einfachen Worten erklärt.', 'wel.s1t':'Firma anlegen', 'wel.s1':'Der Name genügt: Den Basis-Kontenplan bereitet die App vor.', 'wel.s2t':'Erfasse, was passiert', 'wel.s2':'Ausgangs- und Eingangsrechnungen, Zahlungseingänge, Zahlungen, Löhne: Die Buchungen schreiben sich von selbst.', 'wel.s3t':'Sieh, wie es läuft', 'wel.s3':'Bilanz, fällige MwSt., Termine und geschätzte Steuern aktualisieren sich mit jeder Buchung.', 'wel.note':'Die Steuerzahlen sind Schätzungen zur Orientierung: Für offizielle Pflichten bleibt dein Steuerberater zuständig.',
@@ -5902,6 +6064,7 @@
       el.textContent = t(el.getAttribute('data-i18n'));
     });
     updateTermsLabel();
+    setAuthMode(authMode); // titolo, collegamento e pulsante Google dipendono dalla schermata (accesso o registrazione)
   }
   async function applyLanguage(lang){
     try{ localStorage.setItem('bizLang', lang); }catch(err){}
