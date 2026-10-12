@@ -127,6 +127,68 @@
   .dash-toggle-row{display:flex;justify-content:flex-end;margin-bottom:10px;}
   .dash-toggle-row button{background:none;border:none;color:var(--ink-faint);font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;}
   .dash-toggle-row button:hover{color:var(--accent);background:var(--accent-soft);}
+
+  /* ===================== Nuovo aspetto (ottobre 2026) =====================
+     Colori a scelta (Impostazioni → Aspetto), menu laterale a gruppi con icone, schede più morbide.
+     Tutto qui in fondo, così vince sulle regole più vecchie senza doverle riscrivere. Nessuna sfocatura. */
+  html:root{--radius:22px;--radius-sm:13px;}
+  /* --- tavolozze: "oro" è quella storica (nessun attributo data-pal) --- */
+  html[data-pal="notte"]:root{--ink:#17212E;--ink-soft:#55657A;--ink-faint:#93A1B3;--bg:#F3F6FA;--surface:#FFFFFF;--input-bg:#F6F9FC;--line:#DCE4EE;--card-shadow:0 1px 2px rgba(20,30,50,.04),0 10px 30px rgba(20,30,50,.06);}
+  html[data-pal="notte"][data-theme="dark"]{--ink:#EAF0F8;--ink-soft:#A9B6C8;--ink-faint:#6F7D91;--bg:#0D121A;--surface:#151C27;--input-bg:#101722;--line:#263142;--card-shadow:0 12px 34px rgba(0,0,0,.35);--bg-glow-1:rgba(90,169,255,.09);--bg-glow-2:rgba(95,211,160,.04);}
+  html[data-pal="smeraldo"]:root{--ink:#18231F;--ink-soft:#56675F;--ink-faint:#93A39B;--bg:#F4F7F5;--surface:#FFFFFF;--input-bg:#F7FAF8;--line:#DBE5DF;--card-shadow:0 1px 2px rgba(20,40,30,.04),0 10px 30px rgba(20,40,30,.06);}
+  html[data-pal="smeraldo"][data-theme="dark"]{--ink:#ECF2EF;--ink-soft:#A8B7B0;--ink-faint:#6E7D76;--bg:#0E1211;--surface:#161B19;--input-bg:#111614;--line:#28312E;--card-shadow:0 12px 34px rgba(0,0,0,.35);--bg-glow-1:rgba(61,214,163,.08);--bg-glow-2:rgba(134,182,255,.04);}
+  html[data-pal="grafite"]:root{--ink:#1B1C22;--ink-soft:#5C5E6B;--ink-faint:#9698A5;--bg:#F5F5F7;--surface:#FFFFFF;--input-bg:#F8F8FA;--line:#DFDFE6;--card-shadow:0 1px 2px rgba(20,20,30,.04),0 10px 30px rgba(20,20,30,.06);}
+  html[data-pal="grafite"][data-theme="dark"]{--ink:#EEEEF2;--ink-soft:#ADAFBB;--ink-faint:#737582;--bg:#101114;--surface:#191A1F;--input-bg:#131418;--line:#2C2E36;--card-shadow:0 12px 34px rgba(0,0,0,.35);--bg-glow-1:rgba(140,158,255,.08);--bg-glow-2:rgba(95,211,160,.04);}
+
+  /* --- forme più morbide --- */
+  .card{border-color:color-mix(in srgb, var(--line) 55%, transparent);padding:22px;}
+  .stat-card{border-color:color-mix(in srgb, var(--line) 55%, transparent);}
+  button.primary,button.ghost{border-radius:999px;}
+  button.primary{box-shadow:none;}
+  button.primary:hover{box-shadow:0 6px 18px color-mix(in srgb, var(--accent) 30%, transparent);}
+  button.ghost:hover{box-shadow:none;}
+  .hint.box{border-radius:16px;}
+  .list-row{padding:12px 2px;}
+  th{border-bottom-width:1px;}
+  .segmented{border-radius:999px;border-width:1px;}
+  .segmented button{padding:9px 18px;}
+
+  /* --- menu: icone e gruppi --- */
+  .tab{display:inline-flex;align-items:center;gap:9px;white-space:nowrap;transition:background .15s,color .15s;}
+  .tab svg{width:18px;height:18px;flex:0 0 18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .tab:hover{background:var(--accent-soft);color:var(--ink);}
+  .tab.active{background:var(--accent-soft);color:var(--accent);box-shadow:none;}
+  .tab-group,.nav-brand,.section-title{display:none;}
+  /* telefono e finestre strette: una sola riga che scorre di lato */
+  #navCard .tabs{flex-wrap:nowrap;overflow-x:auto;border:0;background:none;padding:0;scrollbar-width:none;}
+  #navCard .tabs::-webkit-scrollbar{display:none;}
+  #navCard{border-radius:18px;}
+  /* computer: il menu sta a sinistra, fisso, con le voci raggruppate */
+  @media (min-width:1000px){
+    body.has-nav .app{max-width:1260px;margin:0;padding:22px 34px 60px 286px;}
+    body.has-nav #navCard{position:fixed;left:0;top:0;bottom:0;width:252px;margin:0;border-radius:0;border:0;border-right:1px solid var(--line);padding:20px 12px !important;overflow-y:auto;box-shadow:none;z-index:20;}
+    body.has-nav #navCard .tabs{flex-direction:column;overflow:visible;gap:2px;}
+    body.has-nav #navCard .tab{width:100%;text-align:left;border-radius:12px;padding:9px 12px;font-size:14px;}
+    body.has-nav .tab-group{display:block;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);padding:14px 12px 6px;}
+    body.has-nav .nav-brand{display:block;font-family:var(--serif);font-weight:700;font-size:18px;padding:0 12px 16px;color:var(--ink);}
+    body.has-nav .nav-brand span{color:var(--accent);}
+    body.has-nav .brand-full{display:none;}
+    body.has-nav .section-title{display:inline;font-size:26px;}
+    body.has-nav #navCard{scrollbar-width:thin;scrollbar-color:var(--line) transparent;}
+  }
+
+  /* --- frase in cima alla Dashboard --- */
+  .dash-hero{background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, var(--surface)), var(--surface) 62%);border-radius:26px;padding:24px 26px;margin-bottom:16px;box-shadow:var(--card-shadow);}
+  .dash-hero .eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);}
+  .dash-hero p{font-family:var(--serif);font-size:21px;line-height:1.38;margin:8px 0 0;max-width:760px;color:var(--ink);}
+  .dash-hero b{color:var(--accent);}
+  @media (max-width:640px){.dash-hero p{font-size:17px;}}
+
+  /* --- scelta dei colori nelle Impostazioni --- */
+  .pal-row{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
+  .pal-btn{display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 14px 7px 8px;font-size:13px;font-weight:600;}
+  .pal-btn i{width:24px;height:24px;border-radius:50%;display:block;}
+  .pal-btn.on{border-color:var(--accent);color:var(--accent);}
 </style>
 </head>
 <body>
@@ -288,7 +350,7 @@
 <div class="app">
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-    <h1 style="font-size:22px;">Contabilità <span style="color:var(--accent);">Azienda</span></h1>
+    <h1 style="font-size:22px;"><span class="brand-full">Contabilità <span style="color:var(--accent);">Azienda</span></span><span class="section-title" id="sectionTitle"></span></h1>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
       <span class="hint" id="companyNameLabel"></span>
       <div class="currency-picker" id="langPicker">
@@ -354,7 +416,7 @@
 
   <!-- APP PRINCIPALE (mostrata solo se esiste già un'azienda) -->
   <div id="mainAppWrap" style="display:none;">
-    <div class="card" style="padding:6px;margin-bottom:16px;">
+    <div class="card" id="navCard" style="padding:6px;margin-bottom:16px;">
       <div class="tabs">
         <button class="tab active" data-panel="dashboard" data-i18n="tab.dashboard">Dashboard</button>
         <button class="tab" data-panel="conti" data-i18n="tab.conti">Piano dei conti</button>
@@ -375,6 +437,7 @@
 
     <!-- DASHBOARD -->
     <div class="panel" id="panel-dashboard">
+      <div class="dash-hero" id="dashHero"></div>
       <div class="card" id="dashAlertsCard" style="display:none;">
         <h3 data-i18n="dashA.title">Da fare a breve</h3>
         <div id="dashAlertsWrap"></div>
@@ -1079,6 +1142,13 @@
     <div class="card">
       <h3 data-i18n="settings.appearance">Aspetto</h3>
       <div class="hint box" data-i18n="settings.appearanceHint">Puoi cambiare tema e colore anche dai pulsanti in alto, vicino a "Esci" — sono gli stessi controlli, qui solo più comodi da trovare.</div>
+      <label data-i18n="pal.title">Colori dell'app</label>
+      <div class="pal-row">
+        <button type="button" class="pal-btn" data-pal="notte"><i style="background:#5AA9FF;"></i><span data-i18n="pal.notte">Blu notte</span></button>
+        <button type="button" class="pal-btn" data-pal="smeraldo"><i style="background:#3DD6A3;"></i><span data-i18n="pal.smeraldo">Verde smeraldo</span></button>
+        <button type="button" class="pal-btn" data-pal="grafite"><i style="background:#8C9EFF;"></i><span data-i18n="pal.grafite">Grafite</span></button>
+        <button type="button" class="pal-btn" data-pal="oro"><i style="background:#E0B255;"></i><span data-i18n="pal.oro">Oro</span></button>
+      </div>
       <div style="display:flex;gap:12px;align-items:center;">
         <button class="theme-appearance-btn" id="accentColorSwatchSettings" title="Colore accento" style="width:44px;height:44px;">
           <input type="color" id="accentColorPickerSettings" title="Colore accento">
@@ -4099,12 +4169,130 @@
     }
   });
 
+  // ===================== Nuovo aspetto: colori a scelta, menu a gruppi, frase della Dashboard =====================
+  // Tavolozze: fondo e testi cambiano con l'attributo data-pal su <html> (regole in fondo al foglio di stile); ogni
+  // tavolozza ha il suo colore principale per tema scuro e chiaro. Scelta salvata in biz_companies.palette e, per la
+  // schermata di accesso, in localStorage 'bizPalette'. Un colore scelto a mano col selettore resta e vince.
+  const PALETTES = { notte: ['#5AA9FF','#2F6FD6'], smeraldo: ['#3DD6A3','#12996B'], grafite: ['#8C9EFF','#4B5BD6'], oro: ['#E0B255','#8C6A2F'] };
+  const PALETTE_DEFAULT = 'notte';
+  function currentPalette(){
+    let p = currentCompany && currentCompany.palette;
+    if(!p){ try{ p = localStorage.getItem('bizPalette'); }catch(err){} }
+    return PALETTES[p] ? p : PALETTE_DEFAULT;
+  }
+  function paletteAccent(pal, theme){ return (PALETTES[pal] || PALETTES[PALETTE_DEFAULT])[theme === 'light' ? 1 : 0]; }
+  function isPaletteAccent(color){ const c = String(color || '').toUpperCase(); return Object.keys(PALETTES).some(k => PALETTES[k].some(x => x.toUpperCase() === c)); }
+  // colore principale da usare: quello scelto a mano, se c'è; altrimenti quello della tavolozza per il tema in uso
+  function effectiveAccent(saved){
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    return (saved && !isPaletteAccent(saved)) ? saved : paletteAccent(currentPalette(), theme);
+  }
+  function applyPalette(pal){
+    const p = PALETTES[pal] ? pal : PALETTE_DEFAULT;
+    if(p === 'oro') document.documentElement.removeAttribute('data-pal'); else document.documentElement.setAttribute('data-pal', p);
+    try{ localStorage.setItem('bizPalette', p); }catch(err){}
+    document.querySelectorAll('.pal-btn').forEach(b => b.classList.toggle('on', b.dataset.pal === p));
+    const metaTheme = document.getElementById('metaThemeColor');
+    if(metaTheme) metaTheme.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0D121A');
+  }
+  document.querySelectorAll('.pal-btn').forEach(btn => btn.addEventListener('click', async ()=>{
+    const pal = btn.dataset.pal;
+    if(currentCompany){
+      currentCompany.palette = pal;
+      await supabaseClient.from('biz_companies').update({ palette: pal }).eq('id', currentCompany.id);
+    }
+    applyPalette(pal);
+    await saveAccentColor(paletteAccent(pal, document.documentElement.getAttribute('data-theme') || 'dark'));
+    renderDashboardChart();
+  }));
+
+  // Menu: le voci esistenti vengono solo riordinate in gruppi e ricevono un'icona (i clic restano quelli di prima).
+  // Il testo passa in uno <span data-i18n>, altrimenti la traduzione cancellerebbe l'icona.
+  const NAV_ICONS = {
+    dashboard:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 7h6V4h-6z"/>',
+    primanota:'<path d="M5 4h14v16H5zM9 8h6M9 12h6M9 16h3"/>',
+    fatture:'<path d="M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6"/>',
+    scadenzario:'<path d="M5 5h14v15H5zM5 10h14M9 3v4M15 3v4"/>',
+    contibancari:'<path d="M3 10l9-6 9 6M5 10v9M19 10v9M9 19v-6M15 19v-6M3 20h18"/>',
+    anagrafica:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11a3 3 0 100-6M21 20c0-2.6-1.6-4.8-4-5.6"/>',
+    stipendi:'<path d="M4 7h16v12H4zM9 7V5h6v2M4 12h16"/>',
+    magazzino:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',
+    ammortamenti:'<path d="M4 16l5-5 4 4 7-8M15 7h5v5"/>',
+    iva:'<path d="M6 18L18 6"/><circle cx="7.5" cy="7.5" r="2.2"/><circle cx="16.5" cy="16.5" r="2.2"/>',
+    bilanci:'<path d="M12 4v16M5 8h14M6 8l-3 7a3.5 3.5 0 006 0zM18 8l-3 7a3.5 3.5 0 006 0z"/>',
+    cashflow:'<path d="M4 12h4l2-6 4 12 2-6h4"/>',
+    analisi:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+    conti:'<path d="M5 6h14M5 12h14M5 18h9"/>'
+  };
+  const NAV_GROUPS = [
+    [null, ['dashboard']],
+    ['nav.gDaily', ['primanota','fatture','scadenzario','contibancari']],
+    ['nav.gPeople', ['anagrafica','stipendi']],
+    ['nav.gGoods', ['magazzino','ammortamenti']],
+    ['nav.gTax', ['iva','bilanci','cashflow','analisi','conti']]
+  ];
+  (function buildNav(){
+    const box = document.querySelector('#navCard .tabs');
+    if(!box) return;
+    const byPanel = {};
+    box.querySelectorAll('.tab').forEach(b => { byPanel[b.dataset.panel] = b; });
+    const brand = document.createElement('div');
+    brand.className = 'nav-brand';
+    brand.innerHTML = 'Contabilità <span>Azienda</span>';
+    box.appendChild(brand);
+    const place = b => {
+      if(!b.querySelector('svg')){
+        const key = b.getAttribute('data-i18n'), label = b.textContent;
+        b.removeAttribute('data-i18n');
+        b.innerHTML = '<svg viewBox="0 0 24 24">' + (NAV_ICONS[b.dataset.panel] || '') + '</svg><span' + (key ? ' data-i18n="' + key + '"' : '') + '></span>';
+        b.querySelector('span').textContent = label;
+      }
+      box.appendChild(b);
+    };
+    NAV_GROUPS.forEach(([key, panels]) => {
+      if(key){ const g = document.createElement('div'); g.className = 'tab-group'; g.setAttribute('data-i18n', key); g.textContent = key; box.appendChild(g); }
+      panels.forEach(p => { if(byPanel[p]){ place(byPanel[p]); delete byPanel[p]; } });
+    });
+    Object.keys(byPanel).forEach(p => place(byPanel[p])); // eventuali voci non previste restano in fondo
+    // sul computer il titolo in alto è il nome della sezione aperta (il nome dell'app sta già nel menu)
+    const title = () => { const a = box.querySelector('.tab.active span'), el = document.getElementById('sectionTitle'); if(a && el && el.textContent !== a.textContent) el.textContent = a.textContent; };
+    new MutationObserver(title).observe(box, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+    title();
+    // il menu laterale esiste solo quando l'app è aperta (non nella creazione dell'azienda)
+    const wrap = document.getElementById('mainAppWrap');
+    const sync = () => document.body.classList.toggle('has-nav', wrap.style.display !== 'none');
+    new MutationObserver(sync).observe(wrap, { attributes: true, attributeFilter: ['style'] });
+    sync();
+  })();
+
+  // Frase in cima alla Dashboard: incassato nel mese, quanto resta da incassare e quanto è già scaduto
+  function renderDashHero(){
+    const el = document.getElementById('dashHero');
+    if(!el || !currentCompany) return;
+    const now = new Date(), ym = dayKey(now).slice(0, 7), today = dayKey(now);
+    let cashed = 0, open = 0, late = 0;
+    state.invoices.filter(i => i.type === 'emessa' && i.doc_type !== 'credit_note').forEach(inv => {
+      const pays = invoicePayments(inv).filter(p => p.kind !== 'cn');
+      pays.forEach(p => { if(String(p.date || '').slice(0, 7) === ym) cashed += Number(p.amount || 0); });
+      if(!pays.length && inv.paid && String(inv.paid_date || '').slice(0, 7) === ym) cashed += invoiceCalc(inv).netto; // segnata pagata col vecchio sistema
+      const o = invoiceOpen(inv).cash;
+      if(o > 0.005){ open += o; if(inv.due_date && String(inv.due_date).slice(0, 10) < today) late += o; }
+    });
+    const b = v => '<b>€ ' + fmt(v) + '</b>';
+    const month = now.toLocaleDateString(localeTag(), {month:'long', year:'numeric'});
+    let text = t('hero.cashed', {amt: b(cashed)});
+    if(open > 0.005) text += ' ' + (late > 0.005 ? t('hero.openLate', {open: b(open), late: b(late)}) : t('hero.open', {open: b(open)}));
+    else text += ' ' + t('hero.nothingOpen');
+    el.innerHTML = '<div class="eyebrow">' + esc(t('hero.eyebrow', {month})) + '</div><p>' + text + '</p>';
+  }
+
   function renderAll(){
     renderAccountsList();
     renderDashboardStats();
     renderDashboardChart();
     renderDashboard();
     renderDashAlerts();
+    renderDashHero();
     renderStock();
     renderJournalList();
     updateSimplePreview();
@@ -4250,7 +4438,8 @@
     document.getElementById('companySetupCard').style.display = 'none';
     document.getElementById('mainAppWrap').style.display = 'block'; document.getElementById('bizWelcomeCard').style.display = 'none';
     applyTheme(currentCompany.theme || 'dark');
-    applyAccentColor(currentCompany.accent_color || (currentCompany.theme==='light' ? '#8C6A2F' : '#E0B255'));
+    applyPalette(currentPalette());
+    applyAccentColor(effectiveAccent(currentCompany.accent_color));
     document.documentElement.lang = currentCompany.language || 'it';
     applyStaticTranslations();
     if(typeof currentCompany !== 'undefined' && currentCompany && document.getElementById('simpleTemplateSelect')){ const selTpl = document.getElementById('simpleTemplateSelect'), keepTpl = selTpl.value; populateSimpleTemplateSelect(); if(keepTpl) selTpl.value = keepTpl; }
@@ -5002,6 +5191,7 @@
   // ---------- Lingua e traduzioni ----------
   const I18N = {
     it: {
+      'nav.gDaily':'Ogni giorno', 'nav.gPeople':'Persone', 'nav.gGoods':'Beni e magazzino', 'nav.gTax':'Fisco e risultati', 'hero.eyebrow':'{month}, in breve', 'hero.cashed':'Questo mese hai incassato {amt}.', 'hero.open':'Ti restano da incassare {open}.', 'hero.openLate':'Ti restano da incassare {open}, di cui {late} già scaduti.', 'hero.nothingOpen':'Non hai fatture da incassare.', 'pal.title':"Colori dell'app", 'pal.notte':'Blu notte', 'pal.smeraldo':'Verde smeraldo', 'pal.grafite':'Grafite', 'pal.oro':'Oro',
       'mag.itemQty':'Quanti ne hai adesso (facoltativo)', 'mag.initial':'Giacenza iniziale',
       'mag.invCheck':'Carica le righe in magazzino (ogni riga diventa un carico dell’articolo con lo stesso nome; se non esiste viene creato)', 'mag.fromInvoice':'Fattura {number} — {name}',
       'stip.printBtn':'🖨 Busta paga (PDF)',
@@ -5207,6 +5397,7 @@
       'settings.exportJournal':'Esporta Prima Nota (CSV)', 'settings.exportInvoices':'Esporta Fatture (CSV)', 'settings.exportAccounts':'Esporta Piano dei conti (CSV)',
     },
     en: {
+      'nav.gDaily':'Every day', 'nav.gPeople':'People', 'nav.gGoods':'Assets and stock', 'nav.gTax':'Tax and results', 'hero.eyebrow':'{month}, in short', 'hero.cashed':'This month you collected {amt}.', 'hero.open':'You still have {open} to collect.', 'hero.openLate':'You still have {open} to collect, of which {late} already overdue.', 'hero.nothingOpen':'You have no invoices to collect.', 'pal.title':'App colours', 'pal.notte':'Night blue', 'pal.smeraldo':'Emerald green', 'pal.grafite':'Graphite', 'pal.oro':'Gold',
       'mag.itemQty':'How many you have now (optional)', 'mag.initial':'Opening stock',
       'mag.invCheck':'Add the lines to stock (each line becomes a goods-in entry for the item with the same name; if it does not exist it is created)', 'mag.fromInvoice':'Invoice {number} — {name}',
       'stip.printBtn':'🖨 Payslip (PDF)',
@@ -5412,6 +5603,7 @@
       'settings.exportJournal':'Export Ledger (CSV)', 'settings.exportInvoices':'Export Invoices (CSV)', 'settings.exportAccounts':'Export Chart of Accounts (CSV)',
     },
     de: {
+      'nav.gDaily':'Jeden Tag', 'nav.gPeople':'Personen', 'nav.gGoods':'Anlagen und Lager', 'nav.gTax':'Steuern und Ergebnisse', 'hero.eyebrow':'{month}, kurz gefasst', 'hero.cashed':'Diesen Monat hast du {amt} eingenommen.', 'hero.open':'Offen sind noch {open}.', 'hero.openLate':'Offen sind noch {open}, davon {late} bereits überfällig.', 'hero.nothingOpen':'Du hast keine offenen Rechnungen.', 'pal.title':'Farben der App', 'pal.notte':'Nachtblau', 'pal.smeraldo':'Smaragdgrün', 'pal.grafite':'Graphit', 'pal.oro':'Gold',
       'mag.itemQty':'Aktueller Bestand (optional)', 'mag.initial':'Anfangsbestand',
       'mag.invCheck':'Zeilen ins Lager buchen (jede Zeile wird ein Zugang des Artikels mit demselben Namen; falls nicht vorhanden, wird er angelegt)', 'mag.fromInvoice':'Rechnung {number} — {name}',
       'stip.printBtn':'🖨 Lohnabrechnung (PDF)',
@@ -5693,6 +5885,7 @@
     const current = document.documentElement.getAttribute('data-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
     applyTheme(next);
+    applyAccentColor(effectiveAccent(currentCompany ? currentCompany.accent_color : null)); // il colore della tavolozza cambia tra scuro e chiaro
     if(currentCompany){
       currentCompany.theme = next;
       await supabaseClient.from('biz_companies').update({ theme: next }).eq('id', currentCompany.id);
@@ -5831,7 +6024,8 @@
     applyTheme(savedTheme);
     let savedAccent = null;
     try{ savedAccent = localStorage.getItem('bizAccent'); }catch(err){}
-    applyAccentColor(savedAccent || (savedTheme==='light' ? '#8C6A2F' : '#E0B255'));
+    applyPalette(currentPalette());
+    applyAccentColor(effectiveAccent(savedAccent));
     let savedLang = 'it';
     try{ savedLang = localStorage.getItem('bizLang') || 'it'; }catch(err){}
     applyStaticTranslations();
