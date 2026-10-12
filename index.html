@@ -1140,6 +1140,17 @@
       <div id="saveCompanySettingsMsg" style="display:none;margin-top:10px;"></div>
     </div>
     <div class="card">
+      <h3 data-i18n="acc.title">Il tuo accesso</h3>
+      <div class="hint box"><span data-i18n="acc.loggedAs">Sei entrato come</span> <strong id="accEmailLabel"></strong></div>
+      <label data-i18n="acc.newPw">Nuova password (almeno 6 caratteri)</label>
+      <input type="password" id="accNewPw" autocomplete="new-password">
+      <label data-i18n="acc.newPw2">Ripeti la nuova password</label>
+      <input type="password" id="accNewPw2" autocomplete="new-password">
+      <div class="hint" style="margin:-6px 0 12px;" data-i18n="acc.pwHint">Se entri con Google puoi comunque scegliere una password: potrai usare l'una o l'altra strada.</div>
+      <button class="primary" id="accSavePwBtn" type="button" data-i18n="acc.savePw">Cambia password</button>
+      <div id="accPwMsg" class="hint" style="display:none;margin-top:10px;"></div>
+    </div>
+    <div class="card">
       <h3 data-i18n="settings.appearance">Aspetto</h3>
       <div class="hint box" data-i18n="settings.appearanceHint">Puoi cambiare tema e colore anche dai pulsanti in alto, vicino a "Esci" — sono gli stessi controlli, qui solo più comodi da trovare.</div>
       <label data-i18n="pal.title">Colori dell'app</label>
@@ -4286,6 +4297,18 @@
     el.innerHTML = '<div class="eyebrow">' + esc(t('hero.eyebrow', {month})) + '</div><p>' + text + '</p>';
   }
 
+  // ---------- Impostazioni: il tuo accesso (cambio password) ----------
+  document.getElementById('accSavePwBtn').addEventListener('click', async ()=>{
+    const p1 = document.getElementById('accNewPw').value, p2 = document.getElementById('accNewPw2').value, msg = document.getElementById('accPwMsg');
+    const say = (text, bad) => { msg.textContent = text; msg.style.color = bad ? 'var(--over)' : 'var(--green)'; msg.style.display = 'block'; };
+    if(p1.length < 6){ say(t('acc.short'), true); return; }
+    if(p1 !== p2){ say(t('acc.mismatch'), true); return; }
+    const { error } = await supabaseClient.auth.updateUser({ password: p1 });
+    if(error){ say(t('al.error') + ' ' + error.message, true); return; }
+    document.getElementById('accNewPw').value = ''; document.getElementById('accNewPw2').value = '';
+    say(t('acc.saved'), false);
+  });
+
   function renderAll(){
     renderAccountsList();
     renderDashboardStats();
@@ -4425,6 +4448,7 @@
 
   async function enterApp(session){
     currentUserId = session.user.id;
+    { const accEl = document.getElementById('accEmailLabel'); if(accEl) accEl.textContent = session.user.email || ''; }
     loadFailed = false;
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('appRoot').style.display = 'block';
@@ -5191,6 +5215,7 @@
   // ---------- Lingua e traduzioni ----------
   const I18N = {
     it: {
+      'acc.title':'Il tuo accesso', 'acc.loggedAs':'Sei entrato come', 'acc.newPw':'Nuova password (almeno 6 caratteri)', 'acc.newPw2':'Ripeti la nuova password', 'acc.pwHint':"Se entri con Google puoi comunque scegliere una password: potrai usare l'una o l'altra strada.", 'acc.savePw':'Cambia password', 'acc.short':'La password deve avere almeno 6 caratteri.', 'acc.mismatch':'Le due password non sono uguali.', 'acc.saved':'Password cambiata.',
       'nav.gDaily':'Ogni giorno', 'nav.gPeople':'Persone', 'nav.gGoods':'Beni e magazzino', 'nav.gTax':'Fisco e risultati', 'hero.eyebrow':'{month}, in breve', 'hero.cashed':'Questo mese hai incassato {amt}.', 'hero.open':'Ti restano da incassare {open}.', 'hero.openLate':'Ti restano da incassare {open}, di cui {late} già scaduti.', 'hero.nothingOpen':'Non hai fatture da incassare.', 'pal.title':"Colori dell'app", 'pal.notte':'Blu notte', 'pal.smeraldo':'Verde smeraldo', 'pal.grafite':'Grafite', 'pal.oro':'Oro',
       'mag.itemQty':'Quanti ne hai adesso (facoltativo)', 'mag.initial':'Giacenza iniziale',
       'mag.invCheck':'Carica le righe in magazzino (ogni riga diventa un carico dell’articolo con lo stesso nome; se non esiste viene creato)', 'mag.fromInvoice':'Fattura {number} — {name}',
@@ -5397,6 +5422,7 @@
       'settings.exportJournal':'Esporta Prima Nota (CSV)', 'settings.exportInvoices':'Esporta Fatture (CSV)', 'settings.exportAccounts':'Esporta Piano dei conti (CSV)',
     },
     en: {
+      'acc.title':'Your login', 'acc.loggedAs':'You are logged in as', 'acc.newPw':'New password (at least 6 characters)', 'acc.newPw2':'Repeat the new password', 'acc.pwHint':'If you log in with Google you can still choose a password: you will be able to use either way.', 'acc.savePw':'Change password', 'acc.short':'The password must be at least 6 characters long.', 'acc.mismatch':'The two passwords do not match.', 'acc.saved':'Password changed.',
       'nav.gDaily':'Every day', 'nav.gPeople':'People', 'nav.gGoods':'Assets and stock', 'nav.gTax':'Tax and results', 'hero.eyebrow':'{month}, in short', 'hero.cashed':'This month you collected {amt}.', 'hero.open':'You still have {open} to collect.', 'hero.openLate':'You still have {open} to collect, of which {late} already overdue.', 'hero.nothingOpen':'You have no invoices to collect.', 'pal.title':'App colours', 'pal.notte':'Night blue', 'pal.smeraldo':'Emerald green', 'pal.grafite':'Graphite', 'pal.oro':'Gold',
       'mag.itemQty':'How many you have now (optional)', 'mag.initial':'Opening stock',
       'mag.invCheck':'Add the lines to stock (each line becomes a goods-in entry for the item with the same name; if it does not exist it is created)', 'mag.fromInvoice':'Invoice {number} — {name}',
@@ -5603,6 +5629,7 @@
       'settings.exportJournal':'Export Ledger (CSV)', 'settings.exportInvoices':'Export Invoices (CSV)', 'settings.exportAccounts':'Export Chart of Accounts (CSV)',
     },
     de: {
+      'acc.title':'Dein Zugang', 'acc.loggedAs':'Du bist angemeldet als', 'acc.newPw':'Neues Passwort (mindestens 6 Zeichen)', 'acc.newPw2':'Neues Passwort wiederholen', 'acc.pwHint':'Auch wenn du dich mit Google anmeldest, kannst du ein Passwort wählen: Dann funktionieren beide Wege.', 'acc.savePw':'Passwort ändern', 'acc.short':'Das Passwort muss mindestens 6 Zeichen haben.', 'acc.mismatch':'Die beiden Passwörter stimmen nicht überein.', 'acc.saved':'Passwort geändert.',
       'nav.gDaily':'Jeden Tag', 'nav.gPeople':'Personen', 'nav.gGoods':'Anlagen und Lager', 'nav.gTax':'Steuern und Ergebnisse', 'hero.eyebrow':'{month}, kurz gefasst', 'hero.cashed':'Diesen Monat hast du {amt} eingenommen.', 'hero.open':'Offen sind noch {open}.', 'hero.openLate':'Offen sind noch {open}, davon {late} bereits überfällig.', 'hero.nothingOpen':'Du hast keine offenen Rechnungen.', 'pal.title':'Farben der App', 'pal.notte':'Nachtblau', 'pal.smeraldo':'Smaragdgrün', 'pal.grafite':'Graphit', 'pal.oro':'Gold',
       'mag.itemQty':'Aktueller Bestand (optional)', 'mag.initial':'Anfangsbestand',
       'mag.invCheck':'Zeilen ins Lager buchen (jede Zeile wird ein Zugang des Artikels mit demselben Namen; falls nicht vorhanden, wird er angelegt)', 'mag.fromInvoice':'Rechnung {number} — {name}',
