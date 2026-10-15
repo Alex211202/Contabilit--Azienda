@@ -220,6 +220,29 @@
   body.anim-bg .app-scene{display:block;}
   body.anim-bg .app{position:relative;z-index:1;}
   @media (min-width:1000px){body.has-nav.anim-bg .app-scene{left:252px;}}
+
+  /* --- gruppi per mese richiudibili (fatture, libro giornale) e mastrini --- */
+  details.month-group{border-top:1px solid var(--line);}
+  details.month-group:first-child{border-top:0;}
+  details.month-group > summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;padding:13px 2px;list-style:none;font-weight:700;}
+  details.month-group > summary::-webkit-details-marker{display:none;}
+  details.month-group > summary .mg-name{display:flex;align-items:center;gap:8px;text-transform:capitalize;}
+  details.month-group > summary .mg-name::before{content:'';width:7px;height:7px;border-right:2px solid var(--ink-faint);border-bottom:2px solid var(--ink-faint);transform:rotate(-45deg);transition:transform .15s;margin-right:2px;}
+  details.month-group[open] > summary .mg-name::before{transform:rotate(45deg);}
+  details.month-group > summary .mg-info{font-size:12.5px;font-weight:600;color:var(--ink-faint);white-space:nowrap;}
+  details.month-group > .mg-body{padding:0 0 10px;}
+  .jr-entry{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:0 0 8px;}
+  .jr-head{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:6px;}
+  .jr-head b{font-variant-numeric:tabular-nums;}
+  .jr-entry table td{padding:4px 6px;font-size:12.5px;border-bottom:0;}
+  .ric-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:700px){.ric-grid{grid-template-columns:1fr;}}
+  .ric-box h4{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);}
+  .ric-ind{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px;}
+  .ric-ind div{border:1px solid var(--line);border-radius:14px;padding:10px 12px;}
+  .ric-ind small{display:block;font-size:11.5px;color:var(--ink-faint);font-weight:600;}
+  .ric-ind strong{font-size:18px;font-variant-numeric:tabular-nums;}
+  .ric-ind span{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:2px;line-height:1.35;}
 </style>
 </head>
 <body>
@@ -472,6 +495,7 @@
         <button class="tab" data-panel="scadenzario" data-i18n="tab.scadenzario">Scadenzario</button>
         <button class="tab" data-panel="cashflow" data-i18n="tab.cashflow">Cash Flow</button>
         <button class="tab" data-panel="bilanci" data-i18n="tab.bilanci">Bilanci</button>
+        <button class="tab" data-panel="libri" data-i18n="tab.libri">Libri contabili</button>
         <button class="tab" data-panel="iva" data-i18n="tab.iva">IVA</button>
         <button class="tab" data-panel="ammortamenti" data-i18n="tab.ammortamenti">Ammortamenti</button>
         <button class="tab" data-panel="contibancari" data-i18n="tab.contibancari">Conti bancari</button>
@@ -853,8 +877,29 @@
         <div id="statoPatrimonialeWrap"></div>
       </div>
       <div class="card">
+        <h3 data-i18n="ric.title">Stato patrimoniale riclassificato</h3>
+        <div class="hint box" data-i18n="ric.hint">Le stesse cifre dello Stato Patrimoniale, ordinate secondo il criterio finanziario: in alto ciò che diventa denaro (o va pagato) entro l'anno, in basso ciò che resta più a lungo. Sotto, i margini e gli indici che dicono se l'azienda è in equilibrio.</div>
+        <div id="riclassWrap"></div>
+      </div>
+      <div class="card">
         <h3 data-i18n="bil.incomeStatement">Conto Economico</h3>
         <div id="contoEconomicoWrap"></div>
+      </div>
+    </div>
+
+    <!-- LIBRI CONTABILI -->
+    <div class="panel" id="panel-libri" style="display:none;">
+      <div class="card">
+        <h3 data-i18n="libri.title">Libro giornale e mastrini</h3>
+        <div class="hint box" data-i18n="libri.hint">Il libro giornale è l'elenco di tutte le registrazioni in ordine di data, numerate. I mastrini mostrano, conto per conto, tutti i movimenti dell'anno con il saldo progressivo. Si aggiornano da soli.</div>
+        <div class="form-grid">
+          <div><label data-i18n="bil.year">Anno</label><select id="libriYearSelect"></select></div>
+          <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;">
+            <div class="segmented" id="libriToggle"><button type="button" data-v="giornale" class="active" data-i18n="libri.journal">Libro giornale</button><button type="button" data-v="mastri" data-i18n="libri.ledgers">Mastrini</button></div>
+          </div>
+        </div>
+        <button class="ghost" id="libriPrintBtn" type="button" style="margin:2px 0 14px;" data-i18n="libri.print">🖨 Stampa o salva in PDF</button>
+        <div id="libriWrap"></div>
       </div>
     </div>
 
@@ -1328,6 +1373,7 @@
     { code:'3060', name:'Altre riserve', category:'patrimonio_netto' },
     { code:'3100', name:'Utili portati a nuovo', category:'patrimonio_netto' },
     { code:'3200', name:"Utile/perdita d'esercizio", category:'patrimonio_netto' },
+    { code:'3300', name:'Prelevamenti e versamenti del titolare', category:'patrimonio_netto' },
 
     // Costi — Acquisti e servizi
     { code:'4000', name:'Acquisti materie prime/merci', category:'costi' },
@@ -1382,6 +1428,11 @@
     versamento_inps:     { labelKey:'tpl.versamentoInps',    dareCode:'2220', avereCode:'1010' }, // Debiti verso INPS / Banca
     versamento_ritenute: { labelKey:'tpl.versamentoRitenute', dareCode:'2240', avereCode:'1010' }, // Ritenute da versare / Banca
     versamento_capitale: { labelKey:'tpl.versamentoCapitale', dareCode:'1010', avereCode:'3000' }, // Banca / Capitale sociale
+    conferimento_beni:   { labelKey:'tpl.conferimentoBeni',  dareCode:'1500', avereCode:'3000' }, // Immobilizzazioni materiali / Capitale sociale
+    versamento_soci_cc:  { labelKey:'tpl.versamentoSociCC',  dareCode:'1010', avereCode:'3060' }, // Banca / Altre riserve (versamenti in conto capitale)
+    finanziamento_soci:  { labelKey:'tpl.finanziamentoSoci', dareCode:'1010', avereCode:'2310' }, // Banca / Debiti diversi (da restituire ai soci)
+    prelievo_titolare:   { labelKey:'tpl.prelievoTitolare',  dareCode:'3300', avereCode:'1010' }, // Prelevamenti del titolare / Banca
+    versamento_titolare: { labelKey:'tpl.versamentoTitolare', dareCode:'1010', avereCode:'3300' }, // Banca / Prelevamenti e versamenti del titolare
     utile_a_nuovo:       { labelKey:'tpl.utileANuovo',       dareCode:'3200', avereCode:'3100' }, // Utile d'esercizio / Utili portati a nuovo
     rimanenze_finali:    { labelKey:'tpl.rimanenzeFinali',   dareCode:'1200', avereCode:'5150' }, // Magazzino / Variazione delle rimanenze
     rimanenze_iniziali:  { labelKey:'tpl.rimanenzeIniziali', dareCode:'5150', avereCode:'1200' }  // storno a inizio anno
@@ -1716,6 +1767,7 @@
     if(!yearSel || !yearSel.value) return;
     const year = Number(yearSel.value);
     const f = bilancioFigures(year);
+    renderRiclassificato(year);
     // confronto con l'anno prima, solo se in quell'anno c'è almeno una registrazione
     const hasPrev = state.journalEntries.some(e => Number(String(e.date).slice(0,4)) === year - 1);
     const p = hasPrev ? bilancioFigures(year - 1) : null;
@@ -2504,7 +2556,7 @@
     if(list.length === 0){ wrap.innerHTML = '<div class="empty-state">'+t('fatt.noInvoicesYet')+'</div>'; return; }
     const d = x => new Date(x).toLocaleDateString(localeTag(),{day:'2-digit',month:'2-digit',year:'numeric'});
     const isIn = currentInvoiceType === 'emessa';
-    wrap.innerHTML = list.map(inv=>{
+    const invRow = inv=>{
       const open = invoiceOpen(inv), c = open.calc, pays = invoicePayments(inv);
       const paidLabel = isIn ? t('fatt.collected') : t('fatt.paidStatus');
       const unpaidLabel = isIn ? t('scad.toCollectShort') : t('scad.toPayShort');
@@ -2553,7 +2605,9 @@
           <button class="ghost" type="button" data-pay-cancel="1">${t('btn.cancel')}</button>
         </div>` : ''}
       `;
-    }).join('');
+    };
+    wrap.innerHTML = invoiceMonthGroups(list, invRow, currentInvoiceType);
+    bindMonthGroups(wrap, 'bizInvMonths.' + currentInvoiceType);
 
     wrap.querySelectorAll('[data-toggle-paid]').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
@@ -3952,8 +4006,8 @@
     win.print();
   }
   // Libro giornale dell'anno: registrazioni in ordine di data, numerate, con le loro righe
-  function printJournal(){
-    const year = exportYear();
+  function printJournal(yearArg){
+    const year = yearArg || exportYear();
     const entries = state.journalEntries.filter(e => Number(String(e.date).slice(0,4)) === year).sort((a,b)=> a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
     let totD = 0, totC = 0;
     const rows = entries.map((e, i) => {
@@ -3975,6 +4029,7 @@
     sel.value = String(year);
     if(sel.value !== String(year)){ sel.value = keep; alert(t('exp.noData')); return; }
     renderBilanci();
+    renderLibri();
     const html = '<h2>'+t('bil.balanceSheet')+'</h2>' + document.querySelector('#statoPatrimonialeWrap table').outerHTML + '<h2>'+t('bil.incomeStatement')+'</h2>' + document.querySelector('#contoEconomicoWrap table').outerHTML;
     sel.value = keep; renderBilanci();
     printHtml(t('exp.bilancioTitle', {year}), html);
@@ -4288,14 +4343,15 @@
     bilanci:'<path d="M12 4v16M5 8h14M6 8l-3 7a3.5 3.5 0 006 0zM18 8l-3 7a3.5 3.5 0 006 0z"/>',
     cashflow:'<path d="M4 12h4l2-6 4 12 2-6h4"/>',
     analisi:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
-    conti:'<path d="M5 6h14M5 12h14M5 18h9"/>'
+    conti:'<path d="M5 6h14M5 12h14M5 18h9"/>',
+    libri:'<path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 5v16M8 7h7M8 11h7"/>'
   };
   const NAV_GROUPS = [
     [null, ['dashboard']],
     ['nav.gDaily', ['primanota','fatture','scadenzario','contibancari']],
     ['nav.gPeople', ['anagrafica','stipendi']],
     ['nav.gGoods', ['magazzino','ammortamenti']],
-    ['nav.gTax', ['iva','bilanci','cashflow','analisi','conti']]
+    ['nav.gTax', ['iva','bilanci','libri','cashflow','analisi','conti']]
   ];
   (function buildNav(){
     const box = document.querySelector('#navCard .tabs');
@@ -4500,6 +4556,189 @@
   // dopo ogni ridisegno, con un po' di attesa: più modifiche di fila diventano un solo aggiornamento
   function scheduleRemindersSync(){ clearTimeout(remindersTimer); remindersTimer = setTimeout(syncReminders, 2500); }
 
+  // ---------- Stato patrimoniale riclassificato (criterio finanziario) ----------
+  // Impieghi: liquidità immediate (cassa e banche 1000-1099), liquidità differite (crediti 1100-1199, esclusi i depositi
+  // cauzionali 1130 che sono a lungo termine), disponibilità (rimanenze 1200-1299), attivo immobilizzato (immateriali
+  // 1600-1699, materiali 1500-1599 al netto del fondo, finanziarie: 1130 e 1300-1499). Fonti: passività correnti (tutti
+  // i debiti 2xxx tranne mutui 2110 e TFR 2300), passività consolidate (mutui e TFR), patrimonio netto.
+  function riclassFigures(year){
+    const U = { upToYear: year };
+    const sum = fn => sumAccountsWhere(fn, U);
+    const code = a => String(a.code || '');
+    const r = {};
+    r.li = sum(a => a.category === 'attivo' && code(a) >= '1000' && code(a) <= '1099');
+    r.ld = sum(a => a.category === 'attivo' && code(a) >= '1100' && code(a) <= '1199' && code(a) !== '1130');
+    r.disp = sum(a => a.category === 'attivo' && code(a) >= '1200' && code(a) <= '1299');
+    r.immImm = sum(a => a.category === 'attivo' && code(a) >= '1600' && code(a) <= '1699');
+    r.immMat = sum(a => a.category === 'attivo' && code(a) >= '1500' && code(a) <= '1599');
+    r.immFin = sum(a => a.category === 'attivo' && (code(a) === '1130' || (code(a) >= '1300' && code(a) <= '1499')));
+    const totAtt = sum(a => a.category === 'attivo');
+    r.altre = totAtt - r.li - r.ld - r.disp - r.immImm - r.immMat - r.immFin; // conti attivi fuori dagli intervalli: tra le liquidità differite
+    r.ld += r.altre;
+    r.ac = r.li + r.ld + r.disp;
+    r.af = r.immImm + r.immMat + r.immFin;
+    r.totImpieghi = r.ac + r.af;
+    r.pcons = sum(a => a.category === 'passivo' && (code(a) === '2110' || code(a) === '2300')) * -1;
+    r.pc = sum(a => a.category === 'passivo') * -1 - r.pcons;
+    r.pn = bilancioFigures(year).patrimonioNetto;
+    r.totFonti = r.pc + r.pcons + r.pn;
+    r.ccn = r.ac - r.pc;
+    r.mt = r.li + r.ld - r.pc;
+    r.ms = r.pn - r.af;
+    r.current = r.pc > 0.005 ? r.ac / r.pc : null;
+    r.quick = r.pc > 0.005 ? (r.li + r.ld) / r.pc : null;
+    r.autonomia = r.totFonti > 0.005 ? r.pn / r.totFonti : null;
+    return r;
+  }
+  function renderRiclassificato(year){
+    const wrap = document.getElementById('riclassWrap');
+    if(!wrap) return;
+    const r = riclassFigures(year);
+    const pct = v => v === null ? '—' : Math.round(v * 100) + '%';
+    const num = v => v === null ? '—' : v.toLocaleString(localeTag(), {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const line = (label, v, strong) => `<tr><td>${strong ? '<strong>' : ''}${esc(label)}${strong ? '</strong>' : ''}</td><td style="text-align:right;" class="mono">${strong ? '<strong>' : ''}€ ${fmt(v)}${strong ? '</strong>' : ''}</td></tr>`;
+    const tot = (label, v) => `<tr style="border-top:2px solid var(--line);"><td><strong>${esc(label)}</strong></td><td style="text-align:right;" class="mono"><strong>€ ${fmt(v)}</strong></td></tr>`;
+    const share = v => r.totImpieghi > 0.005 ? ' <span style="color:var(--ink-faint);font-size:11px;">' + Math.round(v / r.totImpieghi * 100) + '%</span>' : '';
+    const ind = (label, value, good, note) => `<div><small>${esc(label)}</small><strong class="${good === null ? '' : (good ? 'balanced' : 'unbalanced')}">${value}</strong><span>${esc(note)}</span></div>`;
+    wrap.innerHTML = `<div class="ric-grid">
+        <div class="ric-box"><h4>${esc(t('ric.uses'))}</h4><table>
+          ${line(t('ric.li'), r.li)}${line(t('ric.ld'), r.ld)}${line(t('ric.disp'), r.disp)}
+          ${line(t('ric.ac'), r.ac, true)}
+          ${line(t('ric.immImm'), r.immImm)}${line(t('ric.immMat'), r.immMat)}${Math.abs(r.immFin) >= 0.005 ? line(t('ric.immFin'), r.immFin) : ''}
+          ${line(t('ric.af'), r.af, true)}
+          ${tot(t('ric.totUses'), r.totImpieghi)}</table></div>
+        <div class="ric-box"><h4>${esc(t('ric.sources'))}</h4><table>
+          ${line(t('ric.pc'), r.pc, true)}${line(t('ric.pcons'), r.pcons, true)}${line(t('ric.pn'), r.pn, true)}
+          ${tot(t('ric.totSources'), r.totFonti)}</table></div>
+      </div>
+      <div class="ric-ind">
+        ${ind(t('ric.ccn'), '€ ' + fmt(r.ccn), r.ccn >= 0, t('ric.ccnNote'))}
+        ${ind(t('ric.mt'), '€ ' + fmt(r.mt), r.mt >= 0, t('ric.mtNote'))}
+        ${ind(t('ric.ms'), '€ ' + fmt(r.ms), r.ms >= 0, t('ric.msNote'))}
+        ${ind(t('ric.current'), num(r.current), r.current === null ? null : r.current >= 1, t('ric.currentNote'))}
+        ${ind(t('ric.quick'), num(r.quick), r.quick === null ? null : r.quick >= 1, t('ric.quickNote'))}
+        ${ind(t('ric.autonomy'), pct(r.autonomia), r.autonomia === null ? null : r.autonomia >= 0.25, t('ric.autonomyNote'))}
+      </div>
+      <div class="hint" style="margin-top:12px;">${esc(t('ric.note'))}</div>`;
+  }
+
+  // ---------- Libri contabili: libro giornale e mastrini, anno per anno ----------
+  let libriView = 'giornale';
+  function libriYears(){
+    const ys = new Set(state.journalEntries.map(e => Number(String(e.date).slice(0, 4))).filter(Boolean));
+    ys.add(new Date().getFullYear());
+    return Array.from(ys).sort((a,b) => b - a);
+  }
+  function libriYear(){ return Number(document.getElementById('libriYearSelect').value) || new Date().getFullYear(); }
+  const dIt = x => new Date(String(x).slice(0, 10) + 'T00:00:00').toLocaleDateString(localeTag(), {day:'2-digit', month:'2-digit', year:'numeric'});
+  // registrazioni dell'anno in ordine di data, ciascuna con il suo numero progressivo e le sue righe
+  function journalOfYear(year){
+    const entries = state.journalEntries.filter(e => Number(String(e.date).slice(0, 4)) === year)
+      .sort((a,b) => String(a.date).localeCompare(String(b.date)) || String(a.created_at || a.id).localeCompare(String(b.created_at || b.id)));
+    return entries.map((e, i) => ({ n: i + 1, e, lines: state.journalLines.filter(l => l.entry_id === e.id) }));
+  }
+  // movimenti di un conto: saldo all'inizio dell'anno (solo per i conti patrimoniali) e righe dell'anno con il saldo progressivo
+  function mastrinoOf(acc, year){
+    const entryById = {}; state.journalEntries.forEach(e => { entryById[e.id] = e; });
+    const sign = (acc.category === 'passivo' || acc.category === 'patrimonio_netto' || acc.category === 'ricavi') ? -1 : 1;
+    const patrimoniale = acc.category === 'attivo' || acc.category === 'passivo' || acc.category === 'patrimonio_netto';
+    let opening = 0, totD = 0, totC = 0;
+    const rows = [];
+    state.journalLines.filter(l => l.account_id === acc.id && entryById[l.entry_id])
+      .map(l => ({ date: String(entryById[l.entry_id].date).slice(0, 10), desc: entryById[l.entry_id].description || '', debit: Number(l.debit || 0), credit: Number(l.credit || 0) }))
+      .sort((a,b) => a.date.localeCompare(b.date))
+      .forEach(m => {
+        const y = Number(m.date.slice(0, 4));
+        if(y < year){ if(patrimoniale) opening += (m.debit - m.credit) * sign; return; }
+        if(y > year) return;
+        totD += m.debit; totC += m.credit;
+        rows.push(m);
+      });
+    let run = opening;
+    rows.forEach(m => { run += (m.debit - m.credit) * sign; m.running = run; });
+    return { opening, rows, totD, totC, end: run, sign };
+  }
+  function bindMonthGroups(wrap, storeKey){
+    // si ricorda solo quello che apre o chiude l'utente (il browser segnala "toggle" anche quando un mese nasce già aperto)
+    wrap.querySelectorAll('details.month-group[data-k] > summary').forEach(sm => sm.addEventListener('click', ()=>{ const d = sm.parentElement; setTimeout(()=>{
+      let st = {}; try{ st = JSON.parse(localStorage.getItem(storeKey) || '{}'); }catch(err){}
+      st[d.dataset.k] = d.open;
+      try{ localStorage.setItem(storeKey, JSON.stringify(st)); }catch(err){}
+    }, 0);
+    }));
+  }
+  function groupOpenState(storeKey){ try{ return JSON.parse(localStorage.getItem(storeKey) || '{}'); }catch(err){ return {}; } }
+  function renderLibri(){
+    const wrap = document.getElementById('libriWrap'), sel = document.getElementById('libriYearSelect');
+    if(!wrap || !sel || !currentCompany) return;
+    const keep = Number(sel.value), ys = libriYears();
+    sel.innerHTML = ys.map(y => '<option value="' + y + '">' + y + '</option>').join('');
+    sel.value = String(ys.includes(keep) ? keep : ys[0]);
+    const year = libriYear();
+    document.querySelectorAll('#libriToggle button').forEach(b => b.classList.toggle('active', b.dataset.v === libriView));
+    const money = v => v ? fmt(v) : '';
+    if(libriView === 'giornale'){
+      const list = journalOfYear(year);
+      if(!list.length){ wrap.innerHTML = '<div class="empty-state">' + t('libri.emptyJournal') + '</div>'; return; }
+      const byMonth = {};
+      list.forEach(x => { const k = String(x.e.date).slice(0, 7); (byMonth[k] = byMonth[k] || []).push(x); });
+      const keys = Object.keys(byMonth).sort().reverse(), st = groupOpenState('bizJrMonths');
+      let gD = 0, gC = 0;
+      const html = keys.map((k, i) => {
+        let mD = 0, mC = 0;
+        const body = byMonth[k].map(x => {
+          const rows = x.lines.map(l => { const a = accountById(l.account_id); mD += Number(l.debit || 0); mC += Number(l.credit || 0);
+            return '<tr><td>' + esc(a ? a.code + ' ' + a.name : '?') + '</td><td style="text-align:right;" class="mono">' + money(Number(l.debit || 0)) + '</td><td style="text-align:right;" class="mono">' + money(Number(l.credit || 0)) + '</td></tr>'; }).join('');
+          return '<div class="jr-entry"><div class="jr-head"><span><b>' + x.n + '</b> · ' + dIt(x.e.date) + ' · ' + esc(x.e.description || '') + '</span></div><table>' + rows + '</table></div>';
+        }).join('');
+        gD += mD; gC += mC;
+        const label = new Date(k + '-01T00:00:00').toLocaleDateString(localeTag(), {month:'long', year:'numeric'});
+        const open = (k in st) ? st[k] : i === 0;
+        return '<details class="month-group" data-k="' + k + '"' + (open ? ' open' : '') + '><summary><span class="mg-name">' + esc(label) + '</span><span class="mg-info">' + esc(t('libri.monthInfo', {n: byMonth[k].length, d: fmt(mD), c: fmt(mC)})) + '</span></summary><div class="mg-body">' + body + '</div></details>';
+      }).join('');
+      wrap.innerHTML = html + '<div class="hint" style="margin-top:10px;">' + esc(t('libri.yearTotals', {n: list.length, d: fmt(gD), c: fmt(gC)})) + (Math.abs(gD - gC) < 0.01 ? ' <span class="balanced">✓</span>' : ' <span class="unbalanced">' + esc(t('libri.notBalanced')) + '</span>') + '</div>';
+      bindMonthGroups(wrap, 'bizJrMonths');
+    } else {
+      const accs = state.accounts.slice().sort((a,b) => String(a.code).localeCompare(String(b.code)))
+        .map(a => ({ a, m: mastrinoOf(a, year) })).filter(x => x.m.rows.length || Math.abs(x.m.opening) >= 0.005);
+      if(!accs.length){ wrap.innerHTML = '<div class="empty-state">' + t('libri.emptyLedgers') + '</div>'; return; }
+      const st = groupOpenState('bizMastri');
+      wrap.innerHTML = accs.map(({a, m}) => {
+        const k = String(a.id), open = !!st[k];
+        const rows = (Math.abs(m.opening) >= 0.005 ? '<tr><td colspan="4" style="color:var(--ink-faint);">' + esc(t('led.opening', {year})) + '</td><td style="text-align:right;color:var(--ink-faint);" class="mono">' + fmt(m.opening) + '</td></tr>' : '')
+          + m.rows.map(r => '<tr><td style="white-space:nowrap;">' + dIt(r.date) + '</td><td>' + esc(r.desc) + '</td><td style="text-align:right;" class="mono">' + money(r.debit) + '</td><td style="text-align:right;" class="mono">' + money(r.credit) + '</td><td style="text-align:right;" class="mono">' + fmt(r.running) + '</td></tr>').join('')
+          + '<tr style="border-top:2px solid var(--line);"><td colspan="2"><strong>' + esc(t('led.totals')) + '</strong></td><td style="text-align:right;" class="mono"><strong>' + fmt(m.totD) + '</strong></td><td style="text-align:right;" class="mono"><strong>' + fmt(m.totC) + '</strong></td><td style="text-align:right;" class="mono"><strong>' + fmt(m.end) + '</strong></td></tr>';
+        return '<details class="month-group" data-k="' + esc(k) + '"' + (open ? ' open' : '') + '><summary><span class="mg-name" style="text-transform:none;">' + esc(a.code + ' ' + a.name) + '</span><span class="mg-info">' + esc(t('libri.ledgerInfo', {n: m.rows.length, amt: fmt(m.end)})) + '</span></summary><div class="mg-body" style="overflow-x:auto;"><table><tr><th>' + t('led.date') + '</th><th>' + t('led.desc') + '</th><th style="text-align:right;">' + t('primanota.debit') + '</th><th style="text-align:right;">' + t('primanota.credit') + '</th><th style="text-align:right;">' + t('led.balance') + '</th></tr>' + rows + '</table></div></details>';
+      }).join('');
+      bindMonthGroups(wrap, 'bizMastri');
+    }
+  }
+  function printMastrini(year){
+    const accs = state.accounts.slice().sort((a,b) => String(a.code).localeCompare(String(b.code)))
+      .map(a => ({ a, m: mastrinoOf(a, year) })).filter(x => x.m.rows.length || Math.abs(x.m.opening) >= 0.005);
+    const body = accs.map(({a, m}) => '<h2>' + esc(a.code + ' ' + a.name) + '</h2><table><tr><th>' + t('led.date') + '</th><th>' + t('led.desc') + '</th><th class="r">' + t('primanota.debit') + '</th><th class="r">' + t('primanota.credit') + '</th><th class="r">' + t('led.balance') + '</th></tr>'
+      + (Math.abs(m.opening) >= 0.005 ? '<tr><td colspan="4">' + esc(t('led.opening', {year})) + '</td><td class="r">' + fmt(m.opening) + '</td></tr>' : '')
+      + m.rows.map(r => '<tr><td>' + dIt(r.date) + '</td><td>' + esc(r.desc) + '</td><td class="r">' + (r.debit ? fmt(r.debit) : '') + '</td><td class="r">' + (r.credit ? fmt(r.credit) : '') + '</td><td class="r">' + fmt(r.running) + '</td></tr>').join('')
+      + '<tr><td colspan="2"><strong>' + esc(t('led.totals')) + '</strong></td><td class="r"><strong>' + fmt(m.totD) + '</strong></td><td class="r"><strong>' + fmt(m.totC) + '</strong></td><td class="r"><strong>' + fmt(m.end) + '</strong></td></tr></table>').join('');
+    printHtml(t('libri.ledgersTitle', {year}), body || '<p>' + esc(t('libri.emptyLedgers')) + '</p>');
+  }
+  document.getElementById('libriYearSelect').addEventListener('change', renderLibri);
+  document.getElementById('libriToggle').addEventListener('click', (e)=>{ const b = e.target.closest('button'); if(!b) return; libriView = b.dataset.v; renderLibri(); });
+  document.getElementById('libriPrintBtn').addEventListener('click', ()=>{ const y = libriYear(); if(libriView === 'giornale') printJournal(y); else printMastrini(y); });
+
+  // Fatture raggruppate per mese, ogni mese si apre e si chiude (aperto di base solo il più recente; la scelta resta)
+  function invoiceMonthGroups(list, rowFn, type){
+    const storeKey = 'bizInvMonths.' + type, st = groupOpenState(storeKey), groups = {};
+    list.forEach(x => { const k = String(x.date || '').slice(0, 7) || '0000-00'; (groups[k] = groups[k] || []).push(x); });
+    return Object.keys(groups).sort().reverse().map((k, i) => {
+      const items = groups[k].sort((a,b) => String(b.date).localeCompare(String(a.date)));
+      const label = k === '0000-00' ? '—' : new Date(k + '-01T00:00:00').toLocaleDateString(localeTag(), {month:'long', year:'numeric'});
+      const tot = items.reduce((s,x) => s + (x.doc_type === 'credit_note' ? -1 : 1) * invoiceCalc(x).totale, 0);
+      const open = (k in st) ? st[k] : i === 0;
+      return '<details class="month-group" data-k="' + k + '"' + (open ? ' open' : '') + '><summary><span class="mg-name">' + esc(label) + '</span><span class="mg-info">' + esc(t('fatt.monthInfo', {n: items.length, amt: fmt(tot)})) + '</span></summary><div class="mg-body">' + items.map(rowFn).join('') + '</div></details>';
+    }).join('');
+  }
+
   function renderAll(){
     renderAccountsList();
     renderDashboardStats();
@@ -4516,6 +4755,7 @@
     renderScadenzario();
     renderCashflow();
     renderBilanci();
+    renderLibri();
     renderAssetsList();
     renderBankBalances();
     renderEmployeesList();
@@ -5415,6 +5655,7 @@
   // ---------- Lingua e traduzioni ----------
   const I18N = {
     it: {
+      'tab.libri':'Libri contabili', 'libri.title':'Libro giornale e mastrini', 'libri.hint':"Il libro giornale è l'elenco di tutte le registrazioni in ordine di data, numerate. I mastrini mostrano, conto per conto, tutti i movimenti dell'anno con il saldo progressivo. Si aggiornano da soli.", 'libri.journal':'Libro giornale', 'libri.ledgers':'Mastrini', 'libri.print':'🖨 Stampa o salva in PDF', 'libri.emptyJournal':'Nessuna registrazione in questo anno.', 'libri.emptyLedgers':'Nessun conto con movimenti in questo anno.', 'libri.monthInfo':'registrazioni: {n} · dare € {d} · avere € {c}', 'libri.yearTotals':"Totale dell'anno: {n} registrazioni, dare € {d}, avere € {c}.", 'libri.notBalanced':'Dare e avere non coincidono: c’è una registrazione sbilanciata.', 'libri.ledgerInfo':'movimenti: {n} · saldo € {amt}', 'libri.ledgersTitle':'Mastrini {year}', 'led.balance':'Saldo', 'fatt.monthInfo':'documenti: {n} · € {amt}', 'ric.title':'Stato patrimoniale riclassificato', 'ric.hint':"Le stesse cifre dello Stato Patrimoniale, ordinate secondo il criterio finanziario: in alto ciò che diventa denaro (o va pagato) entro l'anno, in basso ciò che resta più a lungo. Sotto, i margini e gli indici che dicono se l'azienda è in equilibrio.", 'ric.uses':'Impieghi (attivo)', 'ric.sources':'Fonti (passivo)', 'ric.li':'Liquidità immediate (cassa e banche)', 'ric.ld':'Liquidità differite (crediti)', 'ric.disp':'Disponibilità (magazzino)', 'ric.ac':'Attivo circolante', 'ric.immImm':'Immobilizzazioni immateriali', 'ric.immMat':'Immobilizzazioni materiali (al netto del fondo)', 'ric.immFin':'Immobilizzazioni finanziarie', 'ric.af':'Attivo immobilizzato', 'ric.totUses':'Totale impieghi', 'ric.pc':'Passività correnti (entro 12 mesi)', 'ric.pcons':'Passività consolidate (mutui e TFR)', 'ric.pn':'Patrimonio netto', 'ric.totSources':'Totale fonti', 'ric.ccn':'Capitale circolante netto', 'ric.ccnNote':'Attivo circolante meno passività correnti: positivo vuol dire che ciò che entra entro l’anno copre ciò che va pagato entro l’anno.', 'ric.mt':'Margine di tesoreria', 'ric.mtNote':'Liquidità e crediti meno passività correnti, senza contare il magazzino.', 'ric.ms':'Margine di struttura', 'ric.msNote':'Patrimonio netto meno attivo immobilizzato: positivo vuol dire che i beni durevoli sono pagati con mezzi propri.', 'ric.current':'Indice di liquidità corrente', 'ric.currentNote':'Attivo circolante diviso passività correnti: sopra 1 va bene.', 'ric.quick':'Indice di liquidità immediata', 'ric.quickNote':'Liquidità e crediti diviso passività correnti: sopra 1 va bene.', 'ric.autonomy':'Autonomia finanziaria', 'ric.autonomyNote':'Quota delle fonti che sono mezzi propri: sotto il 25% l’azienda dipende molto dai debiti.', 'ric.note':'Riclassificazione semplificata: i mutui sono tutti tra le passività consolidate, anche la parte che scade entro 12 mesi; i crediti sono tutti tra le liquidità differite.', 'tpl.conferimentoBeni':'Conferimento di beni da parte dei soci (attrezzature, automezzi…)', 'tpl.versamentoSociCC':'Versamento dei soci in conto capitale (senza aumentare il capitale)', 'tpl.finanziamentoSoci':'Finanziamento dei soci (da restituire)', 'tpl.prelievoTitolare':'Prelievo del titolare (ditta individuale)', 'tpl.versamentoTitolare':'Versamento del titolare (ditta individuale)',
       'push.title':'Notifiche', 'push.hint':'Ricevi un avviso su questo dispositivo 3 giorni prima e il giorno stesso di: versamenti IVA, F24 di stipendi e ritenute, bollo sulle fatture, fatture da incassare e da pagare. Arrivano la mattina.', 'push.enable':'Attiva le notifiche su questo dispositivo', 'push.disable':'Disattiva le notifiche su questo dispositivo', 'push.on':'Su questo dispositivo le notifiche sono attive.', 'push.off':'Su questo dispositivo le notifiche sono spente.', 'push.blocked':'Le notifiche sono bloccate nelle impostazioni del browser per questo sito: vanno riattivate da lì.', 'push.unsupported':'Questo browser non supporta le notifiche.', 'push.failed':'Non sono riuscito ad attivare le notifiche su questo dispositivo.', 'push.iphone':"Su iPhone e iPad funzionano solo se prima aggiungi l'app alla schermata Home (Condividi → Aggiungi a Home) e la apri da lì.", 'push.rCollect':'Da incassare: fattura {number} di {name} — € {amt}', 'push.rPay':'Da pagare: fattura {number} di {name} — € {amt}',
       'acc.title':'Il tuo accesso', 'acc.loggedAs':'Sei entrato come', 'acc.newPw':'Nuova password (almeno 6 caratteri)', 'acc.newPw2':'Ripeti la nuova password', 'acc.pwHint':"Se entri con Google puoi comunque scegliere una password: potrai usare l'una o l'altra strada.", 'acc.savePw':'Cambia password', 'acc.short':'La password deve avere almeno 6 caratteri.', 'acc.mismatch':'Le due password non sono uguali.', 'acc.saved':'Password cambiata.',
       'nav.gDaily':'Ogni giorno', 'nav.gPeople':'Persone', 'nav.gGoods':'Beni e magazzino', 'nav.gTax':'Fisco e risultati', 'hero.eyebrow':'{month}, in breve', 'hero.cashed':'Questo mese hai incassato {amt}.', 'hero.open':'Ti restano da incassare {open}.', 'hero.openLate':'Ti restano da incassare {open}, di cui {late} già scaduti.', 'hero.nothingOpen':'Non hai fatture da incassare.', 'pal.title':"Colori dell'app", 'pal.notte':'Blu notte', 'pal.smeraldo':'Verde smeraldo', 'pal.grafite':'Grafite', 'pal.oro':'Oro',
@@ -5625,6 +5866,7 @@
       'settings.exportJournal':'Esporta Prima Nota (CSV)', 'settings.exportInvoices':'Esporta Fatture (CSV)', 'settings.exportAccounts':'Esporta Piano dei conti (CSV)',
     },
     en: {
+      'tab.libri':'Accounting books', 'libri.title':'Journal and ledgers', 'libri.hint':'The journal lists all entries by date, numbered. The ledgers show, account by account, all the movements of the year with the running balance. They update automatically.', 'libri.journal':'Journal', 'libri.ledgers':'Ledgers', 'libri.print':'🖨 Print or save as PDF', 'libri.emptyJournal':'No entries in this year.', 'libri.emptyLedgers':'No accounts with movements in this year.', 'libri.monthInfo':'entries: {n} · debit € {d} · credit € {c}', 'libri.yearTotals':'Year total: {n} entries, debit € {d}, credit € {c}.', 'libri.notBalanced':'Debit and credit do not match: one entry is unbalanced.', 'libri.ledgerInfo':'movements: {n} · balance € {amt}', 'libri.ledgersTitle':'Ledgers {year}', 'led.balance':'Balance', 'fatt.monthInfo':'documents: {n} · € {amt}', 'ric.title':'Reclassified balance sheet', 'ric.hint':'The same figures as the balance sheet, ordered by the financial criterion: at the top what becomes cash (or must be paid) within the year, at the bottom what lasts longer. Below, the margins and ratios that tell whether the business is balanced.', 'ric.uses':'Uses (assets)', 'ric.sources':'Sources (liabilities)', 'ric.li':'Cash and banks', 'ric.ld':'Receivables', 'ric.disp':'Inventory', 'ric.ac':'Current assets', 'ric.immImm':'Intangible fixed assets', 'ric.immMat':'Tangible fixed assets (net of depreciation)', 'ric.immFin':'Financial fixed assets', 'ric.af':'Fixed assets', 'ric.totUses':'Total uses', 'ric.pc':'Current liabilities (within 12 months)', 'ric.pcons':'Long-term liabilities (mortgages and severance pay)', 'ric.pn':'Equity', 'ric.totSources':'Total sources', 'ric.ccn':'Net working capital', 'ric.ccnNote':'Current assets minus current liabilities: positive means what comes in within the year covers what must be paid within the year.', 'ric.mt':'Treasury margin', 'ric.mtNote':'Cash and receivables minus current liabilities, without inventory.', 'ric.ms':'Structural margin', 'ric.msNote':'Equity minus fixed assets: positive means durable assets are paid with own funds.', 'ric.current':'Current ratio', 'ric.currentNote':'Current assets divided by current liabilities: above 1 is good.', 'ric.quick':'Quick ratio', 'ric.quickNote':'Cash and receivables divided by current liabilities: above 1 is good.', 'ric.autonomy':'Financial autonomy', 'ric.autonomyNote':'Share of sources that are own funds: below 25% the business depends heavily on debt.', 'ric.note':'Simplified reclassification: mortgages are all long-term, including the part due within 12 months; all receivables are short-term.', 'tpl.conferimentoBeni':'Contribution of assets by the partners (equipment, vehicles…)', 'tpl.versamentoSociCC':'Partners’ capital contribution (without increasing share capital)', 'tpl.finanziamentoSoci':'Partners’ loan (to be repaid)', 'tpl.prelievoTitolare':'Owner’s withdrawal (sole proprietorship)', 'tpl.versamentoTitolare':'Owner’s contribution (sole proprietorship)',
       'push.title':'Notifications', 'push.hint':'Get an alert on this device 3 days before and on the day of: VAT payments, F24 for salaries and withholdings, stamp duty on invoices, invoices to collect and to pay. They arrive in the morning.', 'push.enable':'Turn on notifications on this device', 'push.disable':'Turn off notifications on this device', 'push.on':'Notifications are on for this device.', 'push.off':'Notifications are off for this device.', 'push.blocked':'Notifications are blocked in the browser settings for this site: they must be re-enabled there.', 'push.unsupported':'This browser does not support notifications.', 'push.failed':'I could not turn on notifications on this device.', 'push.iphone':'On iPhone and iPad they only work if you first add the app to the Home screen (Share → Add to Home Screen) and open it from there.', 'push.rCollect':'To collect: invoice {number} from {name} — € {amt}', 'push.rPay':'To pay: invoice {number} from {name} — € {amt}',
       'acc.title':'Your login', 'acc.loggedAs':'You are logged in as', 'acc.newPw':'New password (at least 6 characters)', 'acc.newPw2':'Repeat the new password', 'acc.pwHint':'If you log in with Google you can still choose a password: you will be able to use either way.', 'acc.savePw':'Change password', 'acc.short':'The password must be at least 6 characters long.', 'acc.mismatch':'The two passwords do not match.', 'acc.saved':'Password changed.',
       'nav.gDaily':'Every day', 'nav.gPeople':'People', 'nav.gGoods':'Assets and stock', 'nav.gTax':'Tax and results', 'hero.eyebrow':'{month}, in short', 'hero.cashed':'This month you collected {amt}.', 'hero.open':'You still have {open} to collect.', 'hero.openLate':'You still have {open} to collect, of which {late} already overdue.', 'hero.nothingOpen':'You have no invoices to collect.', 'pal.title':'App colours', 'pal.notte':'Night blue', 'pal.smeraldo':'Emerald green', 'pal.grafite':'Graphite', 'pal.oro':'Gold',
@@ -5835,6 +6077,7 @@
       'settings.exportJournal':'Export Ledger (CSV)', 'settings.exportInvoices':'Export Invoices (CSV)', 'settings.exportAccounts':'Export Chart of Accounts (CSV)',
     },
     de: {
+      'tab.libri':'Geschäftsbücher', 'libri.title':'Journal und Kontenblätter', 'libri.hint':'Das Journal listet alle Buchungen nach Datum, nummeriert. Die Kontenblätter zeigen Konto für Konto alle Bewegungen des Jahres mit laufendem Saldo. Sie aktualisieren sich von selbst.', 'libri.journal':'Journal', 'libri.ledgers':'Kontenblätter', 'libri.print':'🖨 Drucken oder als PDF speichern', 'libri.emptyJournal':'Keine Buchungen in diesem Jahr.', 'libri.emptyLedgers':'Keine Konten mit Bewegungen in diesem Jahr.', 'libri.monthInfo':'Buchungen: {n} · Soll € {d} · Haben € {c}', 'libri.yearTotals':'Jahressumme: {n} Buchungen, Soll € {d}, Haben € {c}.', 'libri.notBalanced':'Soll und Haben stimmen nicht überein: Eine Buchung ist unausgeglichen.', 'libri.ledgerInfo':'Bewegungen: {n} · Saldo € {amt}', 'libri.ledgersTitle':'Kontenblätter {year}', 'led.balance':'Saldo', 'fatt.monthInfo':'Belege: {n} · € {amt}', 'ric.title':'Umgegliederte Bilanz', 'ric.hint':'Dieselben Zahlen wie in der Bilanz, nach finanziellen Kriterien geordnet: oben, was innerhalb eines Jahres zu Geld wird (oder bezahlt werden muss), unten, was länger bleibt. Darunter die Kennzahlen, die zeigen, ob das Unternehmen im Gleichgewicht ist.', 'ric.uses':'Mittelverwendung (Aktiva)', 'ric.sources':'Mittelherkunft (Passiva)', 'ric.li':'Kasse und Banken', 'ric.ld':'Forderungen', 'ric.disp':'Vorräte', 'ric.ac':'Umlaufvermögen', 'ric.immImm':'Immaterielle Anlagen', 'ric.immMat':'Sachanlagen (abzüglich Abschreibungen)', 'ric.immFin':'Finanzanlagen', 'ric.af':'Anlagevermögen', 'ric.totUses':'Summe Mittelverwendung', 'ric.pc':'Kurzfristige Verbindlichkeiten (bis 12 Monate)', 'ric.pcons':'Langfristige Verbindlichkeiten (Darlehen und Abfertigung)', 'ric.pn':'Eigenkapital', 'ric.totSources':'Summe Mittelherkunft', 'ric.ccn':'Nettoumlaufvermögen', 'ric.ccnNote':'Umlaufvermögen minus kurzfristige Verbindlichkeiten: positiv heißt, was im Jahr hereinkommt, deckt, was im Jahr zu zahlen ist.', 'ric.mt':'Liquiditätsmarge', 'ric.mtNote':'Liquide Mittel und Forderungen minus kurzfristige Verbindlichkeiten, ohne Vorräte.', 'ric.ms':'Strukturmarge', 'ric.msNote':'Eigenkapital minus Anlagevermögen: positiv heißt, dauerhafte Güter sind mit eigenen Mitteln bezahlt.', 'ric.current':'Liquidität 3. Grades', 'ric.currentNote':'Umlaufvermögen geteilt durch kurzfristige Verbindlichkeiten: über 1 ist gut.', 'ric.quick':'Liquidität 2. Grades', 'ric.quickNote':'Liquide Mittel und Forderungen geteilt durch kurzfristige Verbindlichkeiten: über 1 ist gut.', 'ric.autonomy':'Eigenkapitalquote', 'ric.autonomyNote':'Anteil der Mittel, die Eigenkapital sind: unter 25 % hängt das Unternehmen stark von Schulden ab.', 'ric.note':'Vereinfachte Umgliederung: Darlehen sind ganz langfristig, auch der innerhalb von 12 Monaten fällige Teil; alle Forderungen gelten als kurzfristig.', 'tpl.conferimentoBeni':'Sacheinlage der Gesellschafter (Geräte, Fahrzeuge…)', 'tpl.versamentoSociCC':'Einzahlung der Gesellschafter in die Kapitalrücklage (ohne Kapitalerhöhung)', 'tpl.finanziamentoSoci':'Gesellschafterdarlehen (rückzahlbar)', 'tpl.prelievoTitolare':'Privatentnahme des Inhabers (Einzelunternehmen)', 'tpl.versamentoTitolare':'Privateinlage des Inhabers (Einzelunternehmen)',
       'push.title':'Benachrichtigungen', 'push.hint':'Erhalte auf diesem Gerät 3 Tage vorher und am Tag selbst einen Hinweis zu: MwSt.-Zahlungen, F24 für Löhne und Steuerabzüge, Stempelsteuer auf Rechnungen, offenen Ausgangs- und Eingangsrechnungen. Sie kommen morgens.', 'push.enable':'Benachrichtigungen auf diesem Gerät einschalten', 'push.disable':'Benachrichtigungen auf diesem Gerät ausschalten', 'push.on':'Auf diesem Gerät sind die Benachrichtigungen aktiv.', 'push.off':'Auf diesem Gerät sind die Benachrichtigungen aus.', 'push.blocked':'Die Benachrichtigungen sind in den Browser-Einstellungen für diese Seite blockiert: Sie müssen dort wieder erlaubt werden.', 'push.unsupported':'Dieser Browser unterstützt keine Benachrichtigungen.', 'push.failed':'Ich konnte die Benachrichtigungen auf diesem Gerät nicht einschalten.', 'push.iphone':'Auf iPhone und iPad funktionieren sie nur, wenn du die App zuerst zum Home-Bildschirm hinzufügst (Teilen → Zum Home-Bildschirm) und von dort öffnest.', 'push.rCollect':'Offen: Rechnung {number} von {name} — € {amt}', 'push.rPay':'Zu zahlen: Rechnung {number} von {name} — € {amt}',
       'acc.title':'Dein Zugang', 'acc.loggedAs':'Du bist angemeldet als', 'acc.newPw':'Neues Passwort (mindestens 6 Zeichen)', 'acc.newPw2':'Neues Passwort wiederholen', 'acc.pwHint':'Auch wenn du dich mit Google anmeldest, kannst du ein Passwort wählen: Dann funktionieren beide Wege.', 'acc.savePw':'Passwort ändern', 'acc.short':'Das Passwort muss mindestens 6 Zeichen haben.', 'acc.mismatch':'Die beiden Passwörter stimmen nicht überein.', 'acc.saved':'Passwort geändert.',
       'nav.gDaily':'Jeden Tag', 'nav.gPeople':'Personen', 'nav.gGoods':'Anlagen und Lager', 'nav.gTax':'Steuern und Ergebnisse', 'hero.eyebrow':'{month}, kurz gefasst', 'hero.cashed':'Diesen Monat hast du {amt} eingenommen.', 'hero.open':'Offen sind noch {open}.', 'hero.openLate':'Offen sind noch {open}, davon {late} bereits überfällig.', 'hero.nothingOpen':'Du hast keine offenen Rechnungen.', 'pal.title':'Farben der App', 'pal.notte':'Nachtblau', 'pal.smeraldo':'Smaragdgrün', 'pal.grafite':'Graphit', 'pal.oro':'Gold',
