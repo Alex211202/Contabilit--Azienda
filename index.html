@@ -530,6 +530,24 @@
 
     <!-- PIANO DEI CONTI -->
     <div class="panel" id="panel-conti" style="display:none;">
+      <details class="card" id="openCard">
+        <summary style="cursor:pointer;font-weight:700;font-family:var(--serif);font-size:18px;list-style:none;" data-i18n="open.title">Hai già dei numeri? Inserisci la situazione di partenza</summary>
+        <div class="hint box" style="margin-top:12px;" data-i18n="open.hint">Per un'azienda che esiste già: scrivi il saldo di ogni conto al giorno scelto, preso dall'ultimo bilancio o dal bilancio di verifica del commercialista. Il segno è quello normale del conto (crediti, banca e costi da una parte; debiti, capitale e ricavi dall'altra): un numero col meno va dalla parte opposta, per esempio i fondi di ammortamento. Se metti anche costi e ricavi dell'anno scorso, nei Bilanci vedrai il confronto con l'anno prima.</div>
+        <div class="form-grid">
+          <div><label data-i18n="open.date">Saldi al giorno</label><input type="date" id="openDate"></div>
+          <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;">
+            <button class="ghost" id="openFileBtn" type="button" data-i18n="open.file">📥 Leggi da un file Excel o CSV</button>
+            <input type="file" id="openFileInput" accept=".xlsx,.xls,.csv,text/csv" style="display:none;">
+          </div>
+        </div>
+        <div class="hint" style="margin:0 0 10px;" data-i18n="open.fileHint">Il file deve avere una colonna con il codice (o il nome) del conto e una con il saldo, oppure due colonne Dare e Avere. Dopo la lettura controlli le cifre qui sotto e premi Salva.</div>
+        <div id="openFileMsg" class="hint box" style="display:none;"></div>
+        <div id="openTableWrap" style="max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:14px;padding:4px 10px;"></div>
+        <div id="openTotals" style="margin:12px 0;"></div>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin:0 0 12px;"><input type="checkbox" id="openPlugCheck" style="width:auto;margin-top:3px;"> <span data-i18n="open.plug">Se dare e avere non tornano, metti la differenza in «Utili portati a nuovo»</span></label>
+        <button class="primary" id="openSaveBtn" type="button" data-i18n="open.save">Salva la situazione di partenza</button>
+        <button class="ghost" id="openDeleteBtn" type="button" style="display:none;" data-i18n="open.delete">Togli la situazione di partenza</button>
+      </details>
       <div class="card">
         <h3 data-i18n="conti.title">Piano dei conti</h3>
         <div class="hint box" data-i18n="conti.hint">L'elenco dei conti su cui registri i movimenti — parte già con una base universale, aggiungine altri se ti servono.</div>
@@ -5001,6 +5019,160 @@
   document.getElementById('payTermCheck').addEventListener('change', ()=>{ ['payTermHire','payTermLeave','payTermDate'].forEach(id => { document.getElementById(id).value = ''; }); syncTermForm(); updatePayslipPreview(); });
   ['payTermDate','payTermReason','payTermHire','payTermTfrBefore','payTermNotice','payTermLeave'].forEach(id => { const el = document.getElementById(id); el.addEventListener('input', ()=> updatePayslipPreview()); el.addEventListener('change', ()=> updatePayslipPreview()); });
 
+  // ---------- Situazione di partenza per un'azienda che esiste già ----------
+  // Una registrazione sola (mode 'opening') con il saldo di ogni conto al giorno scelto. Il segno è quello naturale del
+  // conto: attivo e costi in dare, passivo, patrimonio netto e ricavi in avere; un numero negativo va dalla parte opposta.
+  // I saldi si possono leggere da un file Excel (libreria SheetJS caricata solo quando serve) o CSV.
+  const debitSide = a => a.category === 'attivo' || a.category === 'costi';
+  function openingEntry(){ return state.journalEntries.find(e => e.mode === 'opening') || null; }
+  function parseAmount(v){
+    if(typeof v === 'number') return v;
+    let s = String(v == null ? '' : v).trim().replace(/[€\s]/g, '');
+    if(!s) return NaN;
+    const neg = /^\(.*\)$/.test(s); if(neg) s = s.slice(1, -1);
+    if(s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); // formato italiano 1.234,56
+    else if(/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); // 5.400 = cinquemilaquattrocento
+    const n = parseFloat(s);
+    return isNaN(n) ? NaN : (neg ? -n : n);
+  }
+  function renderOpening(){
+    const wrap = document.getElementById('openTableWrap');
+    if(!wrap || !currentCompany) return;
+    const old = openingEntry(), dateEl = document.getElementById('openDate');
+    const keep = {}; wrap.querySelectorAll('[data-open-acc]').forEach(i => { if(i.value !== '') keep[i.dataset.openAcc] = i.value; });
+    if(!dateEl.value) dateEl.value = old ? String(old.date).slice(0, 10) : (new Date().getFullYear() - 1) + '-12-31';
+    // valori: quelli già scritti, altrimenti quelli della situazione salvata
+    const saved = {};
+    if(old) state.journalLines.filter(l => l.entry_id === old.id).forEach(l => { const a = accountById(l.account_id); if(!a) return; const v = Number(l.debit || 0) - Number(l.credit || 0); saved[a.id] = round2((saved[a.id] || 0) + (debitSide(a) ? v : -v)); });
+    const cats = [['attivo','cat.attivo'], ['passivo','cat.passivo'], ['patrimonio_netto','cat.pn'], ['costi','cat.costi'], ['ricavi','cat.ricavi']];
+    const accs = state.accounts.slice().sort((a,b) => String(a.code).localeCompare(String(b.code)));
+    wrap.innerHTML = cats.map(([cat, key]) => {
+      const list = accs.filter(a => a.category === cat);
+      if(!list.length) return '';
+      return '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);padding:10px 2px 4px;">' + esc(t(key)) + '</div>'
+        + list.map(a => { const v = (a.id in keep) ? keep[a.id] : (a.id in saved && saved[a.id] !== 0 ? String(saved[a.id]) : '');
+          return '<div style="display:flex;align-items:center;gap:10px;padding:3px 0;"><span style="flex:1;font-size:13px;min-width:0;">' + esc(a.code + ' ' + a.name) + '</span><input type="number" step="0.01" data-open-acc="' + esc(a.id) + '" value="' + esc(v) + '" style="width:140px;margin:0;padding:7px 10px;text-align:right;"></div>'; }).join('');
+    }).join('');
+    wrap.querySelectorAll('[data-open-acc]').forEach(i => i.addEventListener('input', renderOpeningTotals));
+    document.getElementById('openDeleteBtn').style.display = old ? '' : 'none';
+    renderOpeningTotals();
+  }
+  function openingLines(){
+    const out = [];
+    document.querySelectorAll('#openTableWrap [data-open-acc]').forEach(i => {
+      const v = parseAmount(i.value), a = accountById(i.dataset.openAcc);
+      if(!a || isNaN(v) || Math.abs(v) < 0.005) return;
+      const dare = debitSide(a) ? v : -v; // dare − avere
+      out.push({ acc: a, debit: dare > 0 ? round2(dare) : 0, credit: dare < 0 ? round2(-dare) : 0 });
+    });
+    return out;
+  }
+  function renderOpeningTotals(){
+    const el = document.getElementById('openTotals');
+    if(!el) return;
+    const lines = openingLines(), d = round2(lines.reduce((s,l) => s + l.debit, 0)), c = round2(lines.reduce((s,l) => s + l.credit, 0)), diff = round2(d - c);
+    el.innerHTML = '<span class="mono">' + esc(t('open.totals', {d: fmt(d), c: fmt(c)})) + '</span> ' + (Math.abs(diff) < 0.01 ? '<span class="balanced">✓ ' + esc(t('open.balanced')) + '</span>' : '<span class="unbalanced">' + esc(t('open.diff', {amt: fmt(Math.abs(diff))})) + '</span>');
+  }
+  async function saveOpening(){
+    const date = document.getElementById('openDate').value;
+    if(!date){ alert(t('al.fields')); return; }
+    const lines = openingLines();
+    if(!lines.length){ alert(t('open.empty')); return; }
+    const d = round2(lines.reduce((s,l) => s + l.debit, 0)), c = round2(lines.reduce((s,l) => s + l.credit, 0)), diff = round2(d - c);
+    if(Math.abs(diff) >= 0.01){
+      const plug = accountByCode('3100');
+      if(!document.getElementById('openPlugCheck').checked || !plug){ alert(t('open.notBalanced', {amt: fmt(Math.abs(diff))})); return; }
+      lines.push({ acc: plug, debit: diff < 0 ? -diff : 0, credit: diff > 0 ? diff : 0 });
+    }
+    const old = openingEntry();
+    if(old && !confirm(t('open.replace'))) return;
+    if(old) await rollbackEntry(old.id);
+    const entryId = uid();
+    const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date, description: t('open.entry', {date: new Date(date + 'T00:00:00').toLocaleDateString(localeTag())}), mode: 'opening' };
+    const lineRows = lines.map(l => ({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: l.acc.id, debit: l.debit, credit: l.credit }));
+    const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
+    if(e1){ alert(t('al.error') + ' ' + e1.message); return; }
+    const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
+    if(e2){ await rollbackEntry(entryRow.id); alert(t('al.error') + ' ' + e2.message); return; }
+    state.journalEntries.unshift(entryRow);
+    state.journalLines.push(...lineRows);
+    document.getElementById('openTableWrap').innerHTML = '';
+    renderAll();
+    alert(t('open.saved'));
+  }
+  // lettura del file: righe → { chiave (codice o nome), importo nel segno naturale del conto }
+  function loadSheetJs(){
+    if(window.XLSX) return Promise.resolve();
+    return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
+  }
+  function csvRows(text){
+    const first = text.split(/\r?\n/).find(l => l.trim()) || '';
+    const sep = (first.match(/;/g) || []).length >= (first.match(/,/g) || []).length ? ';' : (first.includes('\t') ? '\t' : ',');
+    return text.split(/\r?\n/).filter(l => l.trim()).map(line => {
+      const out = []; let cur = '', q = false;
+      for(const ch of line){ if(ch === '"'){ q = !q; continue; } if(ch === sep && !q){ out.push(cur); cur = ''; continue; } cur += ch; }
+      out.push(cur); return out.map(x => x.trim());
+    });
+  }
+  function applyOpeningRows(rows){
+    const norm = s => String(s == null ? '' : s).trim().toLowerCase();
+    // riga d'intestazione: cerca le colonne per nome, altrimenti codice nella prima e importo nell'ultima colonna numerica
+    let iKey = 0, iAmt = -1, iD = -1, iC = -1, start = 0;
+    const head = (rows[0] || []).map(norm);
+    if(head.some(h => /(codice|conto|code|account|name|nome|konto)/.test(h))){
+      start = 1;
+      head.forEach((h, i) => {
+        if(/^(codice|cod\.?|code|konto)/.test(h)) iKey = i; else if(iKey === 0 && /(conto|account|nome|name)/.test(h)) iKey = i;
+        if(/(saldo|importo|amount|balance|betrag)/.test(h)) iAmt = i;
+        if(/^(dare|debit|soll)/.test(h)) iD = i;
+        if(/^(avere|credit|haben)/.test(h)) iC = i;
+      });
+    }
+    const byCode = {}, byName = {};
+    state.accounts.forEach(a => { byCode[norm(a.code)] = a; byName[norm(a.name)] = a; });
+    const found = {}, missing = [];
+    rows.slice(start).forEach(r => {
+      if(!r || !r.length) return;
+      let key = r[iKey];
+      let acc = byCode[norm(key)] || byName[norm(key)];
+      if(!acc){ // codice e nome nella stessa cella, per esempio "1010 Banca c/c"
+        const m = String(key || '').match(/^\s*(\d{3,6})\b/); if(m) acc = byCode[m[1]];
+      }
+      if(!acc && r.length > 1) acc = byName[norm(r[1])] || byCode[norm(r[1])];
+      let v;
+      if(iD >= 0 || iC >= 0){ const dd = parseAmount(iD >= 0 ? r[iD] : 0) || 0, cc = parseAmount(iC >= 0 ? r[iC] : 0) || 0; v = dd - cc; if(acc && !debitSide(acc)) v = -v; }
+      else if(iAmt >= 0) v = parseAmount(r[iAmt]);
+      else { const nums = r.map(parseAmount).filter((x, i) => i !== iKey && !isNaN(x)); v = nums.length ? nums[nums.length - 1] : NaN; }
+      if(isNaN(v) || Math.abs(v) < 0.005) return;
+      if(!acc){ missing.push(String(key || r.join(' ')).slice(0, 40)); return; }
+      found[acc.id] = round2((found[acc.id] || 0) + v);
+    });
+    document.querySelectorAll('#openTableWrap [data-open-acc]').forEach(i => { if(i.dataset.openAcc in found) i.value = String(found[i.dataset.openAcc]); });
+    renderOpeningTotals();
+    const msg = document.getElementById('openFileMsg');
+    msg.style.display = 'block';
+    msg.innerHTML = esc(t('open.read', {n: Object.keys(found).length})) + (missing.length ? '<br><span style="color:var(--over);">' + esc(t('open.missing', {list: missing.slice(0, 12).join(', ') + (missing.length > 12 ? '…' : '')})) + '</span>' : '');
+  }
+  document.getElementById('openFileBtn').addEventListener('click', ()=> document.getElementById('openFileInput').click());
+  document.getElementById('openFileInput').addEventListener('change', async (e)=>{
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    try{
+      if(/\.csv$/i.test(file.name)){ applyOpeningRows(csvRows(await file.text())); return; }
+      await loadSheetJs();
+      const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      applyOpeningRows(window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' }));
+    }catch(err){ console.error('apertura', err); alert(t('open.badFile')); }
+  });
+  document.getElementById('openSaveBtn').addEventListener('click', saveOpening);
+  document.getElementById('openDeleteBtn').addEventListener('click', async ()=>{
+    const old = openingEntry(); if(!old || !confirm(t('open.deleteConfirm'))) return;
+    await rollbackEntry(old.id); document.getElementById('openTableWrap').innerHTML = ''; renderAll();
+  });
+  document.getElementById('openCard').addEventListener('toggle', (e)=>{ if(e.target.open) renderOpening(); });
+
   function renderAll(){
     renderAccountsList();
     renderDashboardStats();
@@ -5939,6 +6111,7 @@
   // ---------- Lingua e traduzioni ----------
   const I18N = {
     it: {
+      'open.title':'Hai già dei numeri? Inserisci la situazione di partenza', 'open.hint':"Per un'azienda che esiste già: scrivi il saldo di ogni conto al giorno scelto, preso dall'ultimo bilancio o dal bilancio di verifica del commercialista. Il segno è quello normale del conto (crediti, banca e costi da una parte; debiti, capitale e ricavi dall'altra): un numero col meno va dalla parte opposta, per esempio i fondi di ammortamento. Se metti anche costi e ricavi dell'anno scorso, nei Bilanci vedrai il confronto con l'anno prima.", 'open.date':'Saldi al giorno', 'open.file':'📥 Leggi da un file Excel o CSV', 'open.fileHint':'Il file deve avere una colonna con il codice (o il nome) del conto e una con il saldo, oppure due colonne Dare e Avere. Dopo la lettura controlli le cifre qui sotto e premi Salva.', 'open.plug':'Se dare e avere non tornano, metti la differenza in «Utili portati a nuovo»', 'open.save':'Salva la situazione di partenza', 'open.delete':'Togli la situazione di partenza', 'open.totals':'Dare € {d} · Avere € {c}', 'open.balanced':'torna', 'open.diff':'differenza € {amt}', 'open.empty':'Scrivi almeno un saldo.', 'open.notBalanced':'Dare e avere non tornano (differenza € {amt}): controlla le cifre oppure spunta la casella per mettere la differenza negli utili portati a nuovo.', 'open.replace':'Esiste già una situazione di partenza: la sostituisco con questa?', 'open.entry':'Situazione di partenza al {date}', 'open.saved':'Situazione di partenza salvata: la trovi in Prima nota, nei Bilanci e nei mastrini.', 'open.read':'Letti i saldi di {n} conti dal file.', 'open.missing':'Non ho trovato questi conti nel piano dei conti (aggiungili o correggi il file): {list}', 'open.badFile':'Non riesco a leggere questo file. Prova a salvarlo come CSV da Excel.', 'open.deleteConfirm':'Togliere la situazione di partenza?', 'cat.attivo':'Attivo', 'cat.passivo':'Passivo', 'cat.pn':'Patrimonio netto', 'cat.costi':'Costi', 'cat.ricavi':'Ricavi',
       'term.tfrPaid':'TFR liquidato: € {fund} lordi, € {net} netti', 'term.hireDate':'Data di assunzione', 'term.check':'Ultima busta paga: il rapporto di lavoro finisce in questo mese', 'term.date':'Ultimo giorno di lavoro', 'term.reason':'Motivo', 'term.r_dim':'Dimissioni', 'term.r_lic':'Licenziamento', 'term.r_end':'Fine del contratto a termine', 'term.hire':'Data di assunzione', 'term.tfrBefore':"TFR maturato prima di usare l'app (facoltativo)", 'term.notice':'Indennità di mancato preavviso (facoltativa)', 'term.leaveLeft':'Giorni di ferie non godute da pagare', 'term.hint':"Nell'ultima busta: i giorni lavorati del mese, le quote di tredicesima e quattordicesima maturate, le ferie non godute e l'eventuale preavviso. Il TFR si paga a parte, con la sua tassazione separata. Per il licenziamento l'azienda versa all'INPS il contributo NASpI (il \"ticket\").", 'term.pDays':'Giorni lavorati nel mese ({d} su 30)', 'term.p13':'Rateo di tredicesima ({m} mesi)', 'term.p14':'Rateo di quattordicesima ({m} mesi)', 'term.pLeave':'Ferie non godute ({d} giorni)', 'term.pNotice':'Indennità di mancato preavviso', 'term.pTfrTitle':'TFR (pagato a parte, tassazione separata)', 'term.pTfrFund':'TFR maturato in tutto', 'term.pTfrTax':'Ritenuta IRPEF sul TFR (aliquota media {rate}%, su {years} anni)', 'term.pTfrNet':'TFR netto', 'term.pTicket':'Contributo NASpI per il licenziamento ({m} mesi di anzianità)', 'term.pTotal':'Totale che riceve il dipendente (busta + TFR)', 'term.needHire':'Per la fine del rapporto serve la data di assunzione.', 'term.badDate':"L'ultimo giorno di lavoro deve essere nel mese della busta paga.", 'term.note':'Il TFR non comprende la rivalutazione annuale; la ritenuta sul TFR è provvisoria, poi la ricalcola l’Agenzia delle Entrate.', 'term.ended':'rapporto finito il {date}',
       'pay.ctype':'Tipo di contratto', 'pay.ct_ind':'Tempo indeterminato', 'pay.ct_det':'Tempo determinato', 'pay.ct_app':'Apprendistato', 'pay.ccnl':'Contratto collettivo (CCNL)', 'pay.ccnlTerz':'Commercio e terziario (Confcommercio)', 'pay.ccnlOther':'Altro: scrivo io stipendio e numeri', 'pay.level':'Livello', 'pay.hours':'Ore a settimana (40 = tempo pieno)', 'pay.presetHint':'Minimo del livello {level} a tempo pieno: € {amt} al mese (paga base, contingenza e terzo elemento). Per {hours} ore a settimana lo stipendio è in proporzione; se paghi di più, correggilo.', 'pay.appHint':"Apprendista: contributi 5,84% a carico suo e 11,61% a carico dell'azienda (circolare INPS 91/2023); per le aziende fino a 9 dipendenti l'aliquota dei primi anni è ridotta: verificala col consulente e correggi il numero. Lo stipendio dell'apprendista di solito parte da uno o due livelli sotto quello finale.", 'pay.varsTitle':'Variazioni del mese', 'pay.otHours':'Ore di straordinario', 'pay.otPct':'Maggiorazione straordinario (%)', 'pay.sickDays':'Giorni di malattia nel mese (di calendario)', 'pay.sickPrior':'Giorni della stessa malattia già nel mese prima', 'pay.unpaid':'Giorni di assenza non pagata', 'pay.leave':'Giorni di ferie presi nel mese', 'pay.varsHint':"Straordinario: paga oraria × ore × (1 + maggiorazione). Malattia (regola del CCNL Commercio): primi 3 giorni pagati al 100% dall'azienda, dal 4° al 20° al 75% (50% INPS + 25% azienda), dal 21° al 100% (66,66% INPS + resto azienda). Le ferie non cambiano lo stipendio: servono a tenere il conto dei giorni.", 'pay.pBase':'Stipendio del mese', 'pay.pOvertime':'Straordinario ({h} ore, +{pct}%)', 'pay.pUnpaid':'Assenza non pagata ({d} giorni)', 'pay.pSickOff':'Giorni di malattia tolti ({d})', 'pay.pSickEmp':"Malattia pagata dall'azienda", 'pay.pSickInps':"Malattia a carico INPS (anticipata dall'azienda, senza contributi)", 'pay.pContrib':'Imponibile per i contributi', 'pay.empContract':'{type} · {ccnl} · {hours} ore a settimana', 'pay.leaveLine':'Ferie: maturate {acc} giorni, prese {taken}, restano {left}', 'pay.ccnlShortTerz':'Commercio', 'pay.ccnlShortOther':'altro contratto', 'pay.levelShort':'livello {l}',
       'tab.libri':'Libri contabili', 'libri.title':'Libro giornale e mastrini', 'libri.hint':"Il libro giornale è l'elenco di tutte le registrazioni in ordine di data, numerate. I mastrini mostrano, conto per conto, tutti i movimenti dell'anno con il saldo progressivo. Si aggiornano da soli.", 'libri.journal':'Libro giornale', 'libri.ledgers':'Mastrini', 'libri.print':'🖨 Stampa o salva in PDF', 'libri.emptyJournal':'Nessuna registrazione in questo anno.', 'libri.emptyLedgers':'Nessun conto con movimenti in questo anno.', 'libri.monthInfo':'registrazioni: {n} · dare € {d} · avere € {c}', 'libri.yearTotals':"Totale dell'anno: {n} registrazioni, dare € {d}, avere € {c}.", 'libri.notBalanced':'Dare e avere non coincidono: c’è una registrazione sbilanciata.', 'libri.ledgerInfo':'movimenti: {n} · saldo € {amt}', 'libri.ledgersTitle':'Mastrini {year}', 'led.balance':'Saldo', 'fatt.monthInfo':'documenti: {n} · € {amt}', 'ric.title':'Stato patrimoniale riclassificato', 'ric.hint':"Le stesse cifre dello Stato Patrimoniale, ordinate secondo il criterio finanziario: in alto ciò che diventa denaro (o va pagato) entro l'anno, in basso ciò che resta più a lungo. Sotto, i margini e gli indici che dicono se l'azienda è in equilibrio.", 'ric.uses':'Impieghi (attivo)', 'ric.sources':'Fonti (passivo)', 'ric.li':'Liquidità immediate (cassa e banche)', 'ric.ld':'Liquidità differite (crediti)', 'ric.disp':'Disponibilità (magazzino)', 'ric.ac':'Attivo circolante', 'ric.immImm':'Immobilizzazioni immateriali', 'ric.immMat':'Immobilizzazioni materiali (al netto del fondo)', 'ric.immFin':'Immobilizzazioni finanziarie', 'ric.af':'Attivo immobilizzato', 'ric.totUses':'Totale impieghi', 'ric.pc':'Passività correnti (entro 12 mesi)', 'ric.pcons':'Passività consolidate (mutui e TFR)', 'ric.pn':'Patrimonio netto', 'ric.totSources':'Totale fonti', 'ric.ccn':'Capitale circolante netto', 'ric.ccnNote':'Attivo circolante meno passività correnti: positivo vuol dire che ciò che entra entro l’anno copre ciò che va pagato entro l’anno.', 'ric.mt':'Margine di tesoreria', 'ric.mtNote':'Liquidità e crediti meno passività correnti, senza contare il magazzino.', 'ric.ms':'Margine di struttura', 'ric.msNote':'Patrimonio netto meno attivo immobilizzato: positivo vuol dire che i beni durevoli sono pagati con mezzi propri.', 'ric.current':'Indice di liquidità corrente', 'ric.currentNote':'Attivo circolante diviso passività correnti: sopra 1 va bene.', 'ric.quick':'Indice di liquidità immediata', 'ric.quickNote':'Liquidità e crediti diviso passività correnti: sopra 1 va bene.', 'ric.autonomy':'Autonomia finanziaria', 'ric.autonomyNote':'Quota delle fonti che sono mezzi propri: sotto il 25% l’azienda dipende molto dai debiti.', 'ric.note':'Riclassificazione semplificata: i mutui sono tutti tra le passività consolidate, anche la parte che scade entro 12 mesi; i crediti sono tutti tra le liquidità differite.', 'tpl.conferimentoBeni':'Conferimento di beni da parte dei soci (attrezzature, automezzi…)', 'tpl.versamentoSociCC':'Versamento dei soci in conto capitale (senza aumentare il capitale)', 'tpl.finanziamentoSoci':'Finanziamento dei soci (da restituire)', 'tpl.prelievoTitolare':'Prelievo del titolare (ditta individuale)', 'tpl.versamentoTitolare':'Versamento del titolare (ditta individuale)',
@@ -6152,6 +6325,7 @@
       'settings.exportJournal':'Esporta Prima Nota (CSV)', 'settings.exportInvoices':'Esporta Fatture (CSV)', 'settings.exportAccounts':'Esporta Piano dei conti (CSV)',
     },
     en: {
+      'open.title':'Already have figures? Enter the starting position', 'open.hint':'For an existing company: enter the balance of each account on the chosen day, taken from the last balance sheet or the accountant’s trial balance. The sign is the account’s normal one (receivables, bank and costs on one side; payables, capital and revenues on the other): a negative number goes to the opposite side, for example depreciation funds. If you also enter last year’s costs and revenues, the statements will show the comparison with the previous year.', 'open.date':'Balances on', 'open.file':'📥 Read from an Excel or CSV file', 'open.fileHint':'The file needs a column with the account code (or name) and one with the balance, or two Debit and Credit columns. After reading, check the figures below and press Save.', 'open.plug':'If debit and credit do not match, put the difference in «Retained earnings»', 'open.save':'Save the starting position', 'open.delete':'Remove the starting position', 'open.totals':'Debit € {d} · Credit € {c}', 'open.balanced':'balanced', 'open.diff':'difference € {amt}', 'open.empty':'Enter at least one balance.', 'open.notBalanced':'Debit and credit do not match (difference € {amt}): check the figures or tick the box to put the difference in retained earnings.', 'open.replace':'A starting position already exists: replace it with this one?', 'open.entry':'Starting position on {date}', 'open.saved':'Starting position saved: you will find it in the Journal, the statements and the ledgers.', 'open.read':'Read the balances of {n} accounts from the file.', 'open.missing':'These accounts are not in the chart of accounts (add them or fix the file): {list}', 'open.badFile':'I cannot read this file. Try saving it as CSV from Excel.', 'open.deleteConfirm':'Remove the starting position?', 'cat.attivo':'Assets', 'cat.passivo':'Liabilities', 'cat.pn':'Equity', 'cat.costi':'Costs', 'cat.ricavi':'Revenues',
       'term.tfrPaid':'TFR paid out: € {fund} gross, € {net} net', 'term.hireDate':'Hiring date', 'term.check':'Last payslip: the employment ends this month', 'term.date':'Last working day', 'term.reason':'Reason', 'term.r_dim':'Resignation', 'term.r_lic':'Dismissal', 'term.r_end':'End of fixed-term contract', 'term.hire':'Hiring date', 'term.tfrBefore':'Severance pay (TFR) accrued before using the app (optional)', 'term.notice':'Payment in lieu of notice (optional)', 'term.leaveLeft':'Unused holiday days to pay', 'term.hint':'In the last payslip: days worked in the month, accrued shares of the 13th and 14th month, unused holidays and any notice payment. The TFR is paid separately, with its own separate taxation. For a dismissal the company pays INPS the NASpI contribution (the "ticket").', 'term.pDays':'Days worked in the month ({d} of 30)', 'term.p13':'13th month share ({m} months)', 'term.p14':'14th month share ({m} months)', 'term.pLeave':'Unused holidays ({d} days)', 'term.pNotice':'Payment in lieu of notice', 'term.pTfrTitle':'TFR (paid separately, separate taxation)', 'term.pTfrFund':'Total TFR accrued', 'term.pTfrTax':'IRPEF withheld on TFR (average rate {rate}%, over {years} years)', 'term.pTfrNet':'Net TFR', 'term.pTicket':'NASpI contribution for the dismissal ({m} months of seniority)', 'term.pTotal':'Total the employee receives (payslip + TFR)', 'term.needHire':'The hiring date is needed to end the employment.', 'term.badDate':'The last working day must be in the payslip month.', 'term.note':'The TFR does not include the annual revaluation; the withholding on TFR is provisional and is then recalculated by the Agenzia delle Entrate.', 'term.ended':'employment ended on {date}',
       'pay.ctype':'Contract type', 'pay.ct_ind':'Permanent', 'pay.ct_det':'Fixed-term', 'pay.ct_app':'Apprenticeship', 'pay.ccnl':'Collective agreement (CCNL)', 'pay.ccnlTerz':'Commerce and services (Confcommercio)', 'pay.ccnlOther':'Other: I enter salary and figures myself', 'pay.level':'Level', 'pay.hours':'Hours per week (40 = full time)', 'pay.presetHint':'Minimum for level {level}, full time: € {amt} a month (base pay, cost-of-living allowance and third element). For {hours} hours a week the salary is proportional; if you pay more, correct it.', 'pay.appHint':'Apprentice: contributions 5.84% paid by the apprentice and 11.61% by the company (INPS circular 91/2023); for companies with up to 9 employees the rate is reduced in the first years: check it with your payroll consultant and correct the figure. An apprentice’s pay usually starts one or two levels below the final one.', 'pay.varsTitle':'Changes this month', 'pay.otHours':'Overtime hours', 'pay.otPct':'Overtime premium (%)', 'pay.sickDays':'Sick days this month (calendar days)', 'pay.sickPrior':'Days of the same illness already last month', 'pay.unpaid':'Days of unpaid absence', 'pay.leave':'Holiday days taken this month', 'pay.varsHint':'Overtime: hourly rate × hours × (1 + premium). Sickness (Commerce CCNL rule): first 3 days paid 100% by the company, days 4–20 at 75% (50% INPS + 25% company), from day 21 at 100% (66.66% INPS + rest company). Holidays do not change the salary: they are only counted.', 'pay.pBase':'Monthly salary', 'pay.pOvertime':'Overtime ({h} hours, +{pct}%)', 'pay.pUnpaid':'Unpaid absence ({d} days)', 'pay.pSickOff':'Sick days removed ({d})', 'pay.pSickEmp':'Sickness paid by the company', 'pay.pSickInps':'Sickness paid by INPS (advanced by the company, no contributions)', 'pay.pContrib':'Contribution base', 'pay.empContract':'{type} · {ccnl} · {hours} hours a week', 'pay.leaveLine':'Holidays: accrued {acc} days, taken {taken}, left {left}', 'pay.ccnlShortTerz':'Commerce', 'pay.ccnlShortOther':'other agreement', 'pay.levelShort':'level {l}',
       'tab.libri':'Accounting books', 'libri.title':'Journal and ledgers', 'libri.hint':'The journal lists all entries by date, numbered. The ledgers show, account by account, all the movements of the year with the running balance. They update automatically.', 'libri.journal':'Journal', 'libri.ledgers':'Ledgers', 'libri.print':'🖨 Print or save as PDF', 'libri.emptyJournal':'No entries in this year.', 'libri.emptyLedgers':'No accounts with movements in this year.', 'libri.monthInfo':'entries: {n} · debit € {d} · credit € {c}', 'libri.yearTotals':'Year total: {n} entries, debit € {d}, credit € {c}.', 'libri.notBalanced':'Debit and credit do not match: one entry is unbalanced.', 'libri.ledgerInfo':'movements: {n} · balance € {amt}', 'libri.ledgersTitle':'Ledgers {year}', 'led.balance':'Balance', 'fatt.monthInfo':'documents: {n} · € {amt}', 'ric.title':'Reclassified balance sheet', 'ric.hint':'The same figures as the balance sheet, ordered by the financial criterion: at the top what becomes cash (or must be paid) within the year, at the bottom what lasts longer. Below, the margins and ratios that tell whether the business is balanced.', 'ric.uses':'Uses (assets)', 'ric.sources':'Sources (liabilities)', 'ric.li':'Cash and banks', 'ric.ld':'Receivables', 'ric.disp':'Inventory', 'ric.ac':'Current assets', 'ric.immImm':'Intangible fixed assets', 'ric.immMat':'Tangible fixed assets (net of depreciation)', 'ric.immFin':'Financial fixed assets', 'ric.af':'Fixed assets', 'ric.totUses':'Total uses', 'ric.pc':'Current liabilities (within 12 months)', 'ric.pcons':'Long-term liabilities (mortgages and severance pay)', 'ric.pn':'Equity', 'ric.totSources':'Total sources', 'ric.ccn':'Net working capital', 'ric.ccnNote':'Current assets minus current liabilities: positive means what comes in within the year covers what must be paid within the year.', 'ric.mt':'Treasury margin', 'ric.mtNote':'Cash and receivables minus current liabilities, without inventory.', 'ric.ms':'Structural margin', 'ric.msNote':'Equity minus fixed assets: positive means durable assets are paid with own funds.', 'ric.current':'Current ratio', 'ric.currentNote':'Current assets divided by current liabilities: above 1 is good.', 'ric.quick':'Quick ratio', 'ric.quickNote':'Cash and receivables divided by current liabilities: above 1 is good.', 'ric.autonomy':'Financial autonomy', 'ric.autonomyNote':'Share of sources that are own funds: below 25% the business depends heavily on debt.', 'ric.note':'Simplified reclassification: mortgages are all long-term, including the part due within 12 months; all receivables are short-term.', 'tpl.conferimentoBeni':'Contribution of assets by the partners (equipment, vehicles…)', 'tpl.versamentoSociCC':'Partners’ capital contribution (without increasing share capital)', 'tpl.finanziamentoSoci':'Partners’ loan (to be repaid)', 'tpl.prelievoTitolare':'Owner’s withdrawal (sole proprietorship)', 'tpl.versamentoTitolare':'Owner’s contribution (sole proprietorship)',
@@ -6365,6 +6539,7 @@
       'settings.exportJournal':'Export Ledger (CSV)', 'settings.exportInvoices':'Export Invoices (CSV)', 'settings.exportAccounts':'Export Chart of Accounts (CSV)',
     },
     de: {
+      'open.title':'Schon Zahlen vorhanden? Ausgangslage eingeben', 'open.hint':'Für ein bestehendes Unternehmen: Trage den Saldo jedes Kontos am gewählten Tag ein, aus der letzten Bilanz oder der Saldenliste des Steuerberaters. Das Vorzeichen ist das normale des Kontos (Forderungen, Bank und Kosten auf der einen Seite; Verbindlichkeiten, Kapital und Erlöse auf der anderen): eine negative Zahl kommt auf die andere Seite, zum Beispiel Abschreibungsfonds. Wenn du auch Kosten und Erlöse des Vorjahres einträgst, zeigen die Abschlüsse den Vergleich mit dem Vorjahr.', 'open.date':'Salden am', 'open.file':'📥 Aus Excel- oder CSV-Datei lesen', 'open.fileHint':'Die Datei braucht eine Spalte mit dem Kontocode (oder Namen) und eine mit dem Saldo, oder zwei Spalten Soll und Haben. Danach die Zahlen unten prüfen und Speichern drücken.', 'open.plug':'Wenn Soll und Haben nicht übereinstimmen, die Differenz in «Gewinnvortrag» buchen', 'open.save':'Ausgangslage speichern', 'open.delete':'Ausgangslage entfernen', 'open.totals':'Soll € {d} · Haben € {c}', 'open.balanced':'ausgeglichen', 'open.diff':'Differenz € {amt}', 'open.empty':'Trage mindestens einen Saldo ein.', 'open.notBalanced':'Soll und Haben stimmen nicht überein (Differenz € {amt}): prüfe die Zahlen oder setze das Häkchen, um die Differenz in den Gewinnvortrag zu buchen.', 'open.replace':'Es gibt schon eine Ausgangslage: durch diese ersetzen?', 'open.entry':'Ausgangslage am {date}', 'open.saved':'Ausgangslage gespeichert: Du findest sie im Journal, in den Abschlüssen und in den Kontenblättern.', 'open.read':'Salden von {n} Konten aus der Datei gelesen.', 'open.missing':'Diese Konten fehlen im Kontenplan (hinzufügen oder Datei korrigieren): {list}', 'open.badFile':'Diese Datei kann ich nicht lesen. Speichere sie in Excel als CSV.', 'open.deleteConfirm':'Ausgangslage entfernen?', 'cat.attivo':'Aktiva', 'cat.passivo':'Passiva', 'cat.pn':'Eigenkapital', 'cat.costi':'Kosten', 'cat.ricavi':'Erlöse',
       'term.tfrPaid':'Abfertigung ausgezahlt: € {fund} brutto, € {net} netto', 'term.hireDate':'Einstellungsdatum', 'term.check':'Letzte Lohnabrechnung: das Arbeitsverhältnis endet in diesem Monat', 'term.date':'Letzter Arbeitstag', 'term.reason':'Grund', 'term.r_dim':'Kündigung durch den Mitarbeiter', 'term.r_lic':'Entlassung', 'term.r_end':'Ende des befristeten Vertrags', 'term.hire':'Einstellungsdatum', 'term.tfrBefore':'Vor der App angereifte Abfertigung (TFR, optional)', 'term.notice':'Ersatzleistung für die Kündigungsfrist (optional)', 'term.leaveLeft':'Zu bezahlende nicht genommene Urlaubstage', 'term.hint':'In der letzten Lohnabrechnung: die gearbeiteten Tage des Monats, die angereiften Anteile des 13. und 14. Gehalts, nicht genommener Urlaub und eine allfällige Ersatzleistung. Die Abfertigung (TFR) wird getrennt bezahlt und getrennt besteuert. Bei einer Entlassung zahlt der Betrieb der INPS den NASpI-Beitrag (das „Ticket“).', 'term.pDays':'Gearbeitete Tage im Monat ({d} von 30)', 'term.p13':'Anteil 13. Gehalt ({m} Monate)', 'term.p14':'Anteil 14. Gehalt ({m} Monate)', 'term.pLeave':'Nicht genommener Urlaub ({d} Tage)', 'term.pNotice':'Ersatzleistung für die Kündigungsfrist', 'term.pTfrTitle':'Abfertigung TFR (getrennt bezahlt, getrennte Besteuerung)', 'term.pTfrFund':'Angereifte Abfertigung insgesamt', 'term.pTfrTax':'IRPEF-Einbehalt auf die Abfertigung (Durchschnittssatz {rate} %, über {years} Jahre)', 'term.pTfrNet':'Netto-Abfertigung', 'term.pTicket':'NASpI-Beitrag für die Entlassung ({m} Monate Betriebszugehörigkeit)', 'term.pTotal':'Gesamtbetrag für den Mitarbeiter (Lohn + Abfertigung)', 'term.needHire':'Für das Ende des Arbeitsverhältnisses wird das Einstellungsdatum benötigt.', 'term.badDate':'Der letzte Arbeitstag muss im Monat der Lohnabrechnung liegen.', 'term.note':'Die Abfertigung enthält nicht die jährliche Aufwertung; der Einbehalt ist vorläufig und wird danach von der Agenzia delle Entrate neu berechnet.', 'term.ended':'Arbeitsverhältnis beendet am {date}',
       'pay.ctype':'Vertragsart', 'pay.ct_ind':'Unbefristet', 'pay.ct_det':'Befristet', 'pay.ct_app':'Lehre', 'pay.ccnl':'Kollektivvertrag (CCNL)', 'pay.ccnlTerz':'Handel und Dienstleistungen (Confcommercio)', 'pay.ccnlOther':'Anderer: Lohn und Zahlen gebe ich selbst ein', 'pay.level':'Stufe', 'pay.hours':'Wochenstunden (40 = Vollzeit)', 'pay.presetHint':'Mindestlohn der Stufe {level} in Vollzeit: € {amt} im Monat (Grundlohn, Teuerungszulage und drittes Element). Bei {hours} Wochenstunden ist der Lohn anteilig; wenn du mehr zahlst, korrigiere ihn.', 'pay.appHint':'Lehrling: Beiträge 5,84 % zu seinen Lasten und 11,61 % zu Lasten des Betriebs (INPS-Rundschreiben 91/2023); bei Betrieben bis 9 Beschäftigten ist der Satz in den ersten Jahren ermäßigt: prüfe ihn mit dem Lohnberater und korrigiere die Zahl. Der Lohn eines Lehrlings beginnt meist ein oder zwei Stufen unter der Endstufe.', 'pay.varsTitle':'Änderungen des Monats', 'pay.otHours':'Überstunden', 'pay.otPct':'Überstundenzuschlag (%)', 'pay.sickDays':'Krankheitstage im Monat (Kalendertage)', 'pay.sickPrior':'Tage derselben Krankheit schon im Vormonat', 'pay.unpaid':'Tage unbezahlter Abwesenheit', 'pay.leave':'Im Monat genommene Urlaubstage', 'pay.varsHint':'Überstunden: Stundenlohn × Stunden × (1 + Zuschlag). Krankheit (Regel des Handels-CCNL): erste 3 Tage zu 100 % vom Betrieb bezahlt, Tag 4–20 zu 75 % (50 % INPS + 25 % Betrieb), ab Tag 21 zu 100 % (66,66 % INPS + Rest Betrieb). Urlaub ändert den Lohn nicht: er wird nur gezählt.', 'pay.pBase':'Monatslohn', 'pay.pOvertime':'Überstunden ({h} Std., +{pct}%)', 'pay.pUnpaid':'Unbezahlte Abwesenheit ({d} Tage)', 'pay.pSickOff':'Abgezogene Krankheitstage ({d})', 'pay.pSickEmp':'Vom Betrieb bezahlte Krankheit', 'pay.pSickInps':'Krankheit zu Lasten INPS (vom Betrieb vorgestreckt, ohne Beiträge)', 'pay.pContrib':'Beitragsgrundlage', 'pay.empContract':'{type} · {ccnl} · {hours} Wochenstunden', 'pay.leaveLine':'Urlaub: angereift {acc} Tage, genommen {taken}, übrig {left}', 'pay.ccnlShortTerz':'Handel', 'pay.ccnlShortOther':'anderer Vertrag', 'pay.levelShort':'Stufe {l}',
       'tab.libri':'Geschäftsbücher', 'libri.title':'Journal und Kontenblätter', 'libri.hint':'Das Journal listet alle Buchungen nach Datum, nummeriert. Die Kontenblätter zeigen Konto für Konto alle Bewegungen des Jahres mit laufendem Saldo. Sie aktualisieren sich von selbst.', 'libri.journal':'Journal', 'libri.ledgers':'Kontenblätter', 'libri.print':'🖨 Drucken oder als PDF speichern', 'libri.emptyJournal':'Keine Buchungen in diesem Jahr.', 'libri.emptyLedgers':'Keine Konten mit Bewegungen in diesem Jahr.', 'libri.monthInfo':'Buchungen: {n} · Soll € {d} · Haben € {c}', 'libri.yearTotals':'Jahressumme: {n} Buchungen, Soll € {d}, Haben € {c}.', 'libri.notBalanced':'Soll und Haben stimmen nicht überein: Eine Buchung ist unausgeglichen.', 'libri.ledgerInfo':'Bewegungen: {n} · Saldo € {amt}', 'libri.ledgersTitle':'Kontenblätter {year}', 'led.balance':'Saldo', 'fatt.monthInfo':'Belege: {n} · € {amt}', 'ric.title':'Umgegliederte Bilanz', 'ric.hint':'Dieselben Zahlen wie in der Bilanz, nach finanziellen Kriterien geordnet: oben, was innerhalb eines Jahres zu Geld wird (oder bezahlt werden muss), unten, was länger bleibt. Darunter die Kennzahlen, die zeigen, ob das Unternehmen im Gleichgewicht ist.', 'ric.uses':'Mittelverwendung (Aktiva)', 'ric.sources':'Mittelherkunft (Passiva)', 'ric.li':'Kasse und Banken', 'ric.ld':'Forderungen', 'ric.disp':'Vorräte', 'ric.ac':'Umlaufvermögen', 'ric.immImm':'Immaterielle Anlagen', 'ric.immMat':'Sachanlagen (abzüglich Abschreibungen)', 'ric.immFin':'Finanzanlagen', 'ric.af':'Anlagevermögen', 'ric.totUses':'Summe Mittelverwendung', 'ric.pc':'Kurzfristige Verbindlichkeiten (bis 12 Monate)', 'ric.pcons':'Langfristige Verbindlichkeiten (Darlehen und Abfertigung)', 'ric.pn':'Eigenkapital', 'ric.totSources':'Summe Mittelherkunft', 'ric.ccn':'Nettoumlaufvermögen', 'ric.ccnNote':'Umlaufvermögen minus kurzfristige Verbindlichkeiten: positiv heißt, was im Jahr hereinkommt, deckt, was im Jahr zu zahlen ist.', 'ric.mt':'Liquiditätsmarge', 'ric.mtNote':'Liquide Mittel und Forderungen minus kurzfristige Verbindlichkeiten, ohne Vorräte.', 'ric.ms':'Strukturmarge', 'ric.msNote':'Eigenkapital minus Anlagevermögen: positiv heißt, dauerhafte Güter sind mit eigenen Mitteln bezahlt.', 'ric.current':'Liquidität 3. Grades', 'ric.currentNote':'Umlaufvermögen geteilt durch kurzfristige Verbindlichkeiten: über 1 ist gut.', 'ric.quick':'Liquidität 2. Grades', 'ric.quickNote':'Liquide Mittel und Forderungen geteilt durch kurzfristige Verbindlichkeiten: über 1 ist gut.', 'ric.autonomy':'Eigenkapitalquote', 'ric.autonomyNote':'Anteil der Mittel, die Eigenkapital sind: unter 25 % hängt das Unternehmen stark von Schulden ab.', 'ric.note':'Vereinfachte Umgliederung: Darlehen sind ganz langfristig, auch der innerhalb von 12 Monaten fällige Teil; alle Forderungen gelten als kurzfristig.', 'tpl.conferimentoBeni':'Sacheinlage der Gesellschafter (Geräte, Fahrzeuge…)', 'tpl.versamentoSociCC':'Einzahlung der Gesellschafter in die Kapitalrücklage (ohne Kapitalerhöhung)', 'tpl.finanziamentoSoci':'Gesellschafterdarlehen (rückzahlbar)', 'tpl.prelievoTitolare':'Privatentnahme des Inhabers (Einzelunternehmen)', 'tpl.versamentoTitolare':'Privateinlage des Inhabers (Einzelunternehmen)',
