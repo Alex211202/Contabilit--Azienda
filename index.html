@@ -1096,6 +1096,27 @@
             <input type="text" id="empNameInput" placeholder="es. Mario Bianchi">
           </div>
           <div>
+            <label data-i18n="pay.ctype">Tipo di contratto</label>
+            <select id="empContractType"><option value="indeterminato" data-i18n="pay.ct_ind">Tempo indeterminato</option><option value="determinato" data-i18n="pay.ct_det">Tempo determinato</option><option value="apprendistato" data-i18n="pay.ct_app">Apprendistato</option></select>
+          </div>
+          <div>
+            <label data-i18n="pay.ccnl">Contratto collettivo (CCNL)</label>
+            <select id="empCcnl"><option value="terziario" data-i18n="pay.ccnlTerz">Commercio e terziario (Confcommercio)</option><option value="altro" data-i18n="pay.ccnlOther">Altro: scrivo io stipendio e numeri</option></select>
+          </div>
+          <div id="empLevelWrap">
+            <label data-i18n="pay.level">Livello</label>
+            <select id="empLevel"><option value="Q">Quadro</option><option value="1">I</option><option value="2">II</option><option value="3">III</option><option value="4" selected>IV</option><option value="5">V</option><option value="6">VI</option><option value="7">VII</option></select>
+          </div>
+          <div>
+            <label data-i18n="pay.hours">Ore a settimana (40 = tempo pieno)</label>
+            <input type="number" step="0.5" min="1" max="48" id="empHours" value="40">
+          </div>
+          <div>
+            <label data-i18n="term.hireDate">Data di assunzione</label>
+            <input type="date" id="empHireDate">
+          </div>
+          <div class="full hint" id="empPresetHint" style="margin:-4px 0 4px;"></div>
+          <div>
             <label data-i18n="stip.grossSalary">Stipendio lordo mensile</label>
             <input type="number" step="0.01" min="0" id="empSalaryInput" placeholder="0.00">
           </div>
@@ -1142,6 +1163,30 @@
           </div>
         </div>
         <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin:0 0 12px;"><input type="checkbox" id="payslipExtraCheck" style="width:auto;margin-top:3px;"> <span data-i18n="stip.extraCheck">È una mensilità aggiuntiva (tredicesima o quattordicesima)</span></label>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin:0 0 12px;"><input type="checkbox" id="payTermCheck" style="width:auto;margin-top:3px;"> <span data-i18n="term.check">Ultima busta paga: il rapporto di lavoro finisce in questo mese</span></label>
+        <div id="payTermWrap" style="display:none;border-top:1px solid var(--line);padding-top:12px;margin:0 0 12px;">
+          <div class="form-grid">
+            <div><label data-i18n="term.date">Ultimo giorno di lavoro</label><input type="date" id="payTermDate"></div>
+            <div><label data-i18n="term.reason">Motivo</label><select id="payTermReason"><option value="dimissioni" data-i18n="term.r_dim">Dimissioni</option><option value="licenziamento" data-i18n="term.r_lic">Licenziamento</option><option value="scadenza" data-i18n="term.r_end">Fine del contratto a termine</option></select></div>
+            <div><label data-i18n="term.hire">Data di assunzione</label><input type="date" id="payTermHire"></div>
+            <div><label data-i18n="term.tfrBefore">TFR maturato prima di usare l'app (facoltativo)</label><input type="number" step="0.01" min="0" id="payTermTfrBefore" placeholder="0.00"></div>
+            <div><label data-i18n="term.notice">Indennità di mancato preavviso (facoltativa)</label><input type="number" step="0.01" min="0" id="payTermNotice" placeholder="0.00"></div>
+            <div><label data-i18n="term.leaveLeft">Giorni di ferie non godute da pagare</label><input type="number" step="0.5" min="0" id="payTermLeave"></div>
+          </div>
+          <div class="hint" style="margin-top:6px;" data-i18n="term.hint">Nell'ultima busta: i giorni lavorati del mese, le quote di tredicesima e quattordicesima maturate, le ferie non godute e l'eventuale preavviso. Il TFR si paga a parte, con la sua tassazione separata. Per il licenziamento l'azienda versa all'INPS il contributo NASpI (il "ticket").</div>
+        </div>
+        <div id="payVarsWrap" style="border-top:1px solid var(--line);padding-top:12px;margin:0 0 12px;">
+          <div style="font-weight:700;margin-bottom:8px;" data-i18n="pay.varsTitle">Variazioni del mese</div>
+          <div class="form-grid">
+            <div><label data-i18n="pay.otHours">Ore di straordinario</label><input type="number" step="0.5" min="0" id="payOtHours" placeholder="0"></div>
+            <div><label data-i18n="pay.otPct">Maggiorazione straordinario (%)</label><input type="number" step="1" min="0" id="payOtPct" value="15"></div>
+            <div><label data-i18n="pay.sickDays">Giorni di malattia nel mese (di calendario)</label><input type="number" step="1" min="0" max="31" id="paySickDays" placeholder="0"></div>
+            <div><label data-i18n="pay.sickPrior">Giorni della stessa malattia già nel mese prima</label><input type="number" step="1" min="0" id="paySickPrior" placeholder="0"></div>
+            <div><label data-i18n="pay.unpaid">Giorni di assenza non pagata</label><input type="number" step="1" min="0" max="26" id="payUnpaid" placeholder="0"></div>
+            <div><label data-i18n="pay.leave">Giorni di ferie presi nel mese</label><input type="number" step="0.5" min="0" id="payLeave" placeholder="0"></div>
+          </div>
+          <div class="hint" style="margin-top:6px;" data-i18n="pay.varsHint">Straordinario: paga oraria × ore × (1 + maggiorazione). Malattia (regola del CCNL Commercio): primi 3 giorni pagati al 100% dall'azienda, dal 4° al 20° al 75% (50% INPS + 25% azienda), dal 21° al 100% (66,66% INPS + resto azienda). Le ferie non cambiano lo stipendio: servono a tenere il conto dei giorni.</div>
+        </div>
         <div id="payslipPreviewWrap" style="margin-bottom:14px;"></div>
         <button class="primary" id="generatePayslipBtn" type="button" data-i18n="stip.generateAndSave">Genera e registra busta paga</button>
       </div>
@@ -2791,7 +2836,7 @@
     // F24 delle buste paga, un versamento per mese
     const byMonth = {};
     state.payslips.forEach(p => {
-      const tot = Number(p.inps_employee||0) + Number(p.inps_employer||0) + Number(p.inail_employer||0) + Number(p.irpef||0) - Number(p.integrative||0) - Number(p.cuneo_bonus||0);
+      const tot = Number(p.inps_employee||0) + Number(p.inps_employer||0) + Number(p.inail_employer||0) + Number(p.irpef||0) - Number(p.integrative||0) - Number(p.cuneo_bonus||0) - Number((p.details && p.details.inpsSick) || 0) + Number((p.details && p.details.term && p.details.term.tax) || 0) + Number((p.details && p.details.term && p.details.term.ticket) || 0); // la malattia anticipata per l'INPS si scala dall'F24; ritenuta sul TFR e ticket si aggiungono
       byMonth[p.month] = (byMonth[p.month] || 0) + tot;
     });
     Object.keys(byMonth).forEach(month => {
@@ -3349,9 +3394,16 @@
     const rAz = opts.inpsEmployer !== undefined ? opts.inpsEmployer : INPS_EMPLOYER_RATE;
     const months = opts.months === 14 ? 14 : 13;
     const inpsEmployee = round2(grossMonthly * rEmp);
-    const taxable = grossMonthly - inpsEmployee;
-    const annualIncome = taxable * months;             // reddito dell'anno su cui si misurano detrazioni e bonus
-    const grossIrpef = computeIllustrativeIrpef(taxable * 12) / 12; // scaglioni riportati al mese
+    // nonContrib: indennità di malattia a carico INPS, tassata IRPEF ma senza contributi; refGross: stipendio normale
+    // del mese, usato per stimare il reddito dell'anno (così un mese con straordinari o malattia non sposta le soglie)
+    const nonContrib = Math.max(0, Number(opts.nonContrib) || 0);
+    const taxable = grossMonthly - inpsEmployee + nonContrib;
+    const refTaxable = opts.refGross !== undefined ? Number(opts.refGross) * (1 - rEmp) : taxable;
+    const annualIncome = refTaxable * months;          // reddito dell'anno su cui si misurano detrazioni e bonus
+    // lumpSum: somme di fine rapporto (ratei, ferie non godute, preavviso): l'IRPEF è l'aumento dell'imposta dell'anno
+    const lumpTaxable = Math.max(0, Number(opts.lumpSum) || 0) * (1 - rEmp);
+    const ordTaxable = taxable - lumpTaxable;
+    const grossIrpef = computeIllustrativeIrpef(ordTaxable * 12) / 12 + (lumpTaxable > 0 ? computeIllustrativeIrpef(annualIncome + lumpTaxable) - computeIllustrativeIrpef(annualIncome) : 0); // scaglioni riportati al mese
     const annualGrossIrpef = computeIllustrativeIrpef(annualIncome);
     const annualWorkDed = payWorkDeduction(annualIncome);
     // le detrazioni si danno nei dodici mesi ordinari; su tredicesima e quattordicesima non spettano
@@ -3360,19 +3412,27 @@
     const irpef = round2(Math.max(0, grossIrpef - workDeduction - extraDeduction));
     // trattamento integrativo: 1.200 € l'anno fino a 15.000 € di reddito, se l'imposta supera la detrazione ridotta di 75 €
     const integrative = (!opts.extra && annualIncome <= 15000 && annualGrossIrpef > annualWorkDed - 75) ? 100 : 0;
-    const cuneoBonus = round2(taxable * payCuneoRate(annualIncome));
-    const net = round2(grossMonthly - inpsEmployee - irpef + integrative + cuneoBonus);
+    const cuneoBonus = round2(ordTaxable * payCuneoRate(annualIncome));
+    const net = round2(grossMonthly + nonContrib - inpsEmployee - irpef + integrative + cuneoBonus);
     const inpsEmployer = round2(grossMonthly * rAz);
     const inailEmployer = round2(grossMonthly * (inailRatePercent/100));
     // TFR: retribuzione annua diviso 13,5 (art. 2120 del codice civile), meno lo 0,50% dell'imponibile che va all'INPS
-    const tfr = round2(Math.max(0, grossMonthly / TFR_DIVISOR - grossMonthly * 0.005));
-    return { gross: grossMonthly, inpsEmployee, grossIrpef: round2(grossIrpef), workDeduction: round2(workDeduction), extraDeduction: round2(extraDeduction),
+    const tfrBase = opts.tfrBase !== undefined ? Number(opts.tfrBase) : grossMonthly; // nei giorni di malattia il TFR matura comunque
+    const tfr = round2(Math.max(0, tfrBase / TFR_DIVISOR - grossMonthly * 0.005));
+    return { gross: round2(grossMonthly + nonContrib), contribGross: grossMonthly, inpsSick: nonContrib, inpsEmployee, grossIrpef: round2(grossIrpef), workDeduction: round2(workDeduction), extraDeduction: round2(extraDeduction),
              irpef, integrative, cuneoBonus, net, inpsEmployer, inailEmployer, tfr, annualIncome: round2(annualIncome), months,
              rEmp, rAz, toTreasury: round2(irpef - integrative - cuneoBonus), extra: !!opts.extra };
   }
-  function calcPayslipFor(emp, extra){
+  function calcPayslipFor(emp, extra, vars, term){
     const r = empRates(emp);
-    return calcPayslip(Number(emp.gross_monthly_salary), r.inail, { inpsEmployee: r.inpsEmployee, inpsEmployer: r.inpsEmployer, months: r.months, extra: !!extra });
+    if(extra || !vars) return calcPayslip(Number(emp.gross_monthly_salary), r.inail, { inpsEmployee: r.inpsEmployee, inpsEmployer: r.inpsEmployer, months: r.months, extra: !!extra });
+    const ta = term ? termAmounts(emp, term) : null;
+    const v = payVariations(emp, vars, ta ? ta.monthPay : undefined);
+    const lump = ta ? ta.lump : 0;
+    const calc = calcPayslip(round2(v.contribGross + lump), r.inail, { inpsEmployee: r.inpsEmployee, inpsEmployer: r.inpsEmployer, months: r.months, extra: false, nonContrib: v.inpsSick, refGross: v.base, tfrBase: round2(v.tfrBase + lump), lumpSum: lump });
+    if(ta){ calc.term = Object.assign({}, ta, tfrSettlement(emp, term, calc.tfr), { date: term.date, reason: term.reason, hire: term.hire, leaveDays: term.leaveDays }); }
+    calc.vars = v;
+    return calc;
   }
 
   function renderEmployeesList(){
@@ -3382,9 +3442,16 @@
     wrap.innerHTML = state.employees.map(emp => {
       const empPayslips = state.payslips.filter(p=>p.employee_id===emp.id);
       const tfrAccrued = empPayslips.reduce((s,p)=> s + Number(p.tfr||0), 0);
-      const tfrLine = empPayslips.length > 0
+      const ec = empContract(emp), lv = empLeave(emp), nn = x => String(Math.round(Number(x) * 100) / 100).replace('.', ',');
+      const typeLbl = t('pay.ct_' + (ec.type === 'apprendistato' ? 'app' : (ec.type === 'determinato' ? 'det' : 'ind')));
+      const ccnlLbl = ec.ccnl === 'terziario' ? t('pay.ccnlShortTerz') + (ec.level ? ' ' + t('pay.levelShort', {l: LEVEL_LABEL[ec.level] || ec.level}) : '') : t('pay.ccnlShortOther');
+      const contractLine = '<div style="font-size:12px;color:var(--ink-faint);margin-top:2px;">' + esc(t('pay.empContract', {type: typeLbl, ccnl: ccnlLbl, hours: nn(ec.hours)})) + (emp.contract && emp.contract.endDate ? ' · <strong style="color:var(--over);">' + esc(t('term.ended', {date: new Date(emp.contract.endDate + 'T00:00:00').toLocaleDateString(localeTag())})) + '</strong>' : '')
+        + (empPayslips.length ? ' · ' + esc(t('pay.leaveLine', {acc: nn(lv.accrued), taken: nn(lv.taken), left: nn(lv.left)})) : '') + '</div>';
+      const paidTerm = empPayslips.map(p => p.details && p.details.term).find(Boolean);
+      const tfrPaidLine = paidTerm ? '<div style="font-size:12px;color:var(--ink-faint);margin-top:2px;">' + esc(t('term.tfrPaid', {fund: fmt(paidTerm.fund), net: fmt(paidTerm.net)})) + '</div>' : '';
+      const tfrLine = contractLine + tfrPaidLine + (empPayslips.length > 0 && !paidTerm
         ? '<div style="font-size:12px;color:var(--ink-faint);margin-top:2px;">TFR maturato: <strong style="color:var(--ink-soft);">€ '+fmt(tfrAccrued)+'</strong> ('+empPayslips.length+' bust'+(empPayslips.length===1?'a':'e')+' paga registrat'+(empPayslips.length===1?'a':'e')+')</div>'
-        : '';
+        : '');
       return `
       <div class="list-row" style="flex-direction:column;align-items:stretch;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -3491,7 +3558,7 @@
   function populatePayslipEmployeeSelect(){
     const sel = document.getElementById('payslipEmployeeSelect');
     if(!sel) return;
-    sel.innerHTML = state.employees.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
+    sel.innerHTML = state.employees.map(e=>'<option value="'+e.id+'">'+esc(e.name)+(e.contract && e.contract.endDate ? ' — ' + esc(t('term.ended', {date: new Date(e.contract.endDate + 'T00:00:00').toLocaleDateString(localeTag())})) : '')+'</option>').join('');
     updatePayslipPreview();
   }
 
@@ -3514,11 +3581,21 @@
     const wrap = document.getElementById('payslipPreviewWrap');
     if(!emp){ wrap.innerHTML = '<div class="hint">'+t('al.noEmployee')+'</div>'; return; }
     const extraEl = document.getElementById('payslipExtraCheck');
-    const calc = calcPayslipFor(emp, extraEl && extraEl.checked);
+    const isExtraPv = !!(extraEl && extraEl.checked);
+    document.getElementById('payVarsWrap').style.display = isExtraPv ? 'none' : '';
+    document.getElementById('payTermCheck').closest('label').style.display = isExtraPv ? 'none' : '';
+    if(isExtraPv) document.getElementById('payTermWrap').style.display = 'none'; else syncTermForm();
+    const calc = calcPayslipFor(emp, isExtraPv, isExtraPv ? null : readPayVars(), isExtraPv ? null : readTerm());
+    const T = calc.term;
+    const V = calc.vars;
+    const changed = V && (V.overtime || V.unpaid || V.sickDays || T);
     const row = (label, value, sign, faint) => `<tr><td${faint?' style="color:var(--ink-faint);"':''}>${label}</td><td style="text-align:right;${faint?'color:var(--ink-faint);':''}" class="mono">${sign||''}€ ${fmt(value)}</td></tr>`;
     const pct = r => fmt(r * 100) + '%';
     wrap.innerHTML = '<table>'
+      + (changed ? (T ? row(t('term.pDays', {d: T.daysThis}), V.monthBase) : row(t('pay.pBase'), V.base)) + (V.overtime ? row(t('pay.pOvertime', {h: fmt(V.otHours), pct: fmt(V.otPct)}), V.overtime, '+ ') : '') + (V.unpaid ? row(t('pay.pUnpaid', {d: fmt(V.unpaidDays)}), V.unpaid, '− ') : '') + (V.sickDays ? row(t('pay.pSickOff', {d: V.sickDays}), V.sickOff, '− ') + row(t('pay.pSickEmp'), V.employerSick, '+ ') + (V.inpsSick ? row(t('pay.pSickInps'), V.inpsSick, '+ ') : '') : '') : '')
+      + (T ? (T.ratei13 ? row(t('term.p13', {m: T.m13}), T.ratei13, '+ ') : '') + (T.ratei14 ? row(t('term.p14', {m: T.m14}), T.ratei14, '+ ') : '') + (T.leave ? row(t('term.pLeave', {d: fmt(T.leaveDays)}), T.leave, '+ ') : '') + (T.notice ? row(t('term.pNotice'), T.notice, '+ ') : '') : '')
       + row(t('stip.pGross'), calc.gross)
+      + (calc.inpsSick ? row(t('pay.pContrib'), calc.contribGross, '', true) : '')
       + row(t('stip.pInpsEmp', {pct: pct(calc.rEmp)}), calc.inpsEmployee, '− ')
       + row(t('stip.pIrpefGross'), calc.grossIrpef, '', true)
       + (calc.workDeduction > 0 ? row(t('stip.pWorkDed'), calc.workDeduction, '− ', true) : '')
@@ -3531,8 +3608,15 @@
       + row(t('stip.pInpsAz', {pct: pct(calc.rAz)}), calc.inpsEmployer, '', true)
       + row(t('stip.pInail'), calc.inailEmployer, '', true)
       + row(t('stip.pTfr'), calc.tfr, '', true)
-      + `<tr><td style="color:var(--ink-faint);"><strong>${t('stip.pCost')}</strong></td><td style="text-align:right;color:var(--ink-faint);" class="mono"><strong>€ ${fmt(calc.gross + calc.inpsEmployer + calc.inailEmployer + calc.tfr)}</strong></td></tr>`
+      + `<tr><td style="color:var(--ink-faint);"><strong>${t('stip.pCost')}</strong></td><td style="text-align:right;color:var(--ink-faint);" class="mono"><strong>€ ${fmt(calc.contribGross + calc.inpsEmployer + calc.inailEmployer + calc.tfr)}</strong></td></tr>`
+      + (T && T.ticket ? row(t('term.pTicket', {m: T.ticketMonths}), T.ticket, '', true) : '')
       + '</table>'
+      + (T ? '<table style="margin-top:12px;"><tr><td colspan="2" style="color:var(--ink-faint);font-size:12px;">' + t('term.pTfrTitle') + '</td></tr>'
+          + row(t('term.pTfrFund'), T.fund)
+          + row(t('term.pTfrTax', {rate: fmt(T.rate * 100), years: fmt(T.years)}), T.tax, '− ')
+          + `<tr style="border-top:2px solid var(--line);"><td><strong>${t('term.pTfrNet')}</strong></td><td style="text-align:right;" class="mono"><strong>€ ${fmt(T.net)}</strong></td></tr>`
+          + `<tr><td><strong>${t('term.pTotal')}</strong></td><td style="text-align:right;" class="mono"><strong>€ ${fmt(calc.net + T.net)}</strong></td></tr></table>`
+          + '<div class="hint" style="margin-top:6px;">' + t('term.note') + '</div>' : '')
       + '<div class="hint" style="margin-top:8px;">' + t('stip.pNote', {income: fmt(calc.annualIncome), months: calc.months}) + '</div>';
   }
 
@@ -3545,10 +3629,18 @@
     const gross = n(p.gross), inps = n(p.inps_employee), irpef = n(p.irpef), ti = n(p.integrative), cuneo = n(p.cuneo_bonus), net = n(p.net);
     const row = (label, value, bold) => '<tr><td>' + (bold ? '<strong>' : '') + esc(label) + (bold ? '</strong>' : '') + '</td><td class="r">' + (bold ? '<strong>' : '') + value + (bold ? '</strong>' : '') + '</td></tr>';
     const eur = v => '€ ' + fmt(v), minus = v => '− € ' + fmt(v), plus = v => '+ € ' + fmt(v);
-    const companyCost = gross + n(p.inps_employer) + n(p.inail_employer) + n(p.tfr);
+    const companyCost = gross - n((p.details || {}).inpsSick) + n(p.inps_employer) + n(p.inail_employer) + n(p.tfr);
     const body = '<style>table{width:100%;border-collapse:collapse;margin-top:6px;}td{padding:7px 4px;border-bottom:1px solid #ddd;font-size:13px;}td.r{text-align:right;font-family:Menlo,Consolas,monospace;white-space:nowrap;}.box{border:1px solid #bbb;border-radius:6px;padding:10px 12px;margin:14px 0;font-size:13px;}.net td{border-top:2px solid #222;border-bottom:none;font-size:15px;}.small{font-size:11px;color:#666;margin-top:18px;line-height:1.5;}</style>'
       + '<div class="box"><strong>Dipendente:</strong> ' + esc(emp ? emp.name : '—') + '<br><strong>Periodo:</strong> ' + esc(monthLabel) + (p.kind === 'extra' ? ' — mensilità aggiuntiva' : '') + '</div>'
       + '<h2>Competenze e trattenute</h2><table>'
+      + (() => { // straordinari, assenze e malattia del mese, se ci sono
+          const V = p.details || {};
+          if(!(Number(V.overtime) || Number(V.unpaid) || Number(V.sickDays))) return '';
+          return row('Stipendio del mese', eur(n(V.base)))
+            + (n(V.overtime) ? row('Straordinario (' + fmt(n(V.otHours)) + ' ore, +' + fmt(n(V.otPct)) + '%)', plus(n(V.overtime))) : '')
+            + (n(V.unpaid) ? row('Assenza non retribuita (' + fmt(n(V.unpaidDays)) + ' giorni)', minus(n(V.unpaid))) : '')
+            + (n(V.sickDays) ? row('Giorni di malattia (' + n(V.sickDays) + ')', minus(n(V.sickOff))) + row('Malattia a carico azienda', plus(n(V.employerSick))) + (n(V.inpsSick) ? row('Indennità di malattia INPS anticipata', plus(n(V.inpsSick))) : '') : '');
+        })()
       + row('Retribuzione lorda', eur(gross))
       + row('Contributi previdenziali a carico del dipendente', minus(inps))
       + row('Imponibile fiscale', eur(gross - inps))
@@ -3561,6 +3653,22 @@
       + row('Premio INAIL', eur(n(p.inail_employer)))
       + (n(p.tfr) > 0 ? row('Quota TFR maturata nel mese', eur(n(p.tfr))) : '')
       + row('Costo totale del mese per l\'azienda', eur(companyCost), true) + '</table>'
+      + (() => { // fine del rapporto: ratei, ferie, preavviso stanno già nella retribuzione; qui il TFR e il ticket
+          const T = (p.details || {}).term;
+          if(!T) return '';
+          const motivo = { dimissioni:'dimissioni', licenziamento:'licenziamento', scadenza:'fine del contratto a termine' }[T.reason] || '';
+          return '<h2>Fine del rapporto</h2><div class="box">Ultimo giorno di lavoro: ' + esc(new Date(T.date + 'T00:00:00').toLocaleDateString('it-IT')) + (motivo ? ' — ' + motivo : '') + '<br>Data di assunzione: ' + esc(new Date(T.hire + 'T00:00:00').toLocaleDateString('it-IT')) + '</div><table>'
+            + row('Giorni lavorati nel mese (' + T.daysThis + ' su 30)', eur(n(T.monthPay)))
+            + (n(T.ratei13) ? row('Rateo di tredicesima (' + T.m13 + ' mesi)', eur(n(T.ratei13))) : '')
+            + (n(T.ratei14) ? row('Rateo di quattordicesima (' + T.m14 + ' mesi)', eur(n(T.ratei14))) : '')
+            + (n(T.leave) ? row('Ferie non godute (' + fmt(n(T.leaveDays)) + ' giorni)', eur(n(T.leave))) : '')
+            + (n(T.notice) ? row('Indennità di mancato preavviso', eur(n(T.notice))) : '')
+            + '</table><h2>TFR — tassazione separata</h2><table>'
+            + row('TFR maturato in tutto', eur(n(T.fund)))
+            + row('Ritenuta IRPEF (aliquota media ' + fmt(n(T.rate) * 100) + '%)', minus(n(T.tax)))
+            + '<tr class="net"><td><strong>TFR netto</strong></td><td class="r"><strong>' + eur(n(T.net)) + '</strong></td></tr></table>'
+            + (n(T.ticket) ? '<div class="box">Contributo NASpI per licenziamento a carico dell\'azienda (' + T.ticketMonths + ' mesi di anzianità): ' + eur(n(T.ticket)) + '</div>' : '');
+        })()
       + '<div class="small">Prospetto riepilogativo creato dall\'app Contabilità Azienda con calcoli semplificati (non considera addizionali regionali e comunali, familiari a carico e voci del contratto collettivo). Non sostituisce il cedolino ufficiale del Libro Unico del Lavoro, che va elaborato dal consulente del lavoro.</div>';
     printHtml('Busta paga — ' + (emp ? emp.name : '') + ' — ' + monthLabel, body);
   }
@@ -4739,6 +4847,160 @@
     }).join('');
   }
 
+  // ---------- Stipendi: contratto, livello e variazioni del mese ----------
+  // Minimi del CCNL Terziario, Distribuzione e Servizi (Confcommercio), tempo pieno 40 ore: paga base + contingenza
+  // + terzo elemento (per il Quadro anche l'indennità di funzione, per il VII anche gli altri elementi). Tabelle del
+  // rinnovo del 2024, scaglioni dal 1/11/2025, 1/11/2026 e 1/2/2027 (riportate in modo concorde da più fonti; il testo
+  // ufficiale è quello del contratto). Le altre regole usate: 14 mensilità, 26 giorni di ferie l'anno, divisore orario
+  // 168 a 40 ore, quota giornaliera 1/26, straordinario fino alla 48ª ora +15%.
+  const TERZIARIO_MINIMI = [
+    ['2025-11-01', { Q:2986.29, 1:2506.13, 2:2235.65, 3:1983.91, 4:1783.75, 5:1660.08, 6:1541.77, 7:1397.96 }],
+    ['2026-11-01', { Q:3047.05, 1:2560.87, 2:2283.00, 3:2024.38, 4:1818.75, 5:1691.70, 6:1570.16, 7:1422.27 }],
+    ['2027-02-01', { Q:3116.49, 1:2623.43, 2:2337.11, 3:2070.63, 4:1858.75, 5:1727.84, 6:1602.60, 7:1450.05 }]
+  ];
+  const LEVEL_LABEL = { Q:'Quadro', 1:'I', 2:'II', 3:'III', 4:'IV', 5:'V', 6:'VI', 7:'VII' };
+  function terziarioMinimo(level, day){
+    const d = day || dayKey(new Date());
+    let tab = null;
+    TERZIARIO_MINIMI.forEach(([from, t]) => { if(d >= from) tab = t; });
+    return tab ? tab[level] || null : null;
+  }
+  // dati del contratto di un dipendente (quelli vecchi, senza scheda, valgono come "altro" a tempo pieno)
+  function empContract(emp){
+    const c = (emp && emp.contract && typeof emp.contract === 'object') ? emp.contract : {};
+    const hours = Number(c.hours) > 0 ? Number(c.hours) : 40;
+    return { type: c.type || 'indeterminato', ccnl: c.ccnl || 'altro', level: c.level || '', hours, leaveYear: Number(c.leaveYear) > 0 ? Number(c.leaveYear) : 26, hireDate: c.hireDate || '', endDate: c.endDate || '',
+             divisor: 168 * hours / 40, dayDivisor: 26 };
+  }
+  // variazioni del mese → importi: straordinario, assenze non pagate, malattia (parte azienda e parte INPS)
+  function payVariations(emp, v, monthBase){
+    const base = Number(emp.gross_monthly_salary || 0), c = empContract(emp);
+    const n = x => Math.max(0, Number(x) || 0);
+    const otHours = n(v.otHours), otPct = n(v.otPct), sickDays = Math.min(31, Math.round(n(v.sickDays))), sickPrior = Math.round(n(v.sickPrior)), unpaidDays = n(v.unpaidDays), leaveDays = n(v.leaveDays);
+    const hourly = base / c.divisor, overtime = round2(otHours * hourly * (1 + otPct / 100));
+    const unpaid = round2(unpaidDays * base / c.dayDivisor);
+    // malattia in giorni di calendario: per quei giorni non c'è lo stipendio normale (1/30 al giorno) ma l'indennità
+    const day30 = base / 30;
+    let employerSick = 0, inpsSick = 0;
+    for(let i = 1; i <= sickDays; i++){
+      const k = sickPrior + i;
+      if(k <= 3) employerSick += day30;                                   // carenza: paga l'azienda al 100%
+      else if(k <= 20){ inpsSick += day30 * 0.5; employerSick += day30 * 0.25; }   // INPS 50% + azienda fino al 75%
+      else if(k <= 180){ inpsSick += day30 * 2 / 3; employerSick += day30 / 3; }    // INPS 66,66% + azienda fino al 100%
+    }
+    employerSick = round2(employerSick); inpsSick = round2(inpsSick);
+    const sickOff = round2(sickDays * day30);
+    const mb = monthBase !== undefined ? Number(monthBase) : base; // ultimo mese: solo i giorni lavorati
+    const contribGross = round2(Math.max(0, mb + overtime - unpaid - sickOff + employerSick));
+    return { base: round2(base), otHours, otPct, overtime, unpaidDays, unpaid, sickDays, sickPrior, sickOff, employerSick, inpsSick, leaveDays, contribGross,
+             tfrBase: round2(Math.max(0, mb + overtime - unpaid)), monthBase: round2(mb) };
+  }
+  function readPayVars(){
+    const val = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    return { otHours: val('payOtHours'), otPct: val('payOtPct'), sickDays: val('paySickDays'), sickPrior: val('paySickPrior'), unpaidDays: val('payUnpaid'), leaveDays: val('payLeave') };
+  }
+  function clearPayVars(){ ['payOtHours','paySickDays','paySickPrior','payUnpaid','payLeave'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; }); }
+  // ferie: maturate con le buste paga ordinarie (giorni l'anno / 12 per ogni mese), meno quelle prese
+  function empLeave(emp){
+    const c = empContract(emp), slips = state.payslips.filter(p => p.employee_id === emp.id && p.kind !== 'extra');
+    const accrued = slips.length * c.leaveYear / 12, taken = slips.reduce((s,p) => s + Number((p.details && p.details.leaveDays) || 0) + Number((p.details && p.details.term && p.details.term.leaveDays) || 0), 0); // le ferie pagate a fine rapporto contano come prese
+    return { accrued: Math.round(accrued * 100) / 100, taken, left: Math.round((accrued - taken) * 100) / 100 };
+  }
+  // modulo "Nuovo dipendente": scegliendo contratto e livello si riempiono stipendio, mensilità e contributi
+  function applyEmpPreset(){
+    const ccnl = document.getElementById('empCcnl').value, type = document.getElementById('empContractType').value;
+    const level = document.getElementById('empLevel').value, hours = Number(document.getElementById('empHours').value) || 40;
+    document.getElementById('empLevelWrap').style.display = ccnl === 'terziario' ? '' : 'none';
+    document.getElementById('empInpsEmpInput').value = type === 'apprendistato' ? '5.84' : '9.19';
+    document.getElementById('empInpsAzInput').value = type === 'apprendistato' ? '11.61' : '23.81';
+    const hint = document.getElementById('empPresetHint');
+    if(ccnl === 'terziario'){
+      const min = terziarioMinimo(level);
+      if(min){ document.getElementById('empSalaryInput').value = (Math.round(min * hours / 40 * 100) / 100).toFixed(2); }
+      document.getElementById('empMonthsSelect').value = '14';
+      hint.textContent = t('pay.presetHint', {level: LEVEL_LABEL[level] || level, amt: fmt(min || 0), hours}) + (type === 'apprendistato' ? ' ' + t('pay.appHint') : '');
+    } else {
+      hint.textContent = type === 'apprendistato' ? t('pay.appHint') : '';
+    }
+  }
+  ['empCcnl','empContractType','empLevel','empHours'].forEach(id => document.getElementById(id).addEventListener('change', applyEmpPreset));
+  document.getElementById('empHours').addEventListener('input', applyEmpPreset);
+  ['payOtHours','payOtPct','paySickDays','paySickPrior','payUnpaid','payLeave'].forEach(id => document.getElementById(id).addEventListener('input', ()=> updatePayslipPreview()));
+
+  // ---------- Stipendi, secondo passo: fine del rapporto di lavoro ----------
+  // Ultima busta: stipendio dei giorni lavorati (in 30esimi), ratei di tredicesima (da gennaio) e di quattordicesima (dal
+  // 1° luglio, solo con 14 mensilità) — conta il mese se lavorato per almeno 15 giorni —, ferie non godute (1/26 dello
+  // stipendio al giorno), preavviso non lavorato (importo scritto a mano). Su questi importi contributi e IRPEF (sui ratei
+  // e le altre somme l'IRPEF è calcolata come aumento dell'imposta dell'anno, non come un mese normale).
+  // TFR: fondo = quote delle buste paga registrate + TFR maturato prima (scritto a mano); tassazione separata (art. 19
+  // del Testo unico): reddito di riferimento = TFR / anni di servizio × 12, aliquota media dell'IRPEF su quel reddito,
+  // applicata a tutto il TFR (il datore la trattiene, poi l'Agenzia ricalcola). La rivalutazione annuale non è calcolata.
+  // Ticket di licenziamento 2026: 41% del massimale mensile NASpI 1.584,70 € (circolare INPS 4/2026) = 649,73 € per ogni
+  // 12 mesi di anzianità, al massimo 3 anni; dovuto per il licenziamento, non per dimissioni o fine del contratto a termine.
+  const TICKET_YEAR = 649.73, TICKET_MAX = 1949.19;
+  const monthsWorkedFrom = (from, to) => { // mesi interi contando il mese se lavorato almeno 15 giorni
+    if(!from || !to || to < from) return 0;
+    const a = parseLocalDate(from), b = parseLocalDate(to);
+    let m = 0, y = a.getFullYear(), mo = a.getMonth();
+    while(y * 12 + mo <= b.getFullYear() * 12 + b.getMonth()){
+      const start = (y === a.getFullYear() && mo === a.getMonth()) ? a.getDate() : 1;
+      const lastDay = new Date(y, mo + 1, 0).getDate();
+      const end = (y === b.getFullYear() && mo === b.getMonth()) ? b.getDate() : lastDay;
+      if(end - start + 1 >= 15) m++;
+      mo++; if(mo > 11){ mo = 0; y++; }
+    }
+    return m;
+  }
+  function serviceYears(from, to){ if(!from || !to) return 0; return Math.max(0, (parseLocalDate(to) - parseLocalDate(from)) / 86400000 + 1) / 365; }
+  function readTerm(){
+    const on = document.getElementById('payTermCheck').checked;
+    if(!on) return null;
+    const v = id => document.getElementById(id).value;
+    return { date: v('payTermDate'), reason: v('payTermReason'), hire: v('payTermHire'), tfrBefore: Math.max(0, parseFloat(v('payTermTfrBefore')) || 0),
+             notice: Math.max(0, parseFloat(v('payTermNotice')) || 0), leaveDays: Math.max(0, parseFloat(v('payTermLeave')) || 0) };
+  }
+  // importi di fine rapporto (senza il TFR, che si calcola dopo la busta perché comprende la quota di questo mese)
+  function termAmounts(emp, term){
+    const base = Number(emp.gross_monthly_salary || 0), r = empRates(emp), d = parseLocalDate(term.date);
+    const y = d.getFullYear(), monthStart = dayKey(new Date(y, d.getMonth(), 1));
+    const from13 = term.hire && term.hire > (y + '-01-01') ? term.hire : (y + '-01-01');
+    const julyThis = y + '-07-01', julyPrev = (y - 1) + '-07-01';
+    const from14base = term.date >= julyThis ? julyThis : julyPrev;
+    const from14 = term.hire && term.hire > from14base ? term.hire : from14base;
+    const m13 = monthsWorkedFrom(from13, term.date), m14 = r.months === 14 ? monthsWorkedFrom(from14, term.date) : 0;
+    const startThis = term.hire && term.hire > monthStart ? term.hire : monthStart;
+    const daysThis = Math.min(30, Math.max(0, Math.round((d - parseLocalDate(startThis)) / 86400000) + 1));
+    const ratei13 = round2(base * m13 / 12), ratei14 = round2(base * m14 / 12), leave = round2(base / 26 * term.leaveDays);
+    return { daysThis, m13, m14, ratei13, ratei14, leave, notice: round2(term.notice), monthPay: round2(base * Math.min(30, daysThis) / 30),
+             lump: round2(ratei13 + ratei14 + leave + term.notice) };
+  }
+  function tfrSettlement(emp, term, thisTfr){
+    const fund = round2(state.payslips.filter(p => p.employee_id === emp.id).reduce((s,p) => s + Number(p.tfr || 0), 0) + Number(thisTfr || 0) + term.tfrBefore);
+    const years = serviceYears(term.hire, term.date);
+    let rate = 0;
+    if(fund > 0 && years > 0){ const ref = fund / years * 12; rate = computeIllustrativeIrpef(ref) / ref; }
+    const tax = round2(fund * rate);
+    const ticketMonths = term.reason === 'licenziamento' ? Math.min(36, monthsWorkedFrom(term.hire, term.date)) : 0;
+    const ticket = term.reason === 'licenziamento' ? round2(Math.min(TICKET_MAX, TICKET_YEAR / 12 * ticketMonths)) : 0;
+    return { fund, years: Math.round(years * 100) / 100, rate, tax, net: round2(fund - tax), ticket, ticketMonths };
+  }
+  function syncTermForm(){
+    const on = document.getElementById('payTermCheck').checked;
+    document.getElementById('payTermWrap').style.display = on ? '' : 'none';
+    if(!on) return;
+    const emp = state.employees.find(e => e.id === document.getElementById('payslipEmployeeSelect').value);
+    if(!emp) return;
+    const c = empContract(emp);
+    if(!document.getElementById('payTermHire').value && c.hireDate) document.getElementById('payTermHire').value = c.hireDate;
+    if(document.getElementById('payTermLeave').value === ''){ const lv = empLeave(emp); document.getElementById('payTermLeave').value = String(Math.max(0, Math.round((lv.left + c.leaveYear / 12) * 100) / 100)); }
+    if(!document.getElementById('payTermDate').value){
+      const y = document.getElementById('payslipYearSelect').value, m = document.getElementById('payslipMonthSelect').value;
+      document.getElementById('payTermDate').value = y + '-' + m + '-' + String(new Date(Number(y), Number(m), 0).getDate()).padStart(2, '0');
+    }
+  }
+  document.getElementById('payTermCheck').addEventListener('change', ()=>{ ['payTermHire','payTermLeave','payTermDate'].forEach(id => { document.getElementById(id).value = ''; }); syncTermForm(); updatePayslipPreview(); });
+  ['payTermDate','payTermReason','payTermHire','payTermTfrBefore','payTermNotice','payTermLeave'].forEach(id => { const el = document.getElementById(id); el.addEventListener('input', ()=> updatePayslipPreview()); el.addEventListener('change', ()=> updatePayslipPreview()); });
+
   function renderAll(){
     renderAccountsList();
     renderDashboardStats();
@@ -5540,7 +5802,8 @@
     if(!name || isNaN(salary) || salary<=0){ alert(t('al.empData')); return; }
     const numOr = (id, def) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) || v < 0 ? def : v; };
     const row = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, name, gross_monthly_salary: salary, inail_rate: isNaN(inailRate)?1.0:inailRate,
-      inps_employee_rate: numOr('empInpsEmpInput', 9.19), inps_employer_rate: numOr('empInpsAzInput', 23.81), months_per_year: document.getElementById('empMonthsSelect').value === '14' ? 14 : 13 };
+      inps_employee_rate: numOr('empInpsEmpInput', 9.19), inps_employer_rate: numOr('empInpsAzInput', 23.81), months_per_year: document.getElementById('empMonthsSelect').value === '14' ? 14 : 13,
+      contract: { type: document.getElementById('empContractType').value, ccnl: document.getElementById('empCcnl').value, level: document.getElementById('empCcnl').value === 'terziario' ? document.getElementById('empLevel').value : '', hours: Number(document.getElementById('empHours').value) || 40, leaveYear: 26, hireDate: document.getElementById('empHireDate').value || null } };
     const { error } = await supabaseClient.from('biz_employees').insert([row]);
     if(error){ alert(t('al.error') + ' ' + error.message); return; }
     state.employees.push(row);
@@ -5567,7 +5830,12 @@
       alert(t('al.payslipDup', {name: emp.name}));
       return;
     }
-    const calc = calcPayslipFor(emp, isExtra);
+    const term = isExtra ? null : readTerm();
+    if(term){
+      if(!term.hire){ alert(t('term.needHire')); return; }
+      if(!term.date || term.date.slice(0, 7) !== month || term.date < term.hire){ alert(t('term.badDate')); return; }
+    }
+    const calc = calcPayslipFor(emp, isExtra, isExtra ? null : readPayVars(), term);
     // Conti necessari — se mancano, fermati con un messaggio chiaro invece di un errore criptico
     const salariAcc = accountByCode('4200'), oneriAcc = accountByCode('4210'), tfrAccrualAcc = accountByCode('4220');
     const debDipAcc = accountByCode('2250'), debInpsAcc = accountByCode('2220'), debInailAcc = accountByCode('2230'), ritenuteAcc = accountByCode('2240'), tfrDebAcc = accountByCode('2300');
@@ -5580,26 +5848,42 @@
     const entryRow = { id: entryId, user_id: currentUserId, company_id: currentCompany.id, date: year+'-'+monthNum+'-'+String(new Date(Number(year), Number(monthNum), 0).getDate()).padStart(2,'0'), description: t(isExtra ? 'stip.entryExtra' : 'stip.entry') + ' ' + monthLabel + ' — ' + emp.name, mode: 'payroll' };
     const onericontributivi = calc.inpsEmployer + calc.inailEmployer;
     const lineRows = [
-      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: salariAcc.id, debit: calc.gross, credit: 0 },
+      // il costo per l'azienda è lo stipendio senza la parte di malattia pagata dall'INPS, che l'azienda anticipa e recupera dai contributi
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: salariAcc.id, debit: calc.contribGross, credit: 0 },
       { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: oneriAcc.id, debit: onericontributivi, credit: 0 },
       { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: tfrAccrualAcc.id, debit: calc.tfr, credit: 0 },
       { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: debDipAcc.id, debit: 0, credit: calc.net },
-      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: debInpsAcc.id, debit: 0, credit: calc.inpsEmployee + calc.inpsEmployer },
+      { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: debInpsAcc.id, debit: Math.max(0, round2(calc.inpsSick - calc.inpsEmployee - calc.inpsEmployer)), credit: Math.max(0, round2(calc.inpsEmployee + calc.inpsEmployer - calc.inpsSick)) },
       { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: debInailAcc.id, debit: 0, credit: calc.inailEmployer },
       // all'erario va l'IRPEF trattenuta meno trattamento integrativo e bonus cuneo anticipati in busta: se il conto è a favore dell'azienda la riga va in dare
       { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: ritenuteAcc.id, debit: calc.toTreasury < 0 ? -calc.toTreasury : 0, credit: calc.toTreasury > 0 ? calc.toTreasury : 0 },
       { id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: tfrDebAcc.id, debit: 0, credit: calc.tfr }
     ];
+    // fine del rapporto: si paga il TFR (dal fondo TFR al debito verso il dipendente, la ritenuta all'erario) e, per il
+    // licenziamento, il contributo NASpI dovuto all'INPS
+    if(calc.term){
+      const T = calc.term, L = (acc, debit, credit) => ({ id: uid(), user_id: currentUserId, company_id: currentCompany.id, entry_id: entryId, account_id: acc.id, debit: round2(debit), credit: round2(credit) });
+      if(T.fund > 0){ lineRows.push(L(tfrDebAcc, T.fund, 0), L(debDipAcc, 0, T.net)); if(T.tax > 0) lineRows.push(L(ritenuteAcc, 0, T.tax)); }
+      if(T.ticket > 0) lineRows.push(L(oneriAcc, T.ticket, 0), L(debInpsAcc, 0, T.ticket));
+    }
     const { error: e1 } = await supabaseClient.from('biz_journal_entries').insert([entryRow]);
     if(e1){ alert(t('al.error') + ' ' + e1.message); return; }
     const { error: e2 } = await supabaseClient.from('biz_journal_lines').insert(lineRows);
     if(e2){ await rollbackEntry(entryRow.id); alert(t('al.error') + ' ' + e2.message); return; }
     state.journalEntries.unshift(entryRow);
     state.journalLines.push(...lineRows);
-    const payslipRow = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, employee_id: empId, month, gross: calc.gross, inps_employee: calc.inpsEmployee, irpef: calc.irpef, net: calc.net, inps_employer: calc.inpsEmployer, inail_employer: calc.inailEmployer, tfr: calc.tfr, entry_id: entryId, integrative: calc.integrative, cuneo_bonus: calc.cuneoBonus, extra_deduction: calc.extraDeduction, kind: isExtra ? 'extra' : null };
+    const payslipRow = { id: uid(), user_id: currentUserId, company_id: currentCompany.id, employee_id: empId, month, gross: calc.gross, inps_employee: calc.inpsEmployee, irpef: calc.irpef, net: calc.net, inps_employer: calc.inpsEmployer, inail_employer: calc.inailEmployer, tfr: calc.tfr, entry_id: entryId, integrative: calc.integrative, cuneo_bonus: calc.cuneoBonus, extra_deduction: calc.extraDeduction, kind: isExtra ? 'extra' : null, details: calc.vars ? Object.assign({}, calc.vars, calc.term ? { term: calc.term } : {}) : null };
     const { error: e3 } = await supabaseClient.from('biz_payslips').insert([payslipRow]);
     if(e3){ await rollbackEntry(entryRow.id); alert(t('al.error') + ' ' + e3.message); return; }
     state.payslips.unshift(payslipRow);
+    clearPayVars();
+    if(calc.term){ // il dipendente resta nell'elenco con la data di fine rapporto
+      const contract = Object.assign({}, emp.contract || {}, { endDate: calc.term.date, hireDate: (emp.contract && emp.contract.hireDate) || calc.term.hire });
+      const { error: ce } = await supabaseClient.from('biz_employees').update({ contract }).eq('id', emp.id);
+      if(!ce) emp.contract = contract;
+      document.getElementById('payTermCheck').checked = false; syncTermForm();
+      populatePayslipEmployeeSelect(); renderEmployeesList();
+    }
     renderAll();
   });
 
@@ -5655,6 +5939,8 @@
   // ---------- Lingua e traduzioni ----------
   const I18N = {
     it: {
+      'term.tfrPaid':'TFR liquidato: € {fund} lordi, € {net} netti', 'term.hireDate':'Data di assunzione', 'term.check':'Ultima busta paga: il rapporto di lavoro finisce in questo mese', 'term.date':'Ultimo giorno di lavoro', 'term.reason':'Motivo', 'term.r_dim':'Dimissioni', 'term.r_lic':'Licenziamento', 'term.r_end':'Fine del contratto a termine', 'term.hire':'Data di assunzione', 'term.tfrBefore':"TFR maturato prima di usare l'app (facoltativo)", 'term.notice':'Indennità di mancato preavviso (facoltativa)', 'term.leaveLeft':'Giorni di ferie non godute da pagare', 'term.hint':"Nell'ultima busta: i giorni lavorati del mese, le quote di tredicesima e quattordicesima maturate, le ferie non godute e l'eventuale preavviso. Il TFR si paga a parte, con la sua tassazione separata. Per il licenziamento l'azienda versa all'INPS il contributo NASpI (il \"ticket\").", 'term.pDays':'Giorni lavorati nel mese ({d} su 30)', 'term.p13':'Rateo di tredicesima ({m} mesi)', 'term.p14':'Rateo di quattordicesima ({m} mesi)', 'term.pLeave':'Ferie non godute ({d} giorni)', 'term.pNotice':'Indennità di mancato preavviso', 'term.pTfrTitle':'TFR (pagato a parte, tassazione separata)', 'term.pTfrFund':'TFR maturato in tutto', 'term.pTfrTax':'Ritenuta IRPEF sul TFR (aliquota media {rate}%, su {years} anni)', 'term.pTfrNet':'TFR netto', 'term.pTicket':'Contributo NASpI per il licenziamento ({m} mesi di anzianità)', 'term.pTotal':'Totale che riceve il dipendente (busta + TFR)', 'term.needHire':'Per la fine del rapporto serve la data di assunzione.', 'term.badDate':"L'ultimo giorno di lavoro deve essere nel mese della busta paga.", 'term.note':'Il TFR non comprende la rivalutazione annuale; la ritenuta sul TFR è provvisoria, poi la ricalcola l’Agenzia delle Entrate.', 'term.ended':'rapporto finito il {date}',
+      'pay.ctype':'Tipo di contratto', 'pay.ct_ind':'Tempo indeterminato', 'pay.ct_det':'Tempo determinato', 'pay.ct_app':'Apprendistato', 'pay.ccnl':'Contratto collettivo (CCNL)', 'pay.ccnlTerz':'Commercio e terziario (Confcommercio)', 'pay.ccnlOther':'Altro: scrivo io stipendio e numeri', 'pay.level':'Livello', 'pay.hours':'Ore a settimana (40 = tempo pieno)', 'pay.presetHint':'Minimo del livello {level} a tempo pieno: € {amt} al mese (paga base, contingenza e terzo elemento). Per {hours} ore a settimana lo stipendio è in proporzione; se paghi di più, correggilo.', 'pay.appHint':"Apprendista: contributi 5,84% a carico suo e 11,61% a carico dell'azienda (circolare INPS 91/2023); per le aziende fino a 9 dipendenti l'aliquota dei primi anni è ridotta: verificala col consulente e correggi il numero. Lo stipendio dell'apprendista di solito parte da uno o due livelli sotto quello finale.", 'pay.varsTitle':'Variazioni del mese', 'pay.otHours':'Ore di straordinario', 'pay.otPct':'Maggiorazione straordinario (%)', 'pay.sickDays':'Giorni di malattia nel mese (di calendario)', 'pay.sickPrior':'Giorni della stessa malattia già nel mese prima', 'pay.unpaid':'Giorni di assenza non pagata', 'pay.leave':'Giorni di ferie presi nel mese', 'pay.varsHint':"Straordinario: paga oraria × ore × (1 + maggiorazione). Malattia (regola del CCNL Commercio): primi 3 giorni pagati al 100% dall'azienda, dal 4° al 20° al 75% (50% INPS + 25% azienda), dal 21° al 100% (66,66% INPS + resto azienda). Le ferie non cambiano lo stipendio: servono a tenere il conto dei giorni.", 'pay.pBase':'Stipendio del mese', 'pay.pOvertime':'Straordinario ({h} ore, +{pct}%)', 'pay.pUnpaid':'Assenza non pagata ({d} giorni)', 'pay.pSickOff':'Giorni di malattia tolti ({d})', 'pay.pSickEmp':"Malattia pagata dall'azienda", 'pay.pSickInps':"Malattia a carico INPS (anticipata dall'azienda, senza contributi)", 'pay.pContrib':'Imponibile per i contributi', 'pay.empContract':'{type} · {ccnl} · {hours} ore a settimana', 'pay.leaveLine':'Ferie: maturate {acc} giorni, prese {taken}, restano {left}', 'pay.ccnlShortTerz':'Commercio', 'pay.ccnlShortOther':'altro contratto', 'pay.levelShort':'livello {l}',
       'tab.libri':'Libri contabili', 'libri.title':'Libro giornale e mastrini', 'libri.hint':"Il libro giornale è l'elenco di tutte le registrazioni in ordine di data, numerate. I mastrini mostrano, conto per conto, tutti i movimenti dell'anno con il saldo progressivo. Si aggiornano da soli.", 'libri.journal':'Libro giornale', 'libri.ledgers':'Mastrini', 'libri.print':'🖨 Stampa o salva in PDF', 'libri.emptyJournal':'Nessuna registrazione in questo anno.', 'libri.emptyLedgers':'Nessun conto con movimenti in questo anno.', 'libri.monthInfo':'registrazioni: {n} · dare € {d} · avere € {c}', 'libri.yearTotals':"Totale dell'anno: {n} registrazioni, dare € {d}, avere € {c}.", 'libri.notBalanced':'Dare e avere non coincidono: c’è una registrazione sbilanciata.', 'libri.ledgerInfo':'movimenti: {n} · saldo € {amt}', 'libri.ledgersTitle':'Mastrini {year}', 'led.balance':'Saldo', 'fatt.monthInfo':'documenti: {n} · € {amt}', 'ric.title':'Stato patrimoniale riclassificato', 'ric.hint':"Le stesse cifre dello Stato Patrimoniale, ordinate secondo il criterio finanziario: in alto ciò che diventa denaro (o va pagato) entro l'anno, in basso ciò che resta più a lungo. Sotto, i margini e gli indici che dicono se l'azienda è in equilibrio.", 'ric.uses':'Impieghi (attivo)', 'ric.sources':'Fonti (passivo)', 'ric.li':'Liquidità immediate (cassa e banche)', 'ric.ld':'Liquidità differite (crediti)', 'ric.disp':'Disponibilità (magazzino)', 'ric.ac':'Attivo circolante', 'ric.immImm':'Immobilizzazioni immateriali', 'ric.immMat':'Immobilizzazioni materiali (al netto del fondo)', 'ric.immFin':'Immobilizzazioni finanziarie', 'ric.af':'Attivo immobilizzato', 'ric.totUses':'Totale impieghi', 'ric.pc':'Passività correnti (entro 12 mesi)', 'ric.pcons':'Passività consolidate (mutui e TFR)', 'ric.pn':'Patrimonio netto', 'ric.totSources':'Totale fonti', 'ric.ccn':'Capitale circolante netto', 'ric.ccnNote':'Attivo circolante meno passività correnti: positivo vuol dire che ciò che entra entro l’anno copre ciò che va pagato entro l’anno.', 'ric.mt':'Margine di tesoreria', 'ric.mtNote':'Liquidità e crediti meno passività correnti, senza contare il magazzino.', 'ric.ms':'Margine di struttura', 'ric.msNote':'Patrimonio netto meno attivo immobilizzato: positivo vuol dire che i beni durevoli sono pagati con mezzi propri.', 'ric.current':'Indice di liquidità corrente', 'ric.currentNote':'Attivo circolante diviso passività correnti: sopra 1 va bene.', 'ric.quick':'Indice di liquidità immediata', 'ric.quickNote':'Liquidità e crediti diviso passività correnti: sopra 1 va bene.', 'ric.autonomy':'Autonomia finanziaria', 'ric.autonomyNote':'Quota delle fonti che sono mezzi propri: sotto il 25% l’azienda dipende molto dai debiti.', 'ric.note':'Riclassificazione semplificata: i mutui sono tutti tra le passività consolidate, anche la parte che scade entro 12 mesi; i crediti sono tutti tra le liquidità differite.', 'tpl.conferimentoBeni':'Conferimento di beni da parte dei soci (attrezzature, automezzi…)', 'tpl.versamentoSociCC':'Versamento dei soci in conto capitale (senza aumentare il capitale)', 'tpl.finanziamentoSoci':'Finanziamento dei soci (da restituire)', 'tpl.prelievoTitolare':'Prelievo del titolare (ditta individuale)', 'tpl.versamentoTitolare':'Versamento del titolare (ditta individuale)',
       'push.title':'Notifiche', 'push.hint':'Ricevi un avviso su questo dispositivo 3 giorni prima e il giorno stesso di: versamenti IVA, F24 di stipendi e ritenute, bollo sulle fatture, fatture da incassare e da pagare. Arrivano la mattina.', 'push.enable':'Attiva le notifiche su questo dispositivo', 'push.disable':'Disattiva le notifiche su questo dispositivo', 'push.on':'Su questo dispositivo le notifiche sono attive.', 'push.off':'Su questo dispositivo le notifiche sono spente.', 'push.blocked':'Le notifiche sono bloccate nelle impostazioni del browser per questo sito: vanno riattivate da lì.', 'push.unsupported':'Questo browser non supporta le notifiche.', 'push.failed':'Non sono riuscito ad attivare le notifiche su questo dispositivo.', 'push.iphone':"Su iPhone e iPad funzionano solo se prima aggiungi l'app alla schermata Home (Condividi → Aggiungi a Home) e la apri da lì.", 'push.rCollect':'Da incassare: fattura {number} di {name} — € {amt}', 'push.rPay':'Da pagare: fattura {number} di {name} — € {amt}',
       'acc.title':'Il tuo accesso', 'acc.loggedAs':'Sei entrato come', 'acc.newPw':'Nuova password (almeno 6 caratteri)', 'acc.newPw2':'Ripeti la nuova password', 'acc.pwHint':"Se entri con Google puoi comunque scegliere una password: potrai usare l'una o l'altra strada.", 'acc.savePw':'Cambia password', 'acc.short':'La password deve avere almeno 6 caratteri.', 'acc.mismatch':'Le due password non sono uguali.', 'acc.saved':'Password cambiata.',
@@ -5866,6 +6152,8 @@
       'settings.exportJournal':'Esporta Prima Nota (CSV)', 'settings.exportInvoices':'Esporta Fatture (CSV)', 'settings.exportAccounts':'Esporta Piano dei conti (CSV)',
     },
     en: {
+      'term.tfrPaid':'TFR paid out: € {fund} gross, € {net} net', 'term.hireDate':'Hiring date', 'term.check':'Last payslip: the employment ends this month', 'term.date':'Last working day', 'term.reason':'Reason', 'term.r_dim':'Resignation', 'term.r_lic':'Dismissal', 'term.r_end':'End of fixed-term contract', 'term.hire':'Hiring date', 'term.tfrBefore':'Severance pay (TFR) accrued before using the app (optional)', 'term.notice':'Payment in lieu of notice (optional)', 'term.leaveLeft':'Unused holiday days to pay', 'term.hint':'In the last payslip: days worked in the month, accrued shares of the 13th and 14th month, unused holidays and any notice payment. The TFR is paid separately, with its own separate taxation. For a dismissal the company pays INPS the NASpI contribution (the "ticket").', 'term.pDays':'Days worked in the month ({d} of 30)', 'term.p13':'13th month share ({m} months)', 'term.p14':'14th month share ({m} months)', 'term.pLeave':'Unused holidays ({d} days)', 'term.pNotice':'Payment in lieu of notice', 'term.pTfrTitle':'TFR (paid separately, separate taxation)', 'term.pTfrFund':'Total TFR accrued', 'term.pTfrTax':'IRPEF withheld on TFR (average rate {rate}%, over {years} years)', 'term.pTfrNet':'Net TFR', 'term.pTicket':'NASpI contribution for the dismissal ({m} months of seniority)', 'term.pTotal':'Total the employee receives (payslip + TFR)', 'term.needHire':'The hiring date is needed to end the employment.', 'term.badDate':'The last working day must be in the payslip month.', 'term.note':'The TFR does not include the annual revaluation; the withholding on TFR is provisional and is then recalculated by the Agenzia delle Entrate.', 'term.ended':'employment ended on {date}',
+      'pay.ctype':'Contract type', 'pay.ct_ind':'Permanent', 'pay.ct_det':'Fixed-term', 'pay.ct_app':'Apprenticeship', 'pay.ccnl':'Collective agreement (CCNL)', 'pay.ccnlTerz':'Commerce and services (Confcommercio)', 'pay.ccnlOther':'Other: I enter salary and figures myself', 'pay.level':'Level', 'pay.hours':'Hours per week (40 = full time)', 'pay.presetHint':'Minimum for level {level}, full time: € {amt} a month (base pay, cost-of-living allowance and third element). For {hours} hours a week the salary is proportional; if you pay more, correct it.', 'pay.appHint':'Apprentice: contributions 5.84% paid by the apprentice and 11.61% by the company (INPS circular 91/2023); for companies with up to 9 employees the rate is reduced in the first years: check it with your payroll consultant and correct the figure. An apprentice’s pay usually starts one or two levels below the final one.', 'pay.varsTitle':'Changes this month', 'pay.otHours':'Overtime hours', 'pay.otPct':'Overtime premium (%)', 'pay.sickDays':'Sick days this month (calendar days)', 'pay.sickPrior':'Days of the same illness already last month', 'pay.unpaid':'Days of unpaid absence', 'pay.leave':'Holiday days taken this month', 'pay.varsHint':'Overtime: hourly rate × hours × (1 + premium). Sickness (Commerce CCNL rule): first 3 days paid 100% by the company, days 4–20 at 75% (50% INPS + 25% company), from day 21 at 100% (66.66% INPS + rest company). Holidays do not change the salary: they are only counted.', 'pay.pBase':'Monthly salary', 'pay.pOvertime':'Overtime ({h} hours, +{pct}%)', 'pay.pUnpaid':'Unpaid absence ({d} days)', 'pay.pSickOff':'Sick days removed ({d})', 'pay.pSickEmp':'Sickness paid by the company', 'pay.pSickInps':'Sickness paid by INPS (advanced by the company, no contributions)', 'pay.pContrib':'Contribution base', 'pay.empContract':'{type} · {ccnl} · {hours} hours a week', 'pay.leaveLine':'Holidays: accrued {acc} days, taken {taken}, left {left}', 'pay.ccnlShortTerz':'Commerce', 'pay.ccnlShortOther':'other agreement', 'pay.levelShort':'level {l}',
       'tab.libri':'Accounting books', 'libri.title':'Journal and ledgers', 'libri.hint':'The journal lists all entries by date, numbered. The ledgers show, account by account, all the movements of the year with the running balance. They update automatically.', 'libri.journal':'Journal', 'libri.ledgers':'Ledgers', 'libri.print':'🖨 Print or save as PDF', 'libri.emptyJournal':'No entries in this year.', 'libri.emptyLedgers':'No accounts with movements in this year.', 'libri.monthInfo':'entries: {n} · debit € {d} · credit € {c}', 'libri.yearTotals':'Year total: {n} entries, debit € {d}, credit € {c}.', 'libri.notBalanced':'Debit and credit do not match: one entry is unbalanced.', 'libri.ledgerInfo':'movements: {n} · balance € {amt}', 'libri.ledgersTitle':'Ledgers {year}', 'led.balance':'Balance', 'fatt.monthInfo':'documents: {n} · € {amt}', 'ric.title':'Reclassified balance sheet', 'ric.hint':'The same figures as the balance sheet, ordered by the financial criterion: at the top what becomes cash (or must be paid) within the year, at the bottom what lasts longer. Below, the margins and ratios that tell whether the business is balanced.', 'ric.uses':'Uses (assets)', 'ric.sources':'Sources (liabilities)', 'ric.li':'Cash and banks', 'ric.ld':'Receivables', 'ric.disp':'Inventory', 'ric.ac':'Current assets', 'ric.immImm':'Intangible fixed assets', 'ric.immMat':'Tangible fixed assets (net of depreciation)', 'ric.immFin':'Financial fixed assets', 'ric.af':'Fixed assets', 'ric.totUses':'Total uses', 'ric.pc':'Current liabilities (within 12 months)', 'ric.pcons':'Long-term liabilities (mortgages and severance pay)', 'ric.pn':'Equity', 'ric.totSources':'Total sources', 'ric.ccn':'Net working capital', 'ric.ccnNote':'Current assets minus current liabilities: positive means what comes in within the year covers what must be paid within the year.', 'ric.mt':'Treasury margin', 'ric.mtNote':'Cash and receivables minus current liabilities, without inventory.', 'ric.ms':'Structural margin', 'ric.msNote':'Equity minus fixed assets: positive means durable assets are paid with own funds.', 'ric.current':'Current ratio', 'ric.currentNote':'Current assets divided by current liabilities: above 1 is good.', 'ric.quick':'Quick ratio', 'ric.quickNote':'Cash and receivables divided by current liabilities: above 1 is good.', 'ric.autonomy':'Financial autonomy', 'ric.autonomyNote':'Share of sources that are own funds: below 25% the business depends heavily on debt.', 'ric.note':'Simplified reclassification: mortgages are all long-term, including the part due within 12 months; all receivables are short-term.', 'tpl.conferimentoBeni':'Contribution of assets by the partners (equipment, vehicles…)', 'tpl.versamentoSociCC':'Partners’ capital contribution (without increasing share capital)', 'tpl.finanziamentoSoci':'Partners’ loan (to be repaid)', 'tpl.prelievoTitolare':'Owner’s withdrawal (sole proprietorship)', 'tpl.versamentoTitolare':'Owner’s contribution (sole proprietorship)',
       'push.title':'Notifications', 'push.hint':'Get an alert on this device 3 days before and on the day of: VAT payments, F24 for salaries and withholdings, stamp duty on invoices, invoices to collect and to pay. They arrive in the morning.', 'push.enable':'Turn on notifications on this device', 'push.disable':'Turn off notifications on this device', 'push.on':'Notifications are on for this device.', 'push.off':'Notifications are off for this device.', 'push.blocked':'Notifications are blocked in the browser settings for this site: they must be re-enabled there.', 'push.unsupported':'This browser does not support notifications.', 'push.failed':'I could not turn on notifications on this device.', 'push.iphone':'On iPhone and iPad they only work if you first add the app to the Home screen (Share → Add to Home Screen) and open it from there.', 'push.rCollect':'To collect: invoice {number} from {name} — € {amt}', 'push.rPay':'To pay: invoice {number} from {name} — € {amt}',
       'acc.title':'Your login', 'acc.loggedAs':'You are logged in as', 'acc.newPw':'New password (at least 6 characters)', 'acc.newPw2':'Repeat the new password', 'acc.pwHint':'If you log in with Google you can still choose a password: you will be able to use either way.', 'acc.savePw':'Change password', 'acc.short':'The password must be at least 6 characters long.', 'acc.mismatch':'The two passwords do not match.', 'acc.saved':'Password changed.',
@@ -6077,6 +6365,8 @@
       'settings.exportJournal':'Export Ledger (CSV)', 'settings.exportInvoices':'Export Invoices (CSV)', 'settings.exportAccounts':'Export Chart of Accounts (CSV)',
     },
     de: {
+      'term.tfrPaid':'Abfertigung ausgezahlt: € {fund} brutto, € {net} netto', 'term.hireDate':'Einstellungsdatum', 'term.check':'Letzte Lohnabrechnung: das Arbeitsverhältnis endet in diesem Monat', 'term.date':'Letzter Arbeitstag', 'term.reason':'Grund', 'term.r_dim':'Kündigung durch den Mitarbeiter', 'term.r_lic':'Entlassung', 'term.r_end':'Ende des befristeten Vertrags', 'term.hire':'Einstellungsdatum', 'term.tfrBefore':'Vor der App angereifte Abfertigung (TFR, optional)', 'term.notice':'Ersatzleistung für die Kündigungsfrist (optional)', 'term.leaveLeft':'Zu bezahlende nicht genommene Urlaubstage', 'term.hint':'In der letzten Lohnabrechnung: die gearbeiteten Tage des Monats, die angereiften Anteile des 13. und 14. Gehalts, nicht genommener Urlaub und eine allfällige Ersatzleistung. Die Abfertigung (TFR) wird getrennt bezahlt und getrennt besteuert. Bei einer Entlassung zahlt der Betrieb der INPS den NASpI-Beitrag (das „Ticket“).', 'term.pDays':'Gearbeitete Tage im Monat ({d} von 30)', 'term.p13':'Anteil 13. Gehalt ({m} Monate)', 'term.p14':'Anteil 14. Gehalt ({m} Monate)', 'term.pLeave':'Nicht genommener Urlaub ({d} Tage)', 'term.pNotice':'Ersatzleistung für die Kündigungsfrist', 'term.pTfrTitle':'Abfertigung TFR (getrennt bezahlt, getrennte Besteuerung)', 'term.pTfrFund':'Angereifte Abfertigung insgesamt', 'term.pTfrTax':'IRPEF-Einbehalt auf die Abfertigung (Durchschnittssatz {rate} %, über {years} Jahre)', 'term.pTfrNet':'Netto-Abfertigung', 'term.pTicket':'NASpI-Beitrag für die Entlassung ({m} Monate Betriebszugehörigkeit)', 'term.pTotal':'Gesamtbetrag für den Mitarbeiter (Lohn + Abfertigung)', 'term.needHire':'Für das Ende des Arbeitsverhältnisses wird das Einstellungsdatum benötigt.', 'term.badDate':'Der letzte Arbeitstag muss im Monat der Lohnabrechnung liegen.', 'term.note':'Die Abfertigung enthält nicht die jährliche Aufwertung; der Einbehalt ist vorläufig und wird danach von der Agenzia delle Entrate neu berechnet.', 'term.ended':'Arbeitsverhältnis beendet am {date}',
+      'pay.ctype':'Vertragsart', 'pay.ct_ind':'Unbefristet', 'pay.ct_det':'Befristet', 'pay.ct_app':'Lehre', 'pay.ccnl':'Kollektivvertrag (CCNL)', 'pay.ccnlTerz':'Handel und Dienstleistungen (Confcommercio)', 'pay.ccnlOther':'Anderer: Lohn und Zahlen gebe ich selbst ein', 'pay.level':'Stufe', 'pay.hours':'Wochenstunden (40 = Vollzeit)', 'pay.presetHint':'Mindestlohn der Stufe {level} in Vollzeit: € {amt} im Monat (Grundlohn, Teuerungszulage und drittes Element). Bei {hours} Wochenstunden ist der Lohn anteilig; wenn du mehr zahlst, korrigiere ihn.', 'pay.appHint':'Lehrling: Beiträge 5,84 % zu seinen Lasten und 11,61 % zu Lasten des Betriebs (INPS-Rundschreiben 91/2023); bei Betrieben bis 9 Beschäftigten ist der Satz in den ersten Jahren ermäßigt: prüfe ihn mit dem Lohnberater und korrigiere die Zahl. Der Lohn eines Lehrlings beginnt meist ein oder zwei Stufen unter der Endstufe.', 'pay.varsTitle':'Änderungen des Monats', 'pay.otHours':'Überstunden', 'pay.otPct':'Überstundenzuschlag (%)', 'pay.sickDays':'Krankheitstage im Monat (Kalendertage)', 'pay.sickPrior':'Tage derselben Krankheit schon im Vormonat', 'pay.unpaid':'Tage unbezahlter Abwesenheit', 'pay.leave':'Im Monat genommene Urlaubstage', 'pay.varsHint':'Überstunden: Stundenlohn × Stunden × (1 + Zuschlag). Krankheit (Regel des Handels-CCNL): erste 3 Tage zu 100 % vom Betrieb bezahlt, Tag 4–20 zu 75 % (50 % INPS + 25 % Betrieb), ab Tag 21 zu 100 % (66,66 % INPS + Rest Betrieb). Urlaub ändert den Lohn nicht: er wird nur gezählt.', 'pay.pBase':'Monatslohn', 'pay.pOvertime':'Überstunden ({h} Std., +{pct}%)', 'pay.pUnpaid':'Unbezahlte Abwesenheit ({d} Tage)', 'pay.pSickOff':'Abgezogene Krankheitstage ({d})', 'pay.pSickEmp':'Vom Betrieb bezahlte Krankheit', 'pay.pSickInps':'Krankheit zu Lasten INPS (vom Betrieb vorgestreckt, ohne Beiträge)', 'pay.pContrib':'Beitragsgrundlage', 'pay.empContract':'{type} · {ccnl} · {hours} Wochenstunden', 'pay.leaveLine':'Urlaub: angereift {acc} Tage, genommen {taken}, übrig {left}', 'pay.ccnlShortTerz':'Handel', 'pay.ccnlShortOther':'anderer Vertrag', 'pay.levelShort':'Stufe {l}',
       'tab.libri':'Geschäftsbücher', 'libri.title':'Journal und Kontenblätter', 'libri.hint':'Das Journal listet alle Buchungen nach Datum, nummeriert. Die Kontenblätter zeigen Konto für Konto alle Bewegungen des Jahres mit laufendem Saldo. Sie aktualisieren sich von selbst.', 'libri.journal':'Journal', 'libri.ledgers':'Kontenblätter', 'libri.print':'🖨 Drucken oder als PDF speichern', 'libri.emptyJournal':'Keine Buchungen in diesem Jahr.', 'libri.emptyLedgers':'Keine Konten mit Bewegungen in diesem Jahr.', 'libri.monthInfo':'Buchungen: {n} · Soll € {d} · Haben € {c}', 'libri.yearTotals':'Jahressumme: {n} Buchungen, Soll € {d}, Haben € {c}.', 'libri.notBalanced':'Soll und Haben stimmen nicht überein: Eine Buchung ist unausgeglichen.', 'libri.ledgerInfo':'Bewegungen: {n} · Saldo € {amt}', 'libri.ledgersTitle':'Kontenblätter {year}', 'led.balance':'Saldo', 'fatt.monthInfo':'Belege: {n} · € {amt}', 'ric.title':'Umgegliederte Bilanz', 'ric.hint':'Dieselben Zahlen wie in der Bilanz, nach finanziellen Kriterien geordnet: oben, was innerhalb eines Jahres zu Geld wird (oder bezahlt werden muss), unten, was länger bleibt. Darunter die Kennzahlen, die zeigen, ob das Unternehmen im Gleichgewicht ist.', 'ric.uses':'Mittelverwendung (Aktiva)', 'ric.sources':'Mittelherkunft (Passiva)', 'ric.li':'Kasse und Banken', 'ric.ld':'Forderungen', 'ric.disp':'Vorräte', 'ric.ac':'Umlaufvermögen', 'ric.immImm':'Immaterielle Anlagen', 'ric.immMat':'Sachanlagen (abzüglich Abschreibungen)', 'ric.immFin':'Finanzanlagen', 'ric.af':'Anlagevermögen', 'ric.totUses':'Summe Mittelverwendung', 'ric.pc':'Kurzfristige Verbindlichkeiten (bis 12 Monate)', 'ric.pcons':'Langfristige Verbindlichkeiten (Darlehen und Abfertigung)', 'ric.pn':'Eigenkapital', 'ric.totSources':'Summe Mittelherkunft', 'ric.ccn':'Nettoumlaufvermögen', 'ric.ccnNote':'Umlaufvermögen minus kurzfristige Verbindlichkeiten: positiv heißt, was im Jahr hereinkommt, deckt, was im Jahr zu zahlen ist.', 'ric.mt':'Liquiditätsmarge', 'ric.mtNote':'Liquide Mittel und Forderungen minus kurzfristige Verbindlichkeiten, ohne Vorräte.', 'ric.ms':'Strukturmarge', 'ric.msNote':'Eigenkapital minus Anlagevermögen: positiv heißt, dauerhafte Güter sind mit eigenen Mitteln bezahlt.', 'ric.current':'Liquidität 3. Grades', 'ric.currentNote':'Umlaufvermögen geteilt durch kurzfristige Verbindlichkeiten: über 1 ist gut.', 'ric.quick':'Liquidität 2. Grades', 'ric.quickNote':'Liquide Mittel und Forderungen geteilt durch kurzfristige Verbindlichkeiten: über 1 ist gut.', 'ric.autonomy':'Eigenkapitalquote', 'ric.autonomyNote':'Anteil der Mittel, die Eigenkapital sind: unter 25 % hängt das Unternehmen stark von Schulden ab.', 'ric.note':'Vereinfachte Umgliederung: Darlehen sind ganz langfristig, auch der innerhalb von 12 Monaten fällige Teil; alle Forderungen gelten als kurzfristig.', 'tpl.conferimentoBeni':'Sacheinlage der Gesellschafter (Geräte, Fahrzeuge…)', 'tpl.versamentoSociCC':'Einzahlung der Gesellschafter in die Kapitalrücklage (ohne Kapitalerhöhung)', 'tpl.finanziamentoSoci':'Gesellschafterdarlehen (rückzahlbar)', 'tpl.prelievoTitolare':'Privatentnahme des Inhabers (Einzelunternehmen)', 'tpl.versamentoTitolare':'Privateinlage des Inhabers (Einzelunternehmen)',
       'push.title':'Benachrichtigungen', 'push.hint':'Erhalte auf diesem Gerät 3 Tage vorher und am Tag selbst einen Hinweis zu: MwSt.-Zahlungen, F24 für Löhne und Steuerabzüge, Stempelsteuer auf Rechnungen, offenen Ausgangs- und Eingangsrechnungen. Sie kommen morgens.', 'push.enable':'Benachrichtigungen auf diesem Gerät einschalten', 'push.disable':'Benachrichtigungen auf diesem Gerät ausschalten', 'push.on':'Auf diesem Gerät sind die Benachrichtigungen aktiv.', 'push.off':'Auf diesem Gerät sind die Benachrichtigungen aus.', 'push.blocked':'Die Benachrichtigungen sind in den Browser-Einstellungen für diese Seite blockiert: Sie müssen dort wieder erlaubt werden.', 'push.unsupported':'Dieser Browser unterstützt keine Benachrichtigungen.', 'push.failed':'Ich konnte die Benachrichtigungen auf diesem Gerät nicht einschalten.', 'push.iphone':'Auf iPhone und iPad funktionieren sie nur, wenn du die App zuerst zum Home-Bildschirm hinzufügst (Teilen → Zum Home-Bildschirm) und von dort öffnest.', 'push.rCollect':'Offen: Rechnung {number} von {name} — € {amt}', 'push.rPay':'Zu zahlen: Rechnung {number} von {name} — € {amt}',
       'acc.title':'Dein Zugang', 'acc.loggedAs':'Du bist angemeldet als', 'acc.newPw':'Neues Passwort (mindestens 6 Zeichen)', 'acc.newPw2':'Neues Passwort wiederholen', 'acc.pwHint':'Auch wenn du dich mit Google anmeldest, kannst du ein Passwort wählen: Dann funktionieren beide Wege.', 'acc.savePw':'Passwort ändern', 'acc.short':'Das Passwort muss mindestens 6 Zeichen haben.', 'acc.mismatch':'Die beiden Passwörter stimmen nicht überein.', 'acc.saved':'Passwort geändert.',
